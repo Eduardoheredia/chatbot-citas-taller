@@ -1,0 +1,16 @@
+# Entornos virtuales
+.venv/
+venv/
+
+# Archivos y directorios generados por Rasa
+.rasa/
+models/
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+
+# Archivos de sistema o temporales
+.DS_Store
+Thumbs.db
+*.log
