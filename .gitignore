@@ -1,25 +1,16 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a//dev/null b/.gitignore
-index 0000000000000000000000000000000000000000..1759077ec5b20562982752750f1715bf0c2e12fa 100644
---- a//dev/null
-+++ b/.gitignore
-@@ -0,0 +1,16 @@
-+# Entornos virtuales
-+.venv/
-+venv/
-+
-+# Archivos y directorios generados por Rasa
-+.rasa/
-+models/
-+
-+# Cachés de Python
-+__pycache__/
-+*.py[cod]
-+
-+# Archivos de sistema o temporales
-+.DS_Store
-+Thumbs.db
-+*.log
- 
-EOF
-)
+# Entornos virtuales
+.venv/
+venv/
+
+# Archivos y directorios generados por Rasa
+.rasa/
+models/
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+
+# Archivos de sistema o temporales
+.DS_Store
+Thumbs.db
+*.log
