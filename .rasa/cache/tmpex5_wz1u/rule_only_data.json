@@ -1,0 +1,10 @@
+{
+  "rule_only_slots": [
+    "hora",
+    "fecha",
+    "servicio"
+  ],
+  "rule_only_loops": [
+    "agendar_cita_form"
+  ]
+}

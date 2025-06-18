@@ -1,0 +1,30 @@
+[
+  {
+    "name": "fecha",
+    "pattern": "05/06/2025"
+  },
+  {
+    "name": "fecha",
+    "pattern": "1 de junio"
+  },
+  {
+    "name": "fecha",
+    "pattern": "2025-06-01"
+  },
+  {
+    "name": "hora",
+    "pattern": "14:30"
+  },
+  {
+    "name": "hora",
+    "pattern": "15:00 hrs"
+  },
+  {
+    "name": "hora",
+    "pattern": "9:00"
+  },
+  {
+    "name": "servicio",
+    "pattern": "(\\bcambio\\ de\\ aceite\\b|\\brevisión\\ general\\b|\\balineación\\ y\\ balanceo\\b|\\bdiagnóstico\\ electrónico\\b|\\blimpieza\\ de\\ inyectores\\b)"
+  }
+]

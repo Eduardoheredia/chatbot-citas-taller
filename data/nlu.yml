@@ -1,0 +1,155 @@
+version: "3.1"
+
+nlu:
+
+- intent: saludo
+  examples: |
+    - hola
+    - buenas
+    - buenas tardes
+    - buen día
+    - cómo estás
+
+- intent: solicitar_cita
+  examples: |
+    - quiero agendar una cita
+    - necesito reservar hora
+    - agenda una cita para mi auto
+    - necesito programar una cita
+    - quiero una cita
+    - quiero agendar una cita para mi auto
+
+- intent: cancelar_cita
+  examples: |
+    - quiero cancelar mi cita
+    - cancela mi cita
+    - necesito anular la cita que tengo
+    - anula mi cita
+
+- intent: reprogramar_cita
+  examples: |
+    - necesito cambiar la fecha de mi cita
+    - quiero mover mi cita
+    - reprograma mi cita
+
+- intent: consultar_cita
+  examples: |
+    - ¿cuándo es mi próxima cita?
+    - revisa mis citas agendadas
+    - quiero ver mi cita
+    - muéstrame mi cita
+    - consulta mi cita
+
+- intent: consultar_servicios
+  examples: |
+    - ¿qué servicios ofrecen?
+    - muéstrame sus servicios disponibles
+    - qué servicios tiene el taller
+
+- intent: consultar_horarios
+  examples: |
+    - qué horarios tienen disponibles
+    - quiero ver los horarios
+    - muéstrame horarios disponibles
+
+- intent: confirmar
+  examples: |
+    - sí, por favor
+    - confirma
+    - claro que sí
+    - así es
+    - sí
+    - si
+    - correcto
+    - afirmativo
+    - okey
+    - ok
+    - confirmar
+    - de acuerdo
+    - vale
+    - acepto
+
+- intent: negar
+  examples: |
+    - no, cancela
+    - no, está mal
+    - no, mejor no
+    - no
+
+- intent: seleccionar_servicio
+  examples: |
+    - [cambio de aceite](servicio)
+    - cambio de aceite
+    - Quiero el servicio de [balanceo](servicio)
+    - balanceo
+    - alineación
+    - [alineación](servicio)
+    - revisión general
+    - [revisión general](servicio)
+    - mantenimiento preventivo
+    - [mantenimiento preventivo](servicio)
+    - servicio de [alineación](servicio)
+    - necesito [cambio de aceite](servicio)
+    - quiero un [cambio de aceite](servicio)
+    - agéndame para [balanceo](servicio)
+    - necesito alineación
+    - quiero balanceo
+    - servicio de alineación
+    - necesito cambio de aceite
+    - [cambio de aceite y filtro](servicio)
+    - necesito [alinear las llantas](servicio)
+    - [balanceo](servicio) para mi coche
+    - quiero una [revisión completa](servicio)
+    - [mantenimiento de 50,000 km](servicio)
+    - servicio de [diagnóstico general](servicio)
+
+- intent: informar_fecha
+  examples: |
+    - [2025-06-15](fecha)
+    - para el [2025-06-15](fecha)
+    - quiero para el [próximo lunes](fecha)
+    - agéndalo para [mañana](fecha)
+    - el día [15 de julio](fecha)
+    - El [15 de julio](fecha)
+    - Para [dentro de 2 semanas](fecha)
+
+- intent: informar_hora
+  examples: |
+    - [10:30 am](hora)
+    - A las [14:00](hora)
+    - [8 en punto](hora)
+    - [mediodía](hora)
+    - [4 de la tarde](hora)
+    - a las [15:00](hora)
+
+- intent: agradecer
+  examples: |
+    - gracias
+    - muchas gracias
+    - te lo agradezco
+
+- intent: despedirse
+  examples: |
+    - adiós
+    - hasta luego
+    - nos vemos pronto
+
+- intent: faq_duracion_servicios
+  examples: |
+    - ¿Cuánto dura el servicio?
+    - Tiempo requerido para mantenimiento
+
+- intent: consulta_mecanica
+  examples: |
+    - cuándo debo cambiar el aceite
+    - qué hago si mi auto se recalienta
+    - cada cuánto se cambian las bujías
+    - ¿Por qué mi auto no enciende?
+    - ¿Qué hago si mi carro no arranca?
+    - ¿Cuándo cambiar la correa de distribución?
+    - ¿Por qué mi motor se recalienta?
+    - Mi auto hace un ruido extraño, ¿qué puede ser?
+    - ¿Qué pasa si no hago el mantenimiento?
+    - ¿Por qué vibra el volante?
+    - ¿Cuál es la presión correcta de las llantas?
+    - ¿Qué hago si se prende el check engine?

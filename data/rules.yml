@@ -1,0 +1,65 @@
+version: "3.1"
+
+rules:
+- rule: Saludo
+  steps:
+    - intent: saludo
+    - action: utter_saludo
+
+- rule: Iniciar agendamiento
+  steps:
+    - intent: solicitar_cita
+    - action: agendar_cita_form
+    - active_loop: agendar_cita_form
+
+- rule: Confirmar cita después del resumen
+  steps:
+    - action: utter_confirmar_cita
+    - intent: confirmar
+    - action: action_agendar_cita
+
+- rule: Negar cita después del resumen
+  condition:
+    - slot_was_set:
+        - servicio
+        - fecha
+        - hora
+  steps:
+    - action: utter_confirmar_cita
+    - intent: negar
+    - action: utter_cancelar_cita
+
+- rule: Cancelar cita
+  steps:
+    - intent: cancelar_cita
+    - action: action_cancelar_cita
+
+- rule: Consultar horarios
+  steps:
+    - intent: consultar_horarios
+    - action: utter_horarios
+
+- rule: Manejar despedida
+  steps:
+    - intent: despedirse
+    - action: utter_despedida
+
+- rule: Manejar agradecimiento
+  steps:
+    - intent: agradecer
+    - action: utter_agradecimiento
+
+- rule: Duración servicios
+  steps:
+    - intent: faq_duracion_servicios
+    - action: utter_duracion_servicios
+
+- rule: Responder consulta mecánica
+  steps:
+    - intent: consulta_mecanica
+    - action: action_responder_consulta_mecanica
+
+- rule: Consultar cita
+  steps:
+    - intent: consultar_cita
+    - action: action_consultar_cita

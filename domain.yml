@@ -1,0 +1,102 @@
+version: "3.1"
+
+intents:
+  - saludo
+  - solicitar_cita
+  - cancelar_cita
+  - reprogramar_cita
+  - consultar_cita
+  - consultar_servicios
+  - consultar_horarios
+  - confirmar
+  - negar
+  - seleccionar_servicio
+  - informar_fecha
+  - informar_hora
+  - consulta_mecanica
+  - agradecer
+  - despedirse
+  - faq_duracion_servicios
+
+entities:
+  - servicio
+  - fecha
+  - hora
+
+slots:
+  servicio:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: servicio
+      - type: from_text
+        intent: seleccionar_servicio
+  fecha:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: fecha
+      - type: from_text
+        intent: informar_fecha
+  hora:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: hora
+      - type: from_text
+        intent: informar_hora
+
+responses:
+  utter_saludo:
+    - text: "¡Hola! ¿En qué puedo ayudarte hoy con tu vehículo?"
+  utter_despedida:
+    - text: "¡Hasta luego! Que tengas un buen día."
+  utter_agradecimiento:
+    - text: "¡De nada! Estoy aquí para ayudarte."
+  utter_consultar_servicios:
+    - text: "Servicios disponibles:\n- Cambio de aceite\n- Revisión general\n- Alineación\n- Balanceo\n- Mantenimiento preventivo\n¿Cuál necesitas?"
+  utter_ask_servicio:
+    - text: "¿Qué servicio necesitas? (cambio de aceite, revisión general, alineación, balanceo, mantenimiento preventivo)"
+  utter_ask_fecha:
+    - text: "¿Para qué fecha deseas agendar la cita? (Ejemplo: 2025-06-15)"
+  utter_ask_hora:
+    - text: "¿A qué hora deseas la cita? (Ejemplo: 10:00, entre 08:00 y 18:00)"
+  utter_confirmar_cita:
+    - text: "Resumen de cita:\nServicio: {servicio}\nFecha: {fecha}\nHora: {hora}\n¿Confirmar?"
+  utter_cancelar_cita:
+    - text: "✅ Cita cancelada exitosamente"
+  utter_reprogramar_cita:
+    - text: "🔄 Cita reprogramada para {fecha} a las {hora}"
+  utter_error_fecha:
+    - text: "⚠️ Fecha inválida. Ingresa una fecha futura (Ej: 2025-05-30)"
+  utter_error_hora:
+    - text: "⚠️ Hora fuera de nuestro horario (08:00 - 18:00)"
+  utter_horarios:
+    - text: "Horarios de atención:\nLunes a Viernes: 08:00 - 18:00\nSábados: 09:00 - 14:00"
+  utter_default:
+    - text: "🤖 No entendí. ¿Podrías repetirlo?"
+  utter_duracion_servicios:
+    - text: "Duración aproximada de servicios:\n- Cambio de aceite: 30 min\n- Alineación: 1 hora\n- Revisión general: 2 horas"
+
+forms:
+  agendar_cita_form:
+    required_slots:
+      - servicio
+      - fecha
+      - hora
+
+actions:
+  - action_agendar_cita
+  - action_cancelar_cita
+  - action_reprogramar_cita
+  - validate_agendar_cita_form
+  - action_default_fallback
+  - action_responder_consulta_mecanica
+  - action_consultar_cita
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true 

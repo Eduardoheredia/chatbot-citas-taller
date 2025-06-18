@@ -1,0 +1,84 @@
+{
+  "type": "MaxHistoryTrackerFeaturizer",
+  "state_featurizer": {
+    "action_texts": [],
+    "entity_tag_specs": [],
+    "feature_states": {
+      "intent": {
+        "agradecer": 0,
+        "back": 1,
+        "cancelar_cita": 2,
+        "confirmar": 3,
+        "consulta_mecanica": 4,
+        "consultar_cita": 5,
+        "consultar_horarios": 6,
+        "consultar_servicios": 7,
+        "despedirse": 8,
+        "faq_duracion_servicios": 9,
+        "informar_fecha": 10,
+        "informar_hora": 11,
+        "negar": 12,
+        "nlu_fallback": 13,
+        "out_of_scope": 14,
+        "reprogramar_cita": 15,
+        "restart": 16,
+        "saludo": 17,
+        "seleccionar_servicio": 18,
+        "session_start": 19,
+        "solicitar_cita": 20
+      },
+      "action_name": {
+        "action_listen": 0,
+        "action_restart": 1,
+        "action_session_start": 2,
+        "action_default_fallback": 3,
+        "action_deactivate_loop": 4,
+        "action_revert_fallback_events": 5,
+        "action_default_ask_affirmation": 6,
+        "action_default_ask_rephrase": 7,
+        "action_two_stage_fallback": 8,
+        "action_unlikely_intent": 9,
+        "action_back": 10,
+        "...": 11,
+        "action_extract_slots": 12,
+        "action_agendar_cita": 13,
+        "action_cancelar_cita": 14,
+        "action_reprogramar_cita": 15,
+        "validate_agendar_cita_form": 16,
+        "action_responder_consulta_mecanica": 17,
+        "action_consultar_cita": 18,
+        "utter_agradecimiento": 19,
+        "utter_ask_fecha": 20,
+        "utter_ask_hora": 21,
+        "utter_ask_servicio": 22,
+        "utter_cancelar_cita": 23,
+        "utter_confirmar_cita": 24,
+        "utter_consultar_servicios": 25,
+        "utter_default": 26,
+        "utter_despedida": 27,
+        "utter_duracion_servicios": 28,
+        "utter_error_fecha": 29,
+        "utter_error_hora": 30,
+        "utter_horarios": 31,
+        "utter_reprogramar_cita": 32,
+        "utter_saludo": 33,
+        "agendar_cita_form": 34
+      },
+      "entities": {
+        "fecha": 0,
+        "hora": 1,
+        "servicio": 2
+      },
+      "slots": {
+        "servicio_0": 0,
+        "fecha_0": 1,
+        "hora_0": 2
+      },
+      "active_loop": {
+        "agendar_cita_form": 0
+      }
+    }
+  },
+  "remove_duplicates": true,
+  "max_history": 5
+}
