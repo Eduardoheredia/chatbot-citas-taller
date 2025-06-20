@@ -78,7 +78,8 @@ def chatbot_view():
     if "telefono" not in session:
         return redirect(url_for("index"))
     telefono = session["telefono"]
-    return render_template("chatbot.html", telefono=telefono)
+    socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
+    return render_template("chatbot.html", telefono=telefono, socket_url=socket_url)
 
 if __name__ == "__main__":
     crear_bd()

@@ -42,12 +42,13 @@
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/index.min.js"></script>
   <script>
     const telefonoUsuario = "{{ telefono }}";
+    const socketUrl = "{{ socket_url }}";
 
     WebChat.default({
       selector: "#webchat",
       initPayload: "/saludo",
-      customData: { telefono: telefonoUsuario },
-      socketUrl: "http://localhost:5005",
+      customData: { sender: telefonoUsuario },
+      socketUrl: socketUrl,
       socketPath: "/socket.io/",
       title: "Asistente de Taller",
       subtitle: "¿En qué puedo ayudarte?",
