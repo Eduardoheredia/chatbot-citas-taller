@@ -85,17 +85,23 @@ class ValidateAgendarCitaForm(FormValidationAction):
             return {"fecha": None}
 
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
+        if not slot_value:
+            dispatcher.utter_message(response="utter_error_hora")
+            return {"hora": None}
+
         try:
-            hora_str = ''.join(filter(lambda x: x.isdigit() or x == ':', slot_value))
-            parsed = parse(hora_str, settings={'TIMEZONE': TZ.zone})
+            hora_str = ''.join(
+                filter(lambda x: x.isdigit() or x == ':', slot_value)
+            )
+            parsed = parse(hora_str, settings={"TIMEZONE": TZ.zone})
             if not parsed:
                 raise ValueError
             hora = parsed.time()
-            if hora < time(8,0) or hora > time(18,0):
+            if hora < time(8, 0) or hora > time(18, 0):
                 dispatcher.utter_message(response="utter_error_hora")
                 return {"hora": None}
             return {"hora": hora.strftime("%H:%M")}
-        except Exception as e:
+        except Exception:
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
 
@@ -161,6 +167,4 @@ class ActionResponderConsultaMecanica(Action):
         #else:
             # Reiniciar para nueva conversación
          #   return [Restarted()]
-        
-
-
+         
