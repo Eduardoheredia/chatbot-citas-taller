@@ -167,4 +167,9 @@ class ActionResponderConsultaMecanica(Action):
         #else:
             # Reiniciar para nueva conversación
          #   return [Restarted()]
+<<<<<<< HEAD
          
+=======
+        
+
+>>>>>>> 8ab874f8ab5d6fcbf0fd2e399fcaafdaef6ebebd
