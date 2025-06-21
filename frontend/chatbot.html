@@ -45,6 +45,12 @@
     const telefonoUsuario = "{{ telefono }}";
     const socketUrl = "{{ socket_url }}";
 
+
+    localStorage.setItem(
+      'chat_session',
+      JSON.stringify({ session_id: telefonoUsuario })
+    );
+
     const webchat = WebChat.default({
       selector: "#webchat",
       initPayload: "/saludo",
@@ -70,3 +76,6 @@
   </script>
 </body>
 </html>
+
+
+
