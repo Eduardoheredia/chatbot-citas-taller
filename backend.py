@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+import requests
 from flask_cors import CORS
 import sqlite3
 import hashlib
@@ -13,6 +14,29 @@ app.secret_key = os.environ.get("SECRET_KEY", "poner_un_valor_seguro")
 CORS(app)
 
 DB_PATH = "usuarios.db"
+
+
+def obtener_historial(telefono: str):
+    """Get conversation history for a user from the Rasa server."""
+    rasa_url = os.environ.get("RASA_URL", "http://localhost:5005")
+    try:
+        resp = requests.get(
+            f"{rasa_url}/conversations/{telefono}/tracker",
+            params={"include_events": "after_restart"},
+            timeout=5,
+        )
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+        messages = []
+        for ev in data.get("events", []):
+            if ev.get("event") == "user" and ev.get("text"):
+                messages.append({"sender": "user", "text": ev.get("text")})
+            elif ev.get("event") == "bot" and ev.get("text"):
+                messages.append({"sender": "bot", "text": ev.get("text")})
+        return messages
+    except Exception:
+        return []
 
 def crear_bd():
     with sqlite3.connect(DB_PATH) as conn:
@@ -80,6 +104,14 @@ def chatbot_view():
     telefono = session["telefono"]
     socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
     return render_template("chatbot.html", telefono=telefono, socket_url=socket_url)
+
+
+@app.route("/historial")
+def historial():
+    if "telefono" not in session:
+        return jsonify([])
+    telefono = session["telefono"]
+    return jsonify(obtener_historial(telefono))
 
 if __name__ == "__main__":
     crear_bd()
