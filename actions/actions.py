@@ -3,6 +3,7 @@ from datetime import datetime, time
 from dateparser import parse
 from pytz import timezone
 import logging
+import sqlite3
 
 from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
@@ -10,7 +11,35 @@ from rasa_sdk.types import DomainDict
 from rasa_sdk.events import SlotSet, FollowupAction
 
 logger = logging.getLogger(__name__)
-TZ = timezone("America/Mexico_City")
+TZ = timezone("America/La_Paz")
+
+# Reuse la misma base de datos que utiliza el backend para almacenar
+# usuarios. Aquí agregamos una tabla simple para las citas de cada
+# usuario. La columna "telefono" actúa como identificador del cliente
+# ya que el frontend envía dicho número como `sender` al conectarse
+# al socket de Rasa.
+DB_PATH = "usuarios.db"
+
+def _init_db() -> None:
+    """Ensure the appointments table exists."""
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS citas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telefono TEXT NOT NULL,
+                servicio TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                hora TEXT NOT NULL
+            )
+            """
+        )
+        conn.commit()
+
+
+# Create the table on module import so actions can write de inmediato
+_init_db()
 
 class ActionDefaultFallback(Action):
     def name(self) -> str:
@@ -24,14 +53,33 @@ class ActionAgendarCita(Action):
     def name(self) -> str:
         return "action_agendar_cita"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: DomainDict,
+    ) -> List[Dict[Text, Any]]:
         servicio = tracker.get_slot("servicio") or "Servicio no especificado"
         fecha = tracker.get_slot("fecha") or "Fecha no definida"
         hora = tracker.get_slot("hora") or "Hora no definida"
+
+        # Almacenar la cita en la base de datos utilizando el identificador de
+        # usuario (número de teléfono) que el frontend envía como sender ID.
+        telefono = tracker.sender_id
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO citas (telefono, servicio, fecha, hora) VALUES (?, ?, ?, ?)",
+                    (telefono, servicio, fecha, hora),
+                )
+                conn.commit()
+        except Exception as exc:
+            logger.error(f"Error al guardar la cita: {exc}")
+
         dispatcher.utter_message(
             text=f"✅ Cita confirmada:\n{servicio}\nFecha: {fecha}\nHora: {hora}"
         )
-        # No reseteamos conversación aquí, solo los slots si se requiere después.
         return []
 
 class ActionReprogramarCita(Action):
@@ -121,6 +169,23 @@ class ActionConsultarCita(Action):
         servicio = tracker.get_slot("servicio")
         fecha = tracker.get_slot("fecha")
         hora = tracker.get_slot("hora")
+
+        # Si no hay información en los slots, intentamos recuperarla de la BD
+        if not (servicio and fecha and hora):
+            telefono = tracker.sender_id
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY id DESC LIMIT 1",
+                        (telefono,),
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        servicio, fecha, hora = row
+            except Exception as exc:
+                logger.error(f"Error consultando cita: {exc}")
+
         if servicio and fecha and hora:
             dispatcher.utter_message(
                 text=f"📋 Tu próxima cita:\nServicio: {servicio}\nFecha: {fecha}\nHora: {hora}"

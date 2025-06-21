@@ -16,3 +16,11 @@ python backend.py
 ```
 
 De esta forma el frontend se conectará al WebSocket indicado.
+
+## Persistencia de citas
+
+Cuando un usuario agenda una cita y la confirma, el bot registra el servicio,
+fecha y hora en la base de datos SQLite `usuarios.db` dentro de la tabla
+`citas`. El número de teléfono enviado por el frontend se usa como identificador
+del usuario, por lo que las citas quedan asociadas a cada cuenta y pueden
+consultarse posteriormente mediante la intención `consultar_cita`.

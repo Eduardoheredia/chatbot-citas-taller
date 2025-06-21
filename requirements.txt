@@ -1,9 +1,15 @@
 rasa==3.6.21
 rasa-sdk==3.6.2
-spacy==3.4.4
-es-core-news-md @ https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.4.0/es_core_news_md-3.4.0.tar.gz
+Flask==3.1.1
+flask-cors==6.0.0
 python-socketio==5.7.2
 python-engineio==4.3.2
-flask==3.1.1
-flask-cors==6.0.0
+spacy==3.4.4
+es-core-news-md @ https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.4.0/es_core_news_md-3.4.0.tar.gz
+dateparser==1.1.7
+SQLAlchemy==1.4.54
+sanic==21.12.2
+Sanic-Cors==2.0.1
+sanic-jwt==1.8.0
+
 sqlite3  # (no se instala vía pip, viene con Python)
