@@ -72,7 +72,14 @@
       title: "Asistente de Taller",
       subtitle: "¿En qué puedo ayudarte?",
       embedded: true,
-      showFullScreenButton: true
+      showFullScreenButton: true,
+      onSocketEvent: {
+        connect: () => {
+          if (webchat && webchat.socket) {
+            webchat.socket.emit("session_request", { session_id: telefonoUsuario });
+          }
+        }
+      }
     });
 
     document.getElementById("logout").addEventListener("click", () => {

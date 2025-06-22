@@ -17,6 +17,10 @@ python backend.py
 
 De esta forma el frontend se conectará al WebSocket indicado.
 
+## Identificador de sesión fijo
+
+El frontend utiliza el número de teléfono del usuario como `session_id` cuando se conecta al WebSocket. Esto permite que el historial de conversaciones y las citas queden vinculadas de forma permanente con la cuenta del usuario. El valor se envía mediante el evento `session_request` al iniciar la conexión, por lo que el mismo identificador se reutiliza aunque el usuario cierre y vuelva a abrir el navegador.
+
 ## Persistencia de citas
 
 Cuando un usuario agenda una cita y la confirma, el bot registra el servicio,
