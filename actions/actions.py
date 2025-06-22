@@ -290,12 +290,3 @@ class ActionResponderConsultaMecanica(Action):
             respuesta = "Si se prende el 'check engine', acude lo antes posible al taller para un diagnóstico."
         dispatcher.utter_message(respuesta)
         return []
-
-
-       # dispatcher.utter_message(respuesta)
-        #if tracker.active_loop:
-            # Continuar con el formulario activo
-         #   return [SlotSet("requested_slot", None), FollowupAction(tracker.active_loop)]
-        #else:
-            # Reiniciar para nueva conversación
-         #   return [Restarted()]
