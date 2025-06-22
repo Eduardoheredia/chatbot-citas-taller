@@ -32,25 +32,11 @@ nlu:
     - quiero mover mi cita
     - reprograma mi cita
 
-- intent: consultar_cita
-  examples: |
-    - ¿cuándo es mi próxima cita?
-    - revisa mis citas agendadas
-    - quiero ver mi próxima cita
-    - muéstrame mi próxima cita
-    - consulta mi próxima cita
-
 - intent: consultar_servicios
   examples: |
     - ¿qué servicios ofrecen?
     - muéstrame sus servicios disponibles
     - qué servicios tiene el taller
-
-- intent: consultar_horarios
-  examples: |
-    - qué horarios tienen disponibles
-    - quiero ver los horarios
-    - muéstrame horarios disponibles
 
 - intent: confirmar
   examples: |
@@ -153,14 +139,6 @@ nlu:
     - ¿Por qué vibra el volante?
     - ¿Cuál es la presión correcta de las llantas?
     - ¿Qué hago si se prende el check engine?
-
-- intent: mostrar_historial
-  examples: |
-    - historial
-    - ver historial de citas
-    - mostrar mi historial
-    - quiero ver mis citas anteriores
-    - muéstrame mis citas pasadas
 
 - intent: consultar_historial_citas
   examples: |

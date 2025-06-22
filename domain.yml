@@ -5,9 +5,9 @@ intents:
   - solicitar_cita
   - cancelar_cita
   - reprogramar_cita
-  - consultar_cita
+  - consultar_cita_activa
   - consultar_servicios
-  - consultar_horarios
+  - consultar_horarios_disponibles
   - confirmar
   - negar
   - seleccionar_servicio
@@ -17,7 +17,7 @@ intents:
   - agradecer
   - despedirse
   - faq_duracion_servicios
-  - mostrar_historial
+  - consultar_historial_citas
 
 entities:
   - servicio
