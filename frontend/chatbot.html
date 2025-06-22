@@ -25,6 +25,14 @@
       font-size: 1.2rem;
       font-weight: bold;
       border-bottom: 1px solid #ccc;
+      position: relative;
+    }
+
+    #logout {
+      position: absolute;
+      right: 10px;
+      top: 5px;
+      padding: 5px 10px;
     }
 
     #webchat {
@@ -34,8 +42,11 @@
     }
   </style>
 </head>
-<body>
-  <header>Asistente Virtual del Taller</header>
+  <body>
+    <header>
+      Asistente Virtual del Taller
+      <button id="logout">Cerrar sesión</button>
+    </header>
 
   <div id="history" style="padding: 10px;"></div>
   <div id="webchat"></div>
@@ -45,7 +56,14 @@
     const telefonoUsuario = "{{ telefono }}";
     const socketUrl = "{{ socket_url }}";
 
-    const webchat = WebChat.default({
+    // Ensure the widget uses the phone number as the session ID so each
+    // user gets an independent conversation history.
+    localStorage.setItem(
+      'chat_session',
+      JSON.stringify({ session_id: telefonoUsuario })
+    );
+
+  const webchat = WebChat.default({
       selector: "#webchat",
       initPayload: "/saludo",
       customData: { sender: telefonoUsuario },
@@ -55,6 +73,10 @@
       subtitle: "¿En qué puedo ayudarte?",
       embedded: true,
       showFullScreenButton: true
+    });
+
+    document.getElementById("logout").addEventListener("click", () => {
+      window.location.href = "/logout";
     });
 
     fetch("/historial")
