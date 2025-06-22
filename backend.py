@@ -106,6 +106,12 @@ def chatbot_view():
     return render_template("chatbot.html", telefono=telefono, socket_url=socket_url)
 
 
+@app.route("/logout")
+def logout():
+    session.pop("telefono", None)
+    return redirect(url_for("index"))
+
+
 @app.route("/historial")
 def historial():
     if "telefono" not in session:
