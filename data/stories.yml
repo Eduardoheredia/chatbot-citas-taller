@@ -50,3 +50,8 @@ stories:
   steps:
     - intent: consultar_cita
     - action: action_consultar_cita
+
+- story: mostrar_historial
+  steps:
+    - intent: mostrar_historial
+    - action: action_mostrar_historial

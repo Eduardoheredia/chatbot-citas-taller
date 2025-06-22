@@ -161,6 +161,33 @@ class ActionCancelarCita(Action):
         dispatcher.utter_message(text="✅ Cita cancelada exitosamente.")
         return [SlotSet("servicio", None), SlotSet("fecha", None), SlotSet("hora", None)]
 
+class ActionMostrarHistorial(Action):
+    def name(self) -> str:
+        return "action_mostrar_historial"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict) -> List[Dict[Text, Any]]:
+        telefono = tracker.sender_id
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY id DESC",
+                    (telefono,),
+                )
+                rows = cursor.fetchall()
+        except Exception as exc:
+            logger.error(f"Error consultando historial: {exc}")
+            rows = []
+
+        if rows:
+            mensajes = ["\n".join([f"Servicio: {s}", f"Fecha: {f}", f"Hora: {h}"]) for s, f, h in rows]
+            texto = "\n---\n".join(mensajes)
+            dispatcher.utter_message(text=f"📚 Historial de citas:\n{texto}")
+        else:
+            dispatcher.utter_message(text="No se encontraron citas previas.")
+
+        return []
+
 class ActionConsultarCita(Action):
     def name(self) -> str:
         return "action_consultar_cita"

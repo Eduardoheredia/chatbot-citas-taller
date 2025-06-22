@@ -153,3 +153,11 @@ nlu:
     - ¿Por qué vibra el volante?
     - ¿Cuál es la presión correcta de las llantas?
     - ¿Qué hago si se prende el check engine?
+
+- intent: mostrar_historial
+  examples: |
+    - historial
+    - ver historial de citas
+    - mostrar mi historial
+    - quiero ver mis citas anteriores
+    - muéstrame mis citas
