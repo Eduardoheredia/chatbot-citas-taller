@@ -36,7 +36,7 @@ rules:
 
 - rule: Consultar horarios
   steps:
-    - intent: consultar_horarios
+    - intent: consultar_horarios_disponibles
     - action: utter_horarios
 
 - rule: Manejar despedida
@@ -61,5 +61,10 @@ rules:
 
 - rule: Consultar cita
   steps:
-    - intent: consultar_cita
+    - intent: consultar_cita_activa
     - action: action_consultar_cita
+
+- rule: Consultar historial
+  steps:
+    - intent: consultar_historial_citas
+    - action: action_mostrar_historial

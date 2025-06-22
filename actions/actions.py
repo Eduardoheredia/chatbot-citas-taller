@@ -162,6 +162,8 @@ class ActionCancelarCita(Action):
         return [SlotSet("servicio", None), SlotSet("fecha", None), SlotSet("hora", None)]
 
 class ActionMostrarHistorial(Action):
+    """Devuelve las citas pasadas del usuario cuando se activa el
+    intent `consultar_historial_citas`."""
     def name(self) -> str:
         return "action_mostrar_historial"
 
@@ -201,6 +203,8 @@ class ActionMostrarHistorial(Action):
         return []
 
 class ActionConsultarCita(Action):
+    """Informa la próxima cita del usuario cuando se activa el
+    intent `consultar_cita_activa`."""
     def name(self) -> str:
         return "action_consultar_cita"
 

@@ -33,7 +33,7 @@ stories:
 
 - story: consultar_horarios
   steps:
-    - intent: consultar_horarios
+    - intent: consultar_horarios_disponibles
     - action: utter_horarios
 
 - story: duracion_servicios
@@ -48,10 +48,10 @@ stories:
 
 - story: consultar_cita
   steps:
-    - intent: consultar_cita
+    - intent: consultar_cita_activa
     - action: action_consultar_cita
 
 - story: mostrar_historial
   steps:
-    - intent: mostrar_historial
+    - intent: consultar_historial_citas
     - action: action_mostrar_historial
