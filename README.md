@@ -24,3 +24,10 @@ fecha y hora en la base de datos SQLite `usuarios.db` dentro de la tabla
 `citas`. El número de teléfono enviado por el frontend se usa como identificador
 del usuario, por lo que las citas quedan asociadas a cada cuenta y pueden
 consultarse posteriormente mediante la intención `consultar_cita`.
+
+## Persistencia del historial de conversaciones
+
+El archivo `endpoints.yml` incluye un `tracker_store` basado en SQLite que
+guarda los mensajes de cada usuario en `tracker.db`. Al iniciar sesión, el
+frontend consulta `/historial` para mostrar los intercambios previos y así
+continuar la charla incluso después de reiniciar el servidor de Rasa.

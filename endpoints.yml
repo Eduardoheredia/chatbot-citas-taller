@@ -2,3 +2,12 @@
 
 action_endpoint:
   url: "http://localhost:5055/webhook"
+
+# Persist conversations so that previous messages are restored when a
+# user vuelve a iniciar sesión.  Almacenar el tracker en un archivo
+# SQLite garantiza que el historial se mantenga incluso si el servidor
+# Rasa se reinicia.
+tracker_store:
+  type: SQL
+  dialect: "sqlite"
+  db: "tracker.db"

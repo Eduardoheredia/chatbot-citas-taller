@@ -17,6 +17,7 @@ intents:
   - agradecer
   - despedirse
   - faq_duracion_servicios
+  - mostrar_historial
 
 entities:
   - servicio
@@ -96,6 +97,7 @@ actions:
   - action_default_fallback
   - action_responder_consulta_mecanica
   - action_consultar_cita
+  - action_mostrar_historial
 
 session_config:
   session_expiration_time: 60
