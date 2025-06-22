@@ -21,7 +21,7 @@ TZ = timezone("America/La_Paz")
 DB_PATH = "usuarios.db"
 
 def _init_db() -> None:
-    """Ensure the appointments table exists."""
+    """Ensure the appointments table exists with the proper columns."""
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -31,10 +31,18 @@ def _init_db() -> None:
                 telefono TEXT NOT NULL,
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
-                hora TEXT NOT NULL
+                hora TEXT NOT NULL,
+                estado TEXT NOT NULL DEFAULT 'confirmada'
             )
             """
         )
+        # Add the estado column if the table was created previously without it
+        cursor.execute("PRAGMA table_info(citas)")
+        cols = [row[1] for row in cursor.fetchall()]
+        if "estado" not in cols:
+            cursor.execute(
+                "ALTER TABLE citas ADD COLUMN estado TEXT NOT NULL DEFAULT 'confirmada'"
+            )
         conn.commit()
 
 
@@ -77,8 +85,8 @@ class ActionAgendarCita(Action):
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT INTO citas (telefono, servicio, fecha, hora) VALUES (?, ?, ?, ?)",
-                    (telefono, servicio, fecha, hora),
+                    "INSERT INTO citas (telefono, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?)",
+                    (telefono, servicio, fecha, hora, "confirmada"),
                 )
                 conn.commit()
         except Exception as exc:
@@ -165,6 +173,31 @@ class ActionCancelarCita(Action):
         return "action_cancelar_cita"
 
     def run(self, dispatcher, tracker, domain):
+        telefono = (
+            tracker.latest_message.get("metadata", {}).get("sender")
+            or tracker.sender_id
+        )
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT id FROM citas
+                    WHERE telefono = ? AND estado = 'confirmada'
+                    ORDER BY fecha ASC, hora ASC
+                    """,
+                    (telefono,),
+                )
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute(
+                        "UPDATE citas SET estado = 'cancelada' WHERE id = ?",
+                        (row[0],),
+                    )
+                    conn.commit()
+        except Exception as exc:
+            logger.error(f"Error cancelando cita: {exc}")
+
         dispatcher.utter_message(text="✅ Cita cancelada exitosamente.")
         return [SlotSet("servicio", None), SlotSet("fecha", None), SlotSet("hora", None)]
 
@@ -183,7 +216,11 @@ class ActionMostrarHistorial(Action):
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY fecha DESC, hora DESC",
+                    """
+                    SELECT servicio, fecha, hora FROM citas
+                    WHERE telefono = ? AND estado = 'confirmada'
+                    ORDER BY fecha DESC, hora DESC
+                    """,
                     (telefono,),
                 )
                 rows = cursor.fetchall()
@@ -219,39 +256,38 @@ class ActionConsultarCita(Action):
         return "action_consultar_cita"
 
     def run(self, dispatcher, tracker, domain):
-        servicio = tracker.get_slot("servicio")
-        fecha = tracker.get_slot("fecha")
-        hora = tracker.get_slot("hora")
+        telefono = (
+            tracker.latest_message.get("metadata", {}).get("sender")
+            or tracker.sender_id
+        )
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT servicio, fecha, hora FROM citas
+                    WHERE telefono = ? AND estado = 'confirmada'
+                    ORDER BY fecha ASC, hora ASC
+                    """,
+                    (telefono,),
+                )
+                rows = cursor.fetchall()
+        except Exception as exc:
+            logger.error(f"Error consultando cita: {exc}")
+            rows = []
 
-        # Si no hay información en los slots, intentamos recuperarla de la BD
-        if not (servicio and fecha and hora):
-            telefono = (
-                tracker.latest_message.get("metadata", {}).get("sender")
-                or tracker.sender_id
-            )
+        servicio = fecha = hora = None
+        ahora = datetime.now(TZ)
+        for s, f, h in rows:
             try:
-                with sqlite3.connect(DB_PATH) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY fecha ASC, hora ASC",
-                        (telefono,),
-                    )
-                    rows = cursor.fetchall()
+                fecha_dt = datetime.fromisoformat(f)
+                hora_dt = datetime.strptime(h, "%H:%M").time()
+                cita_dt = TZ.localize(datetime.combine(fecha_dt, hora_dt))
+                if cita_dt >= ahora:
+                    servicio, fecha, hora = s, f, h
+                    break
             except Exception as exc:
-                logger.error(f"Error consultando cita: {exc}")
-                rows = []
-
-            ahora = datetime.now(TZ)
-            for s, f, h in rows:
-                try:
-                    fecha_dt = datetime.fromisoformat(f)
-                    hora_dt = datetime.strptime(h, "%H:%M").time()
-                    cita_dt = TZ.localize(datetime.combine(fecha_dt, hora_dt))
-                    if cita_dt >= ahora:
-                        servicio, fecha, hora = s, f, h
-                        break
-                except Exception as exc:
-                    logger.error(f"Error procesando cita almacenada: {exc}")
+                logger.error(f"Error procesando cita almacenada: {exc}")
 
         if servicio and fecha and hora:
             dispatcher.utter_message(
