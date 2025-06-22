@@ -171,7 +171,7 @@ class ActionMostrarHistorial(Action):
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY id DESC",
+                    "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY fecha DESC, hora DESC",
                     (telefono,),
                 )
                 rows = cursor.fetchall()
@@ -179,8 +179,20 @@ class ActionMostrarHistorial(Action):
             logger.error(f"Error consultando historial: {exc}")
             rows = []
 
-        if rows:
-            mensajes = ["\n".join([f"Servicio: {s}", f"Fecha: {f}", f"Hora: {h}"]) for s, f, h in rows]
+        ahora = datetime.now(TZ)
+        citas_pasadas: List[tuple] = []
+        for s, f, h in rows:
+            try:
+                fecha_dt = datetime.fromisoformat(f)
+                hora_dt = datetime.strptime(h, "%H:%M").time()
+                cita_dt = TZ.localize(datetime.combine(fecha_dt, hora_dt))
+                if cita_dt < ahora:
+                    citas_pasadas.append((s, f, h))
+            except Exception as exc:
+                logger.error(f"Error procesando cita almacenada: {exc}")
+
+        if citas_pasadas:
+            mensajes = ["\n".join([f"Servicio: {s}", f"Fecha: {f}", f"Hora: {h}"]) for s, f, h in citas_pasadas]
             texto = "\n---\n".join(mensajes)
             dispatcher.utter_message(text=f"📚 Historial de citas:\n{texto}")
         else:
@@ -204,14 +216,25 @@ class ActionConsultarCita(Action):
                 with sqlite3.connect(DB_PATH) as conn:
                     cursor = conn.cursor()
                     cursor.execute(
-                        "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY id DESC LIMIT 1",
+                        "SELECT servicio, fecha, hora FROM citas WHERE telefono = ? ORDER BY fecha ASC, hora ASC",
                         (telefono,),
                     )
-                    row = cursor.fetchone()
-                    if row:
-                        servicio, fecha, hora = row
+                    rows = cursor.fetchall()
             except Exception as exc:
                 logger.error(f"Error consultando cita: {exc}")
+                rows = []
+
+            ahora = datetime.now(TZ)
+            for s, f, h in rows:
+                try:
+                    fecha_dt = datetime.fromisoformat(f)
+                    hora_dt = datetime.strptime(h, "%H:%M").time()
+                    cita_dt = TZ.localize(datetime.combine(fecha_dt, hora_dt))
+                    if cita_dt >= ahora:
+                        servicio, fecha, hora = s, f, h
+                        break
+                except Exception as exc:
+                    logger.error(f"Error procesando cita almacenada: {exc}")
 
         if servicio and fecha and hora:
             dispatcher.utter_message(

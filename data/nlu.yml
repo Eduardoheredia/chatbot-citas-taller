@@ -36,9 +36,9 @@ nlu:
   examples: |
     - ¿cuándo es mi próxima cita?
     - revisa mis citas agendadas
-    - quiero ver mi cita
-    - muéstrame mi cita
-    - consulta mi cita
+    - quiero ver mi próxima cita
+    - muéstrame mi próxima cita
+    - consulta mi próxima cita
 
 - intent: consultar_servicios
   examples: |
@@ -160,4 +160,32 @@ nlu:
     - ver historial de citas
     - mostrar mi historial
     - quiero ver mis citas anteriores
-    - muéstrame mis citas
+    - muéstrame mis citas pasadas
+
+- intent: consultar_historial_citas
+  examples: |
+    - quiero ver mis citas anteriores
+    - muéstrame mi historial de citas
+    - historial de citas
+    - mostrar citas pasadas
+    - ver historial
+    - cuáles fueron mis citas anteriores
+
+- intent: consultar_cita_activa
+  examples: |
+    - ¿cuándo es mi próxima cita?
+    - muéstrame mi cita
+    - quiero ver mi cita actual
+    - revisa mi cita pendiente
+    - consulta mi próxima cita
+    - tengo una cita agendada
+
+- intent: consultar_horarios_disponibles
+  examples: |
+    - qué horarios tienen disponibles
+    - quiero ver los horarios
+    - muéstrame horarios disponibles
+    - dime los horarios que hay
+    - qué horas tienen libres
+    - a qué hora puedo agendar
+
