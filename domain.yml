@@ -26,7 +26,8 @@ entities:
 
 slots:
   servicio:
-    type: text
+    type: any
+    auto_fill: false
     influence_conversation: true
     mappings:
       - type: from_entity
@@ -34,7 +35,8 @@ slots:
       - type: from_text
         intent: seleccionar_servicio
   fecha:
-    type: text
+    type: any
+    auto_fill: false
     influence_conversation: true
     mappings:
       - type: from_entity
@@ -42,7 +44,8 @@ slots:
       - type: from_text
         intent: informar_fecha
   hora:
-    type: text
+    type: any
+    auto_fill: false
     influence_conversation: true
     mappings:
       - type: from_entity
