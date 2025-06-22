@@ -65,7 +65,14 @@ class ActionAgendarCita(Action):
 
         # Almacenar la cita en la base de datos utilizando el identificador de
         # usuario (número de teléfono) que el frontend envía como sender ID.
-        telefono = tracker.sender_id
+        # El frontend envía el número de teléfono en los metadata de cada
+        # mensaje como `sender`. Usamos ese valor para persistir la cita de
+        # forma consistente aún cuando el session_id de Rasa cambie entre
+        # conexiones.
+        telefono = (
+            tracker.latest_message.get("metadata", {}).get("sender")
+            or tracker.sender_id
+        )
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
@@ -168,7 +175,10 @@ class ActionMostrarHistorial(Action):
         return "action_mostrar_historial"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict) -> List[Dict[Text, Any]]:
-        telefono = tracker.sender_id
+        telefono = (
+            tracker.latest_message.get("metadata", {}).get("sender")
+            or tracker.sender_id
+        )
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
@@ -215,7 +225,10 @@ class ActionConsultarCita(Action):
 
         # Si no hay información en los slots, intentamos recuperarla de la BD
         if not (servicio and fecha and hora):
-            telefono = tracker.sender_id
+            telefono = (
+                tracker.latest_message.get("metadata", {}).get("sender")
+                or tracker.sender_id
+            )
             try:
                 with sqlite3.connect(DB_PATH) as conn:
                     cursor = conn.cursor()
