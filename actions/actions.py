@@ -256,10 +256,10 @@ class ActionConsultarCita(Action):
         return "action_consultar_cita"
 
     def run(self, dispatcher, tracker, domain):
-        telefono = (
-            tracker.latest_message.get("metadata", {}).get("sender")
-            or tracker.sender_id
-        )
+        # Utilizar el sender_id persistente como identificador del usuario
+        # Este valor coincide con el número de teléfono que el frontend envía
+        # como session_id al conectarse con el bot
+        user_id = tracker.sender_id
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
@@ -269,7 +269,7 @@ class ActionConsultarCita(Action):
                     WHERE telefono = ? AND estado = 'confirmada'
                     ORDER BY fecha ASC, hora ASC
                     """,
-                    (telefono,),
+                    (user_id,),
                 )
                 rows = cursor.fetchall()
         except Exception as exc:
@@ -295,7 +295,7 @@ class ActionConsultarCita(Action):
             )
         else:
             dispatcher.utter_message(
-                text="No tienes citas programadas. ¿Quieres agendar una?"
+                text="No hay citas activas en este momento."
             )
         return []
 
