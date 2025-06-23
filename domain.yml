@@ -100,5 +100,5 @@ actions:
   - action_mostrar_historial
 
 session_config:
-  session_expiration_time: 60
+  expire_after_minutes: 60
   carry_over_slots_to_new_session: true

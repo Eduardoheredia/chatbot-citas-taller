@@ -8,7 +8,13 @@ import sqlite3
 from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.types import DomainDict
-from rasa_sdk.events import SlotSet, FollowupAction
+from rasa_sdk.events import (
+    SlotSet,
+    FollowupAction,
+    SessionStarted,
+    ActionExecuted,
+    EventType,
+)
 
 logger = logging.getLogger(__name__)
 TZ = timezone("America/La_Paz")
@@ -329,3 +335,19 @@ class ActionResponderConsultaMecanica(Action):
             respuesta = "Si se prende el 'check engine', acude lo antes posible al taller para un diagnóstico."
         dispatcher.utter_message(respuesta)
         return []
+
+
+class ActionSessionStart(Action):
+    """Inicia una nueva sesión sin limpiar los slots previos."""
+
+    def name(self) -> str:
+        return "action_session_start"
+
+    async def run(
+        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
+    ) -> List[EventType]:
+        events: List[EventType] = [SessionStarted()]
+        for slot, value in tracker.current_slot_values().items():
+            events.append(SlotSet(slot, value))
+        events.append(ActionExecuted("action_listen"))
+        return events
