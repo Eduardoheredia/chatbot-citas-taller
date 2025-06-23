@@ -259,7 +259,10 @@ class ActionConsultarCita(Action):
         # Utilizar el sender_id persistente como identificador del usuario
         # Este valor coincide con el número de teléfono que el frontend envía
         # como session_id al conectarse con el bot
-        user_id = tracker.sender_id
+        user_id = (
+            tracker.latest_message.get("metadata", {}).get("sender")
+            or tracker.sender_id
+        )
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
