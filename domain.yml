@@ -26,7 +26,7 @@ entities:
 
 slots:
   servicio:
-    type: any
+    type: text
     influence_conversation: true
     mappings:
       - type: from_entity
@@ -34,7 +34,7 @@ slots:
       - type: from_text
         intent: seleccionar_servicio
   fecha:
-    type: any
+    type: text
     influence_conversation: true
     mappings:
       - type: from_entity
@@ -42,7 +42,7 @@ slots:
       - type: from_text
         intent: informar_fecha
   hora:
-    type: any
+    type: text
     influence_conversation: true
     mappings:
       - type: from_entity
