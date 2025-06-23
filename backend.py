@@ -99,11 +99,20 @@ def login():
 
 @app.route("/chatbot")
 def chatbot_view():
+    """Renderiza la interfaz del chatbot con la información del usuario."""
     if "telefono" not in session:
         return redirect(url_for("index"))
+
     telefono = session["telefono"]
     socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
-    return render_template("chatbot.html", telefono=telefono, socket_url=socket_url)
+
+    # Enviamos el número de teléfono al frontend para que sea utilizado
+    # como identificador de sesión al conectar con el WebSocket de Rasa.
+    return render_template(
+        "chatbot.html",
+        telefono=telefono,
+        socket_url=socket_url,
+    )
 
 
 @app.route("/logout")
