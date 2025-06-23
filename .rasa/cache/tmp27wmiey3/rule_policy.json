@@ -1,0 +1,53 @@
+{
+  "lookup": {
+    "rules": {
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"solicitar_cita\"}}]": "agendar_cita_form",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"solicitar_cita\"}}, {\"active_loop\": {\"name\": \"agendar_cita_form\"}, \"prev_action\": {\"action_name\": \"agendar_cita_form\"}, \"user\": {\"intent\": \"solicitar_cita\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"saludo\"}}]": "utter_saludo",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"saludo\"}}, {\"prev_action\": {\"action_name\": \"utter_saludo\"}, \"user\": {\"intent\": \"saludo\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}}, {\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"confirmar\"}}]": "action_agendar_cita",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}}, {\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"confirmar\"}}, {\"prev_action\": {\"action_name\": \"action_agendar_cita\"}, \"user\": {\"intent\": \"confirmar\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"consulta_mecanica\"}}]": "action_responder_consulta_mecanica",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"consulta_mecanica\"}}, {\"prev_action\": {\"action_name\": \"action_responder_consulta_mecanica\"}, \"user\": {\"intent\": \"consulta_mecanica\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"despedirse\"}}]": "utter_despedida",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"despedirse\"}}, {\"prev_action\": {\"action_name\": \"utter_despedida\"}, \"user\": {\"intent\": \"despedirse\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}}, {\"prev_action\": {\"action_name\": \"action_listen\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}, \"user\": {\"intent\": \"negar\"}}]": "utter_cancelar_cita",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}}, {\"prev_action\": {\"action_name\": \"action_listen\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}, \"user\": {\"intent\": \"negar\"}}, {\"prev_action\": {\"action_name\": \"utter_cancelar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}, \"user\": {\"intent\": \"negar\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"cancelar_cita\"}}]": "action_cancelar_cita",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"cancelar_cita\"}}, {\"prev_action\": {\"action_name\": \"action_cancelar_cita\"}, \"user\": {\"intent\": \"cancelar_cita\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"consultar_horarios\"}}]": "utter_horarios",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"consultar_horarios\"}}, {\"prev_action\": {\"action_name\": \"utter_horarios\"}, \"user\": {\"intent\": \"consultar_horarios\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"faq_duracion_servicios\"}}]": "utter_duracion_servicios",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"faq_duracion_servicios\"}}, {\"prev_action\": {\"action_name\": \"utter_duracion_servicios\"}, \"user\": {\"intent\": \"faq_duracion_servicios\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"agradecer\"}}]": "utter_agradecimiento",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"agradecer\"}}, {\"prev_action\": {\"action_name\": \"utter_agradecimiento\"}, \"user\": {\"intent\": \"agradecer\"}}]": "action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"consultar_cita\"}}]": "action_consultar_cita",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"consultar_cita\"}}, {\"prev_action\": {\"action_name\": \"action_consultar_cita\"}, \"user\": {\"intent\": \"consultar_cita\"}}]": "action_listen"
+    },
+    "rule_only_slots": [
+      "servicio",
+      "fecha",
+      "hora"
+    ],
+    "rule_only_loops": [
+      "agendar_cita_form"
+    ],
+    "rules_for_loop_unhappy_path": {
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}}, {\"active_loop\": {\"name\": \"agendar_cita_form\"}, \"prev_action\": {\"action_name\": \"agendar_cita_form\"}, \"user\": {\"intent\": \"solicitar_cita\"}}]": "do_not_predict_loop_action"
+    },
+    "rules_not_in_stories": [
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}}]",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}}, {\"prev_action\": {\"action_name\": \"action_listen\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}, \"user\": {\"intent\": \"negar\"}}]",
+      "handling active loops and forms - agendar_cita_form - action_listen",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"saludo\"}}]",
+      "[{\"prev_action\": {\"action_name\": \"action_listen\"}, \"user\": {\"intent\": \"saludo\"}}, {\"prev_action\": {\"action_name\": \"utter_saludo\"}, \"user\": {\"intent\": \"saludo\"}}]",
+      "[{\"prev_action\": {\"action_name\": \"utter_confirmar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}}, {\"prev_action\": {\"action_name\": \"action_listen\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}, \"user\": {\"intent\": \"negar\"}}, {\"prev_action\": {\"action_name\": \"utter_cancelar_cita\"}, \"slots\": {\"fecha\": [1.0], \"hora\": [1.0], \"servicio\": [1.0]}, \"user\": {\"intent\": \"negar\"}}]",
+      "predicting default action with intent restart",
+      "predicting default action with intent back",
+      "handling active loops and forms - agendar_cita_form",
+      "predicting default action with intent session_start"
+    ]
+  }
+}

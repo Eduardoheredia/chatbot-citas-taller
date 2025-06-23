@@ -1,0 +1,19 @@
+{
+  "0": "agradecer",
+  "1": "cancelar_cita",
+  "2": "confirmar",
+  "3": "consulta_mecanica",
+  "4": "consultar_cita_activa",
+  "5": "consultar_historial_citas",
+  "6": "consultar_horarios_disponibles",
+  "7": "consultar_servicios",
+  "8": "despedirse",
+  "9": "faq_duracion_servicios",
+  "10": "informar_fecha",
+  "11": "informar_hora",
+  "12": "negar",
+  "13": "reprogramar_cita",
+  "14": "saludo",
+  "15": "seleccionar_servicio",
+  "16": "solicitar_cita"
+}

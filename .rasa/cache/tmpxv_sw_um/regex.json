@@ -1,0 +1,6 @@
+[
+  {
+    "name": "servicio",
+    "pattern": "(\\bcambio\\ de\\ aceite\\b|\\brevisión\\ general\\b|\\balineación\\ y\\ balanceo\\b|\\bdiagnóstico\\ electrónico\\b|\\blimpieza\\ de\\ inyectores\\b)"
+  }
+]
