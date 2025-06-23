@@ -60,10 +60,8 @@
 
     // Forzar que la librería utilice siempre el mismo session_id almacenándolo
     // antes de iniciar el widget.
-    // La librería busca el identificador en la clave `session_id`
-    // por lo que guardamos el teléfono del usuario usando ese nombre
     localStorage.setItem(
-      "session_id",
+      "chat_session",
       JSON.stringify({ session_id: telefonoUsuario })
     );
 
