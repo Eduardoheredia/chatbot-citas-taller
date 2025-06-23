@@ -53,13 +53,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/index.min.js"></script>
   <script>
+    // Número de teléfono enviado por Flask. Servirá como identificador de sesión
+    // para mantener el historial del usuario entre visitas.
     const telefonoUsuario = "{{ telefono }}";
     const socketUrl = "{{ socket_url }}";
 
-    // Ensure the widget uses the phone number as the session ID so each
-    // user gets an independent conversation history.
+    // Forzar que la librería utilice siempre el mismo session_id almacenándolo
+    // antes de iniciar el widget.
     localStorage.setItem(
-      'chat_session',
+      "chat_session",
       JSON.stringify({ session_id: telefonoUsuario })
     );
 
