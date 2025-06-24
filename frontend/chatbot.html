@@ -177,7 +177,7 @@
     // Inyectamos el chat dentro de #webchat y forzamos embedded:true
     WebChat.default({
       initPayload: "/saludo",
-      customData: { sender: telefonoUsuario },
+      metadata: { sender: telefonoUsuario },
       socketUrl: socketUrl,
       socketPath: "/socket.io/",
       title: "Asistente de Taller",
