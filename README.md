@@ -43,3 +43,10 @@ comprueba el número de teléfono almacenado en `localStorage` y lo compara con 
 de la sesión activa. Si son diferentes, el historial guardado en el navegador se
 elimina antes de inicializar el widget, garantizando que cada persona vea solo
 sus propios mensajes.
+
+## Consulta de citas mediante la API
+
+El backend dispone de la ruta `/citas`, la cual devuelve todas las citas
+asociadas al usuario autenticado. Esta función consulta la tabla `citas` de
+`usuarios.db` utilizando el número de teléfono guardado en la sesión. Si no hay
+citas registradas, la respuesta es una lista vacía.

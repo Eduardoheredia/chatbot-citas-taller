@@ -5,6 +5,7 @@ import sqlite3
 import hashlib
 import os
 
+
 app = Flask(
     __name__,
     template_folder="frontend",  # aquí están tus HTML
@@ -49,6 +50,28 @@ def crear_bd():
             )
         ''')
         conn.commit()
+
+def obtener_citas(telefono: str):
+    """Return all appointments associated with a user."""
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT servicio, fecha, hora, estado FROM citas WHERE telefono = ? ORDER BY fecha ASC, hora ASC",
+                (telefono,),
+            )
+            rows = cursor.fetchall()
+    except Exception:
+        rows = []
+    return [
+        {
+            "servicio": s,
+            "fecha": f,
+            "hora": h,
+            "estado": e,
+        }
+        for s, f, h, e in rows
+    ]
 
 def hash_contrasena(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
@@ -127,6 +150,15 @@ def historial():
         return jsonify([])
     telefono = session["telefono"]
     return jsonify(obtener_historial(telefono))
+
+
+@app.route("/citas")
+def citas():
+    """Return all appointments for the authenticated user."""
+    if "telefono" not in session:
+        return jsonify([])
+    telefono = session["telefono"]
+    return jsonify(obtener_citas(telefono))
 
 if __name__ == "__main__":
     crear_bd()
