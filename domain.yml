@@ -72,7 +72,7 @@ responses:
   utter_reprogramar_cita:
     - text: "🔄 Cita reprogramada para {fecha} a las {hora}"
   utter_error_fecha:
-    - text: "⚠️ Fecha inválida. Ingresa una fecha futura (Ej: 2025-05-30)"
+    - text: "⚠️ Fecha inválida. Ingresa una fecha igual o futura a la actual(Ej: 2025-05-30)"
   utter_error_hora:
     - text: "⚠️ Hora fuera de nuestro horario (08:00 - 18:00)"
   utter_horarios:
