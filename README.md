@@ -37,3 +37,9 @@ El archivo `endpoints.yml` incluye un `tracker_store` basado en SQLite que
 guarda los mensajes de cada usuario en `tracker.db`. Al iniciar sesión, el
 frontend consulta `/historial` para mostrar los intercambios previos y así
 continuar la charla incluso después de reiniciar el servidor de Rasa.
+
+Para evitar que un nuevo usuario vea conversaciones ajenas, `chatbot.html`
+comprueba el número de teléfono almacenado en `localStorage` y lo compara con el
+de la sesión activa. Si son diferentes, el historial guardado en el navegador se
+elimina antes de inicializar el widget, garantizando que cada persona vea solo
+sus propios mensajes.
