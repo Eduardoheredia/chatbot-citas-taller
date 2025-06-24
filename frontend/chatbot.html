@@ -139,8 +139,9 @@
         font-size: 0.875rem;
       }
       #webchat { margin: 1rem; height: 60vh; }
-      #history { margin: 0.5rem; }
-    }
+    #history { margin: 0.5rem; }
+    #citas { max-width: 1200px; margin: var(--spacing) auto 0; padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem; }
+  }
   </style>
 </head>
 
@@ -152,6 +153,9 @@
 
   <!-- Historial previo (opcional) -->
   <div id="history"></div>
+
+  <!-- Citas almacenadas -->
+  <div id="citas"></div>
 
   <!-- Contenedor del chat (no flotante) -->
   <div id="webchat"></div>
@@ -190,7 +194,7 @@
     });
 
     // Cargar historial previo
-    fetch("/historial")
+      fetch("/historial")
       .then(r => r.json())
       .then(hist => {
         const historyDiv = document.getElementById("history");
@@ -200,6 +204,23 @@
           historyDiv.appendChild(p);
         });
       });
+
+      // Cargar citas almacenadas
+      fetch("/citas")
+        .then(r => r.json())
+        .then(citas => {
+          const citasDiv = document.getElementById("citas");
+          if (citas.length) {
+            const titulo = document.createElement("h3");
+            titulo.textContent = "Tus citas";
+            citasDiv.appendChild(titulo);
+            citas.forEach(c => {
+              const p = document.createElement("p");
+              p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
+              citasDiv.appendChild(p);
+            });
+          }
+        });
   </script>
 </body>
 </html>
