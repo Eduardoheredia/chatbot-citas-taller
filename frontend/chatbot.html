@@ -162,6 +162,14 @@
     const telefonoUsuario = "{{ telefono }}";
     const socketUrl = "{{ socket_url }}";
 
+    // Asegurar que el historial almacenado en el navegador
+    // corresponda con el usuario autenticado.
+    const storedUser = localStorage.getItem("chat_user");
+    if (storedUser !== telefonoUsuario) {
+      localStorage.clear();
+      localStorage.setItem("chat_user", telefonoUsuario);
+    }
+
     // Inyectamos el chat dentro de #webchat y forzamos embedded:true
     WebChat.default({
       initPayload: "/saludo",
