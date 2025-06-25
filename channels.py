@@ -82,6 +82,11 @@ class SessionSocketIOInput(SocketIOInput):
         async def health(_: Request) -> HTTPResponse:
             return response.json({"status": "ok"})
 
+        @socketio_webhook.route("/", methods=["POST"])
+        async def handle_request(request: Request) -> HTTPResponse:
+            await sio.handle_request(request)
+            return response.text("ok")
+
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
             logger.debug(f"User {sid} connected to socketIO endpoint.")
