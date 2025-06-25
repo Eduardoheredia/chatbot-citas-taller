@@ -92,7 +92,7 @@ class SessionSocketIOInput(SocketIOInput):
             if isinstance(result, dict):
                 return response.json(result)
             if result is None:
-                return response.empty()  # ✅ MANEJO CORRECTO DE None
+                return response.empty()  
             return response.text(str(result))
 
         @sio.on("connect", namespace=self.namespace)
