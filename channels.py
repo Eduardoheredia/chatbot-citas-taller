@@ -88,7 +88,7 @@ class SessionSocketIOInput(SocketIOInput):
             """Forward the request to ``python-socketio`` and return an ``HTTPResponse``."""
             result = await sio.handle_request(request)
             if result is None:
-                return response.text("")
+                return response.empty()  
             if isinstance(result, HTTPResponse):
                 return result
             if isinstance(result, dict):
@@ -100,7 +100,7 @@ class SessionSocketIOInput(SocketIOInput):
             logger.debug(f"User {sid} connected to socketIO endpoint.")
             sender = self._sender_from_cookie(environ)
             if sender:
-                sio.save_session(sid, {"sender_id": sender})
+                await sio.save_session(sid, {"sender_id": sender})  
                 if self.session_persistence:
                     sio.enter_room(sid, sender)
                     await sio.emit("session_confirm", sender, room=sid)
@@ -119,7 +119,7 @@ class SessionSocketIOInput(SocketIOInput):
                     sender = session.get("sender_id")
             if not sender:
                 sender = uuid.uuid4().hex
-            sio.save_session(sid, {"sender_id": sender})
+            await sio.save_session(sid, {"sender_id": sender})  
             if self.session_persistence:
                 sio.enter_room(sid, sender)
             await sio.emit("session_confirm", sender, room=sid)
