@@ -12,6 +12,7 @@ pipeline:
 - name: EntitySynonymMapper
 - name: ResponseSelector
   epochs: 50
+  constrain_similarities: true
 
 policies:
 - name: RulePolicy
