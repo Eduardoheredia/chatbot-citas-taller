@@ -3,10 +3,12 @@ import os
 import json
 import uuid
 import logging
+
+logger = logging.getLogger(__name__)
 from http.cookies import SimpleCookie
 
 from sanic.request import Request
-from sanic import response
+from sanic import response, Blueprint
 from sanic.response import HTTPResponse
 from rasa.core.channels.channel import UserMessage
 from rasa.core.channels.rest import RestInput
