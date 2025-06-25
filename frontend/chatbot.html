@@ -175,20 +175,32 @@
     }
 
     // Inyectamos el chat dentro de #webchat y forzamos embedded:true
-    WebChat.default({
-      initPayload: "/saludo",
-      metadata: { sender: telefonoUsuario },
-      customData: { sender: telefonoUsuario },
-      socketUrl: socketUrl,
-      socketPath: "/socket.io/",
-      title: "Asistente de Taller",
-      subtitle: "¿En qué puedo ayudarte?",
-      embedded: true,              // modo “incrustado”
-      showFullScreenButton: false, // desactiva botón de pantalla completa
-      showCloseButton: false,      // desactiva botón de cerrar
-      session_id: telefonoUsuario,
-      sessionId: telefonoUsuario
-    }, document.getElementById("webchat"));
+      WebChat.default({
+        initPayload: "/saludo",
+        metadata: { sender: telefonoUsuario },
+        customData: { sender: telefonoUsuario },
+        socketUrl: socketUrl,
+        socketPath: "/socket.io/",
+        title: "Asistente de Taller",
+        subtitle: "¿En qué puedo ayudarte?",
+        embedded: true,              // modo “incrustado”
+        showFullScreenButton: false, // desactiva botón de pantalla completa
+        showCloseButton: false,      // desactiva botón de cerrar
+        session_id: telefonoUsuario,
+        sessionId: telefonoUsuario
+      }, document.getElementById("webchat"));
+
+      // Emitir session_request explícitamente para asegurar que el
+      // identificador y la metadata lleguen al backend.
+      window.addEventListener("rasa_webchat_ready", () => {
+        const socket = window.WebChat?.defaultInstance?.socket;
+        if (socket) {
+          socket.emit("session_request", {
+            session_id: telefonoUsuario,
+            metadata: { sender: telefonoUsuario }
+          });
+        }
+      });
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {
