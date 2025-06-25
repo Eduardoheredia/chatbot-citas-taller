@@ -87,12 +87,12 @@ class SessionSocketIOInput(SocketIOInput):
         async def handle_request(request: Request) -> HTTPResponse:
             """Forward the request to ``python-socketio`` and return an ``HTTPResponse``."""
             result = await sio.handle_request(request)
-            if result is None:
-                return response.empty()  
             if isinstance(result, HTTPResponse):
                 return result
             if isinstance(result, dict):
                 return response.json(result)
+            if result is None:
+                return response.empty()  # ✅ MANEJO CORRECTO DE None
             return response.text(str(result))
 
         @sio.on("connect", namespace=self.namespace)
