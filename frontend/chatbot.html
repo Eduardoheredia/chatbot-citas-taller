@@ -178,6 +178,7 @@
     WebChat.default({
       initPayload: "/saludo",
       metadata: { sender: telefonoUsuario },
+      customData: { sender: telefonoUsuario },
       socketUrl: socketUrl,
       socketPath: "/socket.io/",
       title: "Asistente de Taller",
@@ -185,7 +186,8 @@
       embedded: true,              // modo “incrustado”
       showFullScreenButton: false, // desactiva botón de pantalla completa
       showCloseButton: false,      // desactiva botón de cerrar
-      session_id: telefonoUsuario
+      session_id: telefonoUsuario,
+      sessionId: telefonoUsuario
     }, document.getElementById("webchat"));
 
     // Logout

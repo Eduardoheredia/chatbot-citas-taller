@@ -50,3 +50,10 @@ El backend dispone de la ruta `/citas`, la cual devuelve todas las citas
 asociadas al usuario autenticado. Esta función consulta la tabla `citas` de
 `usuarios.db` utilizando el número de teléfono guardado en la sesión. Si no hay
 citas registradas, la respuesta es una lista vacía.
+
+## Canal personalizado para SocketIO
+
+Se añadió el canal `session_socketio` definido en `channels.py`. Este canal
+obtiene el identificador del usuario desde la cookie de sesión y lo usa como
+`sender_id` al procesar los mensajes. De esta forma, cada persona conserva sus
+citas y conversaciones aunque cambie la conexión WebSocket.
