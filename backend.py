@@ -3,6 +3,7 @@ import requests
 from flask_cors import CORS
 import sqlite3
 import hashlib
+import os
 
 app = Flask(
     __name__,
