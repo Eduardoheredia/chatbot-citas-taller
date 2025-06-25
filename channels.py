@@ -78,11 +78,11 @@ class SessionSocketIOInput(SocketIOInput):
         )
         self.sio = sio
 
-        @socketio_webhook.route("/", methods=["GET"])
+        @socketio_webhook.route("/health", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:
             return response.json({"status": "ok"})
 
-        @socketio_webhook.route("/", methods=["POST"])
+        @socketio_webhook.route("/", methods=["GET", "POST"])
         async def handle_request(request: Request) -> HTTPResponse:
             """Forward the request to ``python-socketio`` and return its response."""
             result = await sio.handle_request(request)
