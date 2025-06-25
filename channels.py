@@ -3,6 +3,7 @@ import os
 import json
 import uuid
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 from http.cookies import SimpleCookie
@@ -84,21 +85,25 @@ class SessionSocketIOInput(SocketIOInput):
 
         @socketio_webhook.route("/", methods=["GET", "POST"])
         async def handle_request(request: Request) -> HTTPResponse:
-            """Forward the request to ``python-socketio`` and return its response."""
+            """Forward the request to ``python-socketio`` and return an ``HTTPResponse``."""
             result = await sio.handle_request(request)
+            if result is None:
+                return response.text("")
             if isinstance(result, HTTPResponse):
                 return result
             if isinstance(result, dict):
                 return response.json(result)
-            return response.text(result if result is not None else "")
+            return response.text(str(result))
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
             logger.debug(f"User {sid} connected to socketIO endpoint.")
             sender = self._sender_from_cookie(environ)
-            if sender and self.session_persistence:
-                sio.enter_room(sid, sender)
-                await sio.emit("session_confirm", sender, room=sid)
+            if sender:
+                sio.save_session(sid, {"sender_id": sender})
+                if self.session_persistence:
+                    sio.enter_room(sid, sender)
+                    await sio.emit("session_confirm", sender, room=sid)
             return True
 
         @sio.on("disconnect", namespace=self.namespace)
@@ -107,13 +112,14 @@ class SessionSocketIOInput(SocketIOInput):
 
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Optional[Dict]) -> None:
-            sender = None
-            if data:
-                sender = data.get("session_id")
+            sender = data.get("session_id") if data else None
             if not sender:
-                sender = self._sender_from_cookie({})
+                session = await sio.get_session(sid)
+                if session:
+                    sender = session.get("sender_id")
             if not sender:
                 sender = uuid.uuid4().hex
+            sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 sio.enter_room(sid, sender)
             await sio.emit("session_confirm", sender, room=sid)
@@ -122,7 +128,11 @@ class SessionSocketIOInput(SocketIOInput):
         async def handle_message(sid: Text, data: Dict) -> None:
             output_channel = SocketIOOutput(sio, self.bot_message_evt)
 
-            sender_id = data.get("session_id") or self._sender_from_cookie({})
+            sender_id = data.get("session_id")
+            if not sender_id:
+                session = await sio.get_session(sid)
+                if session:
+                    sender_id = session.get("sender_id")
             if self.session_persistence and not sender_id:
                 rasa.shared.utils.io.raise_warning(
                     "A message without a valid session_id was received."
