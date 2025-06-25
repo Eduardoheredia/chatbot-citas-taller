@@ -65,13 +65,3 @@ Al ejecutar el servidor de Rasa es posible que aparezca el mensaje:
 ```
 MovedIn20Warning: Deprecated API features detected! ...
 ```
-
-Para silenciarlo se define la variable de entorno:
-
-```bash
-export SQLALCHEMY_SILENCE_UBER_WARNING=1
-```
-
-El archivo `backend.py` establece este valor por defecto para que la advertencia
-no aparezca al trabajar con la versión 1.4 de SQLAlchemy incluida en
-`requirements.txt`.

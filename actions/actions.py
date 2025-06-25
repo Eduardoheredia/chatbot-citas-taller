@@ -5,6 +5,13 @@ from pytz import timezone
 import logging
 import sqlite3
 
+import os
+
+# Silencia la advertencia "MovedIn20Warning" de SQLAlchemy que puede
+# aparecer al ejecutar Rasa con la versión 1.4.x. Al definir esta
+# variable de entorno, la advertencia no se muestra en consola.
+os.environ.setdefault("SQLALCHEMY_SILENCE_UBER_WARNING", "1")
+
 from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.types import DomainDict

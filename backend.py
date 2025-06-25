@@ -3,13 +3,6 @@ import requests
 from flask_cors import CORS
 import sqlite3
 import hashlib
-import os
-
-# Silencia la advertencia "MovedIn20Warning" de SQLAlchemy que puede
-# aparecer al ejecutar Rasa con la versión 1.4.x. Al definir esta
-# variable de entorno, la advertencia no se muestra en consola.
-os.environ.setdefault("SQLALCHEMY_SILENCE_UBER_WARNING", "1")
-
 
 app = Flask(
     __name__,
