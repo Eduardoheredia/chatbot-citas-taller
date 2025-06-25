@@ -85,7 +85,12 @@ class SessionSocketIOInput(SocketIOInput):
         @socketio_webhook.route("/", methods=["POST"])
         async def handle_request(request: Request) -> HTTPResponse:
             """Forward the request to ``python-socketio`` and return its response."""
-            return await sio.handle_request(request)
+            result = await sio.handle_request(request)
+            if isinstance(result, HTTPResponse):
+                return result
+            if isinstance(result, dict):
+                return response.json(result)
+            return response.text(result if result is not None else "")
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
