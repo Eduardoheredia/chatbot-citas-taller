@@ -15,7 +15,7 @@ app = Flask(
     template_folder="frontend",  # aquí están tus HTML
     static_folder="frontend"     # y tus assets estáticos
 )
-app.secret_key = os.environ.get("SECRET_KEY", "poner_un_valor_seguro")
+app.secret_key = os.environ["SECRET_KEY"]
 CORS(app)
 
 DB_PATH = "usuarios.db"
