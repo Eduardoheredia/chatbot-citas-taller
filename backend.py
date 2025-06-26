@@ -130,7 +130,7 @@ def registro():
             conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO usuarios (id, telefono, contrasena) VALUES (?, ?, ?)",
+                "INSERT INTO usuarios (id_usuario, telefono, contrasena) VALUES (?, ?, ?)",
                 (id_usuario, telefono, hash_contrasena(contrasena))
             )
             conn.commit()

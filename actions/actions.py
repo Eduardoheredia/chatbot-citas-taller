@@ -117,7 +117,7 @@ class ActionReprogramarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT id, servicio FROM citas
+                    SELECT id_usuario, servicio FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -126,7 +126,7 @@ class ActionReprogramarCita(Action):
                 row = cursor.fetchone()
                 if row:
                     cursor.execute(
-                        "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id = ?",
+                        "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_usuario = ?",
                         (nueva_fecha, nueva_hora, row[0]),
                     )
                     conn.commit()
@@ -218,7 +218,7 @@ class ActionCancelarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT id, servicio, fecha, hora FROM citas
+                    SELECT id_usuario, servicio, fecha, hora FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -227,7 +227,7 @@ class ActionCancelarCita(Action):
                 row = cursor.fetchone()
                 if row:
                     cursor.execute(
-                        "UPDATE citas SET estado = 'cancelada' WHERE id = ?",
+                        "UPDATE citas SET estado = 'cancelada' WHERE id_usuario = ?",
                         (row[0],),
                     )
                     conn.commit()
