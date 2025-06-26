@@ -26,7 +26,7 @@ TZ = timezone("America/La_Paz")
 DB_PATH = "usuarios.db"
 
 def _init_db() -> None:
-    """Ensure the appointments table exists with the proper columns."""
+    """Asegúrese de que la tabla de citas exista con las columnas adecuadas."""
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
@@ -37,7 +37,7 @@ def _init_db() -> None:
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
                 hora TEXT NOT NULL,
-                estado TEXT NOT NULL,
+                estado TEXT NOT NULL CHECK (estado IN ('confirmada'),
                 FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
             )
             """)

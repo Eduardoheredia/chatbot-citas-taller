@@ -15,7 +15,10 @@ app = Flask(
     template_folder="frontend",  # aquí están tus HTML
     static_folder="frontend"     # y tus assets estáticos
 )
+if "SECRET_KEY" not in os.environ:
+    raise RuntimeError("Falta la variable de entorno SECRET_KEY")
 app.secret_key = os.environ["SECRET_KEY"]
+
 CORS(app)
 
 DB_PATH = "usuarios.db"

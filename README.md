@@ -26,7 +26,8 @@ El frontend utiliza el número de teléfono del usuario como `session_id` cuando
 Cuando un usuario agenda una cita y la confirma, el bot registra el servicio,
 fecha y hora en la base de datos SQLite `usuarios.db` dentro de la tabla
 `citas`. Desde esta actualización la tabla incluye una columna `estado` que
-indica si la cita está `confirmada` o `cancelada`. El número de teléfono enviado
+*check constraint* para asegurar que solo se almacenen esos dos valores.
+El id_usuario enviado
 por el frontend se usa como identificador del usuario, por lo que las citas
 quedan asociadas a cada cuenta y pueden consultarse posteriormente mediante la
 intención `consultar_cita_activa`.
@@ -39,7 +40,7 @@ frontend consulta `/historial` para mostrar los intercambios previos y así
 continuar la charla incluso después de reiniciar el servidor de Rasa.
 
 Para evitar que un nuevo usuario vea conversaciones ajenas, `chatbot.html`
-comprueba el número de teléfono almacenado en `localStorage` y lo compara con el
+comprueba el id_usuario en `localStorage` y lo compara con el
 de la sesión activa. Si son diferentes, el historial guardado en el navegador se
 elimina antes de inicializar el widget, garantizando que cada persona vea solo
 sus propios mensajes.
@@ -48,7 +49,7 @@ sus propios mensajes.
 
 El backend dispone de la ruta `/citas`, la cual devuelve todas las citas
 asociadas al usuario autenticado. Esta función consulta la tabla `citas` de
-`usuarios.db` utilizando el número de teléfono guardado en la sesión. Si no hay
+`usuarios.db` id_usuario guardado en la sesión. Si no hay
 citas registradas, la respuesta es una lista vacía.
 
 ## Canal personalizado para SocketIO
