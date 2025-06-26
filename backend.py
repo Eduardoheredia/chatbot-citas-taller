@@ -57,20 +57,7 @@ def crear_bd():
                 contrasena TEXT NOT NULL
             )
         ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS citas (
-                id TEXT PRIMARY KEY,
-                id_usuario TEXT NOT NULL,
-                servicio TEXT NOT NULL,
-                fecha TEXT NOT NULL,
-                hora TEXT NOT NULL,
-                estado TEXT NOT NULL CHECK (
-                    estado IN ('confirmada','reprogramada','cancelada','completada')
-                ),
-                FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
-            )
-        ''')
-        conn.commit()
+        
 
 def obtener_citas(id_usuario: str):
     """Return all appointments associated with a user."""

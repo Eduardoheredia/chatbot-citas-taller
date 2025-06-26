@@ -30,7 +30,7 @@ def _init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS citas (
                 id TEXT PRIMARY KEY,
                 id_usuario TEXT NOT NULL,
@@ -42,7 +42,7 @@ def _init_db() -> None:
                 ),
                 FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
             )
-            """)
+        ''')
         conn.commit()
 
 
