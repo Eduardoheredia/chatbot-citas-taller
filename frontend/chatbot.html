@@ -177,17 +177,15 @@
     // Inyectamos el chat dentro de #webchat y forzamos embedded:true
       WebChat.default({
         initPayload: "/saludo",
-        metadata: { sender: id_usuario },
-        customData: { sender: id_usuario },
         socketUrl: socketUrl,
         socketPath: "/socket.io/",
+        session_id: id_usuario,
+        metadata: { sender: id_usuario },
         title: "Asistente de Taller",
         subtitle: "¿En qué puedo ayudarte?",
         embedded: true,              // modo “incrustado”
         showFullScreenButton: false, // desactiva botón de pantalla completa
         showCloseButton: false,      // desactiva botón de cerrar
-        session_id: id_usuario,
-        customData: { sender: id_usuario },
       }, document.getElementById("webchat"));
 
       // Emitir session_request explícitamente para asegurar que el
