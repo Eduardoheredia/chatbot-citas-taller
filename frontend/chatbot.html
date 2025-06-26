@@ -163,22 +163,22 @@
   <!-- Rasa Webchat -->
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/index.min.js"></script>
   <script>
-    const telefonoUsuario = "{{ telefono }}";
+    const idUsuario = "{{ id_usuario }}";
     const socketUrl = "{{ socket_url }}";
 
     // Asegurar que el historial almacenado en el navegador
     // corresponda con el usuario autenticado.
     const storedUser = localStorage.getItem("chat_user");
-    if (storedUser !== telefonoUsuario) {
+    if (storedUser !== idUsuario) {
       localStorage.clear();
-      localStorage.setItem("chat_user", telefonoUsuario);
+      localStorage.setItem("chat_user", idUsuario);
     }
 
     // Inyectamos el chat dentro de #webchat y forzamos embedded:true
       WebChat.default({
         initPayload: "/saludo",
-        metadata: { sender: telefonoUsuario },
-        customData: { sender: telefonoUsuario },
+        metadata: { sender: idUsuario },
+        customData: { sender: idUsuario },
         socketUrl: socketUrl,
         socketPath: "/socket.io/",
         title: "Asistente de Taller",
@@ -186,8 +186,8 @@
         embedded: true,              // modo “incrustado”
         showFullScreenButton: false, // desactiva botón de pantalla completa
         showCloseButton: false,      // desactiva botón de cerrar
-        session_id: telefonoUsuario,
-        sessionId: telefonoUsuario
+        session_id: idUsuario,
+        sessionId: idUsuario
       }, document.getElementById("webchat"));
 
       // Emitir session_request explícitamente para asegurar que el
@@ -196,8 +196,8 @@
         const socket = window.WebChat?.defaultInstance?.socket;
         if (socket) {
           socket.emit("session_request", {
-            session_id: telefonoUsuario,
-            metadata: { sender: telefonoUsuario }
+            session_id: idUsuario,
+            metadata: { sender: idUsuario }
           });
         }
       });

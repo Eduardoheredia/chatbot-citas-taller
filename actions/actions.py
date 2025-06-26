@@ -20,8 +20,8 @@ TZ = timezone("America/La_Paz")
 
 # Reuse la misma base de datos que utiliza el backend para almacenar
 # usuarios. Aquí agregamos una tabla simple para las citas de cada
-# usuario. La columna "telefono" actúa como identificador del cliente
-# ya que el frontend envía dicho número como `sender` al conectarse
+# usuario. La columna "id_usuario" actúa como identificador del cliente
+# ya que el frontend envía el ID de usuario como `sender` al conectarse
 # al socket de Rasa.
 DB_PATH = "usuarios.db"
 
@@ -32,11 +32,12 @@ def _init_db() -> None:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS citas (
                 id TEXT PRIMARY KEY,
-                telefono TEXT NOT NULL,
+                id_usuario TEXT NOT NULL,
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
                 hora TEXT NOT NULL,
-                estado TEXT NOT NULL
+                estado TEXT NOT NULL,
+                FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
             )
             """)
         conn.commit()
@@ -73,7 +74,7 @@ class ActionAgendarCita(Action):
         # mensaje como `sender`. Usamos ese valor para persistir la cita de
         # forma consistente aún cuando el session_id de Rasa cambie entre
         # conexiones.
-        telefono = (
+        id_usuario = (
             tracker.latest_message.get("metadata", {}).get("sender")
             or tracker.sender_id
         )
@@ -81,8 +82,8 @@ class ActionAgendarCita(Action):
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT INTO citas (telefono, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?)",
-                    (telefono, servicio, fecha, hora, "confirmada"),
+                     "INSERT INTO citas (id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?)",
+                    (id_usuario, servicio, fecha, hora, "confirmada"),
                 )
                 conn.commit()
         except Exception as exc:
@@ -169,7 +170,7 @@ class ActionCancelarCita(Action):
         return "action_cancelar_cita"
 
     def run(self, dispatcher, tracker, domain):
-        telefono = (
+        id_usuario = (
             tracker.latest_message.get("metadata", {}).get("sender")
             or tracker.sender_id
         )
@@ -179,10 +180,10 @@ class ActionCancelarCita(Action):
                 cursor.execute(
                     """
                     SELECT id FROM citas
-                    WHERE telefono = ? AND estado = 'confirmada'
+                    WHERE id_usuario = ? AND estado = 'confirmada'
                     ORDER BY fecha ASC, hora ASC
                     """,
-                    (telefono,),
+                    (id_usuario,),
                 )
                 row = cursor.fetchone()
                 if row:
@@ -204,7 +205,7 @@ class ActionMostrarHistorial(Action):
         return "action_mostrar_historial"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict) -> List[Dict[Text, Any]]:
-        telefono = (
+        id_usuario = (
             tracker.latest_message.get("metadata", {}).get("sender")
             or tracker.sender_id
         )
@@ -214,10 +215,10 @@ class ActionMostrarHistorial(Action):
                 cursor.execute(
                     """
                     SELECT servicio, fecha, hora FROM citas
-                    WHERE telefono = ? AND estado = 'confirmada'
+                    WHERE id_usuario = ? AND estado = 'confirmada'
                     ORDER BY fecha DESC, hora DESC
                     """,
-                    (telefono,),
+                    (id_usuario,),
                 )
                 rows = cursor.fetchall()
         except Exception as exc:
@@ -255,7 +256,7 @@ class ActionConsultarCita(Action):
         # Utilizar el sender_id persistente como identificador del usuario
         # Este valor coincide con el número de teléfono que el frontend envía
         # como session_id al conectarse con el bot
-        user_id = (
+        id_usuario = (
             tracker.latest_message.get("metadata", {}).get("sender")
             or tracker.sender_id
         )
@@ -265,10 +266,10 @@ class ActionConsultarCita(Action):
                 cursor.execute(
                     """
                     SELECT servicio, fecha, hora FROM citas
-                    WHERE telefono = ? AND estado = 'confirmada'
+                    WHERE id_usuario = ? AND estado = 'confirmada'
                     ORDER BY fecha ASC, hora ASC
                     """,
-                    (user_id,),
+                    (id_usuario,),
                 )
                 rows = cursor.fetchall()
         except Exception as exc:

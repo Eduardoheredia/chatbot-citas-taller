@@ -35,7 +35,7 @@ class SessionRestInput(RestInput):
             secret = os.environ.get("SECRET_KEY", "poner_un_valor_seguro")
             try:
                 data = URLSafeTimedSerializer(secret, salt="cookie-session").loads(cookie)
-                return data.get("telefono") or data.get("user_id")
+                return data.get("id_usuario") or data.get("telefono") or data.get("user_id")
             except BadSignature:
                 pass
         return await super()._extract_sender(request)
@@ -61,7 +61,7 @@ class SessionSocketIOInput(SocketIOInput):
             data = URLSafeTimedSerializer(secret, salt="cookie-session").loads(
                 morsel.value
             )
-            return data.get("telefono") or data.get("user_id")
+            return data.get("id_usuario") or data.get("telefono") or data.get("user_id")
         except BadSignature:
             return None
 

@@ -21,12 +21,12 @@ CORS(app)
 DB_PATH = "usuarios.db"
 
 
-def obtener_historial(telefono: str):
+def obtener_historial(id_usuario: str):
     """Get conversation history for a user from the Rasa server."""
     rasa_url = os.environ.get("RASA_URL", "http://localhost:5005")
     try:
         resp = requests.get(
-            f"{rasa_url}/conversations/{telefono}/tracker",
+            f"{rasa_url}/conversations/{id_usuario}/tracker",
             params={"include_events": "after_restart"},
             timeout=5,
         )
@@ -61,7 +61,7 @@ def obtener_citas(id_usuario: str):
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT servicio, fecha, hora, estado FROM citas WHERE telefono = ? ORDER BY fecha ASC, hora ASC",
+                "SELECT servicio, fecha, hora, estado FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
                 (id_usuario,),
             )
             rows = cursor.fetchall()
@@ -155,11 +155,11 @@ def chatbot_view():
     id_usuario = session["id_usuario"]
     socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
 
-    # Enviamos el número de teléfono al frontend para que sea utilizado
+    # Enviamos el id_usuario al frontend para que sea utilizado
     # como identificador de sesión al conectar con el WebSocket de Rasa.
     return render_template(
         "chatbot.html",
-        telefono=id_usuario,
+        id_usuario=id_usuario,
         socket_url=socket_url,
     )
 
