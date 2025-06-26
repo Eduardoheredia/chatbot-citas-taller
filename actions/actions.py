@@ -378,17 +378,3 @@ class ActionResponderConsultaMecanica(Action):
         return []
 
 
-class ActionSessionStart(Action):
-    """Inicia una nueva sesión sin limpiar los slots previos."""
-
-    def name(self) -> str:
-        return "action_session_start"
-
-    async def run(
-        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
-    ) -> List[EventType]:
-        events: List[EventType] = [SessionStarted()]
-        for slot, value in tracker.current_slot_values().items():
-            events.append(SlotSet(slot, value))
-        events.append(ActionExecuted("action_listen"))
-        return events

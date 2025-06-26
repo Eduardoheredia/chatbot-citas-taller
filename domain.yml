@@ -100,5 +100,5 @@ actions:
   - action_mostrar_historial
 
 session_config:
-  expire_after_minutes: 10080
+  session_expiration_time: 7200       # en segundos (2 horas)
   carry_over_slots_to_new_session: true

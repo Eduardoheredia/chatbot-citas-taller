@@ -1,9 +1,7 @@
 from typing import Optional, Text, Dict, Any, Callable, Awaitable
 import os
 import json
-import uuid
 import logging
-from http.cookies import SimpleCookie
 
 from sanic.request import Request
 from sanic import response, Blueprint
@@ -17,53 +15,15 @@ from rasa.core.channels.socketio import (
 )
 import rasa.shared.utils.io
 from socketio import AsyncServer
-from itsdangerous import URLSafeTimedSerializer, BadSignature
 
 logger = logging.getLogger(__name__)
 
-class SessionRestInput(RestInput):
-    """REST channel that retrieves ``sender_id`` from a session cookie."""
-
-    @classmethod
-    def name(cls) -> Text:
-        return "session_rest"
-
-    async def _extract_sender(self, request: Request) -> Optional[Text]:
-        cookie_name = os.environ.get("SESSION_COOKIE_NAME", "session")
-        cookie = request.cookies.get(cookie_name)
-        if cookie:
-            secret = os.environ.get("SECRET_KEY", "poner_un_valor_seguro")
-            try:
-                data = URLSafeTimedSerializer(secret, salt="cookie-session").loads(cookie)
-                return data.get("id_usuario") or data.get("telefono") or data.get("user_id")
-            except BadSignature:
-                pass
-        return await super()._extract_sender(request)
-
-
 class SessionSocketIOInput(SocketIOInput):
-    """Socket.IO channel that sets ``sender_id`` using session cookies."""
+    """Socket.IO channel that uses session_request to set sender_id."""
 
     @classmethod
     def name(cls) -> Text:
         return "session_socketio"
-
-    def _sender_from_cookie(self, environ: Dict[str, Any]) -> Optional[Text]:
-        cookie_header = environ.get("HTTP_COOKIE") or ""
-        cookie = SimpleCookie()
-        cookie.load(cookie_header)
-        cookie_name = os.environ.get("SESSION_COOKIE_NAME", "session")
-        morsel = cookie.get(cookie_name)
-        if not morsel:
-            return None
-        secret = os.environ.get("SECRET_KEY", "poner_un_valor_seguro")
-        try:
-            data = URLSafeTimedSerializer(secret, salt="cookie-session").loads(
-                morsel.value
-            )
-            return data.get("id_usuario") or data.get("telefono") or data.get("user_id")
-        except BadSignature:
-            return None
 
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
@@ -92,12 +52,6 @@ class SessionSocketIOInput(SocketIOInput):
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
             logger.debug(f"User {sid} connected to socketIO endpoint.")
-            sender = self._sender_from_cookie(environ)
-            if sender:
-                await sio.save_session(sid, {"sender_id": sender})
-                if self.session_persistence:
-                    await sio.enter_room(sid, sender)
-                    await sio.emit("session_confirm", sender, room=sid)
             return True
 
         @sio.on("disconnect", namespace=self.namespace)
@@ -105,19 +59,12 @@ class SessionSocketIOInput(SocketIOInput):
             logger.debug(f"User {sid} disconnected from socketIO endpoint.")
 
         @sio.on("session_request", namespace=self.namespace)
-        async def session_request(sid: Text, data: Optional[Dict]) -> None:
-            sender = data.get("session_id") if data else None
-            if not sender:
-                session = await sio.get_session(sid)
-                if session:
-                    sender = session.get("sender_id")
-            if not sender:
-                sender = uuid.uuid4().hex
-
+        async def session_request(sid, data):
+            sender = data.get("session_id")
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
-            await sio.emit("session_confirm", sender, room=sid)
+            await sio.emit("session_confirm", {"session_id": sender}, room=sid)
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:

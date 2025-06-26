@@ -11,3 +11,5 @@ tracker_store:
   type: SQL
   dialect: "sqlite"
   db: "tracker.db"
+  # Persistencia opcional para múltiples sesiones simultáneas
+  session_table: "rasa_sessions"
