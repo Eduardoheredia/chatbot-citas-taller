@@ -25,8 +25,9 @@ El frontend utiliza el número de teléfono del usuario como `session_id` cuando
 
 Cuando un usuario agenda una cita y la confirma, el bot registra el servicio,
 fecha y hora en la base de datos SQLite `usuarios.db` dentro de la tabla
-`citas`. Desde esta actualización la tabla incluye una columna `estado` que
-*check constraint* para asegurar que solo se almacenen esos dos valores.
+`citas`. Esta tabla ahora tiene una columna `estado` que
+usa un *check constraint* para permitir solo los valores `confirmada`,
+`reprogramada`, `cancelada` y `completada`.
 El id_usuario enviado
 por el frontend se usa como identificador del usuario, por lo que las citas
 quedan asociadas a cada cuenta y pueden consultarse posteriormente mediante la

@@ -37,7 +37,9 @@ def _init_db() -> None:
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
                 hora TEXT NOT NULL,
-                estado TEXT NOT NULL CHECK (estado IN ('confirmada'),
+                estado TEXT NOT NULL CHECK (
+                    estado IN ('confirmada','reprogramada','cancelada','completada')
+                ),
                 FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
             )
             """)
@@ -100,10 +102,43 @@ class ActionReprogramarCita(Action):
     def name(self) -> str:
         return "action_reprogramar_cita"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict) -> List[Dict[Text, Any]]:
-        dispatcher.utter_message(
-            text=f"🔄 Cita reprogramada para {tracker.get_slot('fecha')} a las {tracker.get_slot('hora')}"
+    def run(
+        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
+    ) -> List[Dict[Text, Any]]:
+        nueva_fecha = tracker.get_slot("fecha")
+        nueva_hora = tracker.get_slot("hora")
+        id_usuario = (
+            tracker.latest_message.get("metadata", {}).get("sender") or tracker.sender_id
         )
+        row = None
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT id, servicio FROM citas
+                    WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
+                    ORDER BY fecha ASC, hora ASC
+                    """,
+                    (id_usuario,),
+                )
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute(
+                        "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id = ?",
+                        (nueva_fecha, nueva_hora, row[0]),
+                    )
+                    conn.commit()
+        except Exception as exc:
+            logger.error(f"Error reprogramando cita: {exc}")
+
+        if row:
+            dispatcher.utter_message(
+                text=f"🔄 Cita reprogramada para {nueva_fecha} a las {nueva_hora}"
+            )
+        else:
+            dispatcher.utter_message("ℹ️ No tienes citas activas para reprogramar.")
         return []
 
 class ValidateAgendarCitaForm(FormValidationAction):
@@ -184,7 +219,7 @@ class ActionCancelarCita(Action):
                 cursor.execute(
                     """
                     SELECT id, servicio, fecha, hora FROM citas
-                    WHERE id_usuario = ? AND estado = 'confirmada'
+                    WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
                     (id_usuario,),
@@ -227,7 +262,7 @@ class ActionMostrarHistorial(Action):
                 cursor.execute(
                     """
                     SELECT servicio, fecha, hora FROM citas
-                    WHERE id_usuario = ? AND estado = 'confirmada'
+                    WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada','completada')
                     ORDER BY fecha DESC, hora DESC
                     """,
                     (id_usuario,),
@@ -279,7 +314,7 @@ class ActionConsultarCita(Action):
                 cursor.execute(
                     """
                     SELECT servicio, fecha, hora FROM citas
-                    WHERE id_usuario = ? AND estado = 'confirmada'
+                    WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
                     (id_usuario,),

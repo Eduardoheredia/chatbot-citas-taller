@@ -64,7 +64,9 @@ def crear_bd():
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
                 hora TEXT NOT NULL,
-                estado TEXT NOT NULL CHECK (estado IN ('confirmada','cancelada')),
+                estado TEXT NOT NULL CHECK (
+                    estado IN ('confirmada','reprogramada','cancelada','completada')
+                ),
                 FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
             )
         ''')
