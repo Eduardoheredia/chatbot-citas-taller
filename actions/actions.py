@@ -2,7 +2,6 @@ from typing import Any, Text, Dict, List
 from datetime import datetime, time
 from dateparser import parse
 from pytz import timezone
-from uuid import uuid4
 import logging
 import sqlite3
 from rasa_sdk import Action, Tracker, FormValidationAction
@@ -25,10 +24,6 @@ TZ = timezone("America/La_Paz")
 # ya que el frontend envía el ID de usuario como `sender` al conectarse
 # al socket de Rasa.
 DB_PATH = "usuarios.db"
-
-def generar_id_cita() -> str:
-    """Return a unique identifier for a new appointment."""
-    return uuid4().hex
 
 def _init_db() -> None:
     """Asegúrese de que la tabla de citas exista con las columnas adecuadas."""
@@ -72,13 +67,20 @@ class ActionAgendarCita(Action):
         tracker: Tracker,
         domain: DomainDict,
     ) -> List[Dict[Text, Any]]:
+        
+        from uuid import uuid4
+
+        def generar_id_cita():
+            """Return a unique identifier for a new appointment."""
+            return uuid4().hex
+
         servicio = tracker.get_slot("servicio") or "Servicio no especificado"
         fecha = tracker.get_slot("fecha") or "Fecha no definida"
         hora = tracker.get_slot("hora") or "Hora no definida"
 
-        # Almacenar la cita en la base de datos utilizando el identificador de
-        # usuario (número de teléfono) que el frontend envía como sender ID.
-        # El frontend envía el número de teléfono en los metadata de cada
+        # Almacenar la cita en la base de datos utilizando id_usuario y 
+        # id_citas que el frontend envía como sender ID.
+        # El frontend envía el id_usuario en los metadata de cada
         # mensaje como `sender`. Usamos ese valor para persistir la cita de
         # forma consistente aún cuando el session_id de Rasa cambie entre
         # conexiones.
@@ -98,6 +100,8 @@ class ActionAgendarCita(Action):
                 conn.commit()
         except Exception as exc:
             logger.error(f"Error al guardar la cita: {exc}")
+            dispatcher.utter_message(text="⚠️ Ocurrió un error al guardar tu cita.")
+            return []
 
         dispatcher.utter_message(
             text=f"✅ Cita confirmada:\n{servicio}\nFecha: {fecha}\nHora: {hora}"
