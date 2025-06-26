@@ -85,10 +85,8 @@ class ActionAgendarCita(Action):
         # mensaje como `sender`. Usamos ese valor para persistir la cita de
         # forma consistente aún cuando el session_id de Rasa cambie entre
         # conexiones.
-        id_usuario = (
-            tracker.latest_message.get("metadata", {}).get("sender")
-            or tracker.sender_id
-        )
+        id_usuario = tracker.sender_id
+
         id_cita = generar_id_cita()
         try:
             with sqlite3.connect(DB_PATH) as conn:
@@ -118,9 +116,8 @@ class ActionReprogramarCita(Action):
     ) -> List[Dict[Text, Any]]:
         nueva_fecha = tracker.get_slot("fecha")
         nueva_hora = tracker.get_slot("hora")
-        id_usuario = (
-            tracker.latest_message.get("metadata", {}).get("sender") or tracker.sender_id
-        )
+        id_usuario = tracker.sender_id
+
         row = None
         try:
             with sqlite3.connect(DB_PATH) as conn:
@@ -218,10 +215,8 @@ class ActionCancelarCita(Action):
         return "action_cancelar_cita"
 
     def run(self, dispatcher, tracker, domain):
-        id_usuario = (
-            tracker.latest_message.get("metadata", {}).get("sender")
-            or tracker.sender_id
-        )
+        id_usuario = tracker.sender_id
+
         row = None
         try:
             with sqlite3.connect(DB_PATH) as conn:
@@ -262,10 +257,8 @@ class ActionMostrarHistorial(Action):
         return "action_mostrar_historial"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict) -> List[Dict[Text, Any]]:
-        id_usuario = (
-            tracker.latest_message.get("metadata", {}).get("sender")
-            or tracker.sender_id
-        )
+        id_usuario = tracker.sender_id
+
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 conn.execute("PRAGMA foreign_keys = ON")
@@ -314,10 +307,8 @@ class ActionConsultarCita(Action):
         # Utilizar el sender_id persistente como identificador del usuario
         # Este valor coincide con el número de teléfono que el frontend envía
         # como session_id al conectarse con el bot
-        id_usuario = (
-            tracker.latest_message.get("metadata", {}).get("sender")
-            or tracker.sender_id
-        )
+        id_usuario = tracker.sender_id
+
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 conn.execute("PRAGMA foreign_keys = ON")

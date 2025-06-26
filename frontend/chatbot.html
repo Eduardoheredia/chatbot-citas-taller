@@ -179,9 +179,9 @@
         initPayload: "/saludo",
         socketUrl,
         socketPath: "/socket.io/",
-        session_id: id_usuario,
-        metadata: { sender: id_usuario },
-        customData: { sender: id_usuario },  // ← aquí
+        metadata: { sender: id_usuario },       // <- requerido
+        customData: { sender: id_usuario },     // <- requerido
+        session_id: id_usuario, 
         title: "Asistente de Taller",
         subtitle: "¿En qué puedo ayudarte?",
         embedded: true,
@@ -200,6 +200,7 @@
           });
         }
       });
+
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {
