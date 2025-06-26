@@ -28,6 +28,7 @@ DB_PATH = "usuarios.db"
 def _init_db() -> None:
     """Ensure the appointments table exists with the proper columns."""
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS citas (
@@ -80,6 +81,7 @@ class ActionAgendarCita(Action):
         )
         try:
             with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
                      "INSERT INTO citas (id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?)",
@@ -176,6 +178,7 @@ class ActionCancelarCita(Action):
         )
         try:
             with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
                     """
@@ -211,6 +214,7 @@ class ActionMostrarHistorial(Action):
         )
         try:
             with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
                     """
@@ -262,6 +266,7 @@ class ActionConsultarCita(Action):
         )
         try:
             with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
                     """
