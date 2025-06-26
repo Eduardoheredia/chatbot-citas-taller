@@ -113,6 +113,7 @@ class SessionSocketIOInput(SocketIOInput):
                     sender = session.get("sender_id")
             if not sender:
                 sender = uuid.uuid4().hex
+
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
