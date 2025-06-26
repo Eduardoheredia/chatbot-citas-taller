@@ -176,13 +176,14 @@ class ActionCancelarCita(Action):
             tracker.latest_message.get("metadata", {}).get("sender")
             or tracker.sender_id
         )
+        row = None
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT id FROM citas
+                    SELECT id, servicio, fecha, hora FROM citas
                     WHERE id_usuario = ? AND estado = 'confirmada'
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -198,7 +199,14 @@ class ActionCancelarCita(Action):
         except Exception as exc:
             logger.error(f"Error cancelando cita: {exc}")
 
-        dispatcher.utter_message(text="✅ Cita cancelada exitosamente.")
+        if not row:
+            dispatcher.utter_message("ℹ️ No tienes citas confirmadas para cancelar.")
+            return []
+
+        servicio, fecha, hora = row[1], row[2], row[3]
+        dispatcher.utter_message(
+            f"✅ Tu cita de {servicio} el {fecha} a las {hora} ha sido cancelada."
+        )
         return [SlotSet("servicio", None), SlotSet("fecha", None), SlotSet("hora", None)]
 
 class ActionMostrarHistorial(Action):
