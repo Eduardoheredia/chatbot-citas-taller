@@ -6,22 +6,26 @@ import hashlib
 import os
 import random
 import string
+from dotenv import load_dotenv
 
-def generar_id_aleatorio(longitud=8):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
+load_dotenv()
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("Falta la variable de entorno SECRET_KEY")
 
 app = Flask(
     __name__,
     template_folder="frontend",  # aquí están tus HTML
     static_folder="frontend"     # y tus assets estáticos
 )
-if "SECRET_KEY" not in os.environ:
-    raise RuntimeError("Falta la variable de entorno SECRET_KEY")
-app.secret_key = os.environ["SECRET_KEY"]
-
+app.secret_key = SECRET_KEY
 CORS(app)
 
 DB_PATH = "usuarios.db"
+
+def generar_id_aleatorio(longitud=8):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
 
 
 def obtener_historial(id_usuario: str):
@@ -52,7 +56,7 @@ def crear_bd():
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
-                id TEXT PRIMARY KEY,
+                id_usuario TEXT PRIMARY KEY,
                 telefono INTEGER UNIQUE NOT NULL,
                 contrasena TEXT NOT NULL
             )
@@ -113,7 +117,7 @@ def registro():
         intentos = 0
         while True:
             id_usuario = generar_id_aleatorio()
-            cursor.execute("SELECT 1 FROM usuarios WHERE id = ?", (id_usuario,))
+            cursor.execute("SELECT 1 FROM usuarios WHERE id_usuario = ?", (id_usuario,))
             if not cursor.fetchone():
                 break
             intentos += 1

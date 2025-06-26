@@ -32,7 +32,7 @@ def _init_db() -> None:
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS citas (
-                id TEXT PRIMARY KEY,
+                id_citas TEXT PRIMARY KEY,
                 id_usuario TEXT NOT NULL,
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
@@ -40,7 +40,7 @@ def _init_db() -> None:
                 estado TEXT NOT NULL CHECK (
                     estado IN ('confirmada','reprogramada','cancelada','completada')
                 ),
-                FOREIGN KEY(id_usuario) REFERENCES usuarios(id)
+                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario)
             )
         ''')
         conn.commit()
