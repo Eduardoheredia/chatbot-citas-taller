@@ -22,7 +22,7 @@ app = Flask(
 app.secret_key = SECRET_KEY
 CORS(app)
 
-DB_PATH = "usuarios.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), "usuarios.db")
 
 def generar_id_aleatorio(longitud=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
