@@ -45,6 +45,7 @@ def obtener_historial(id_usuario: str):
 
 def crear_bd():
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
@@ -59,6 +60,7 @@ def obtener_citas(id_usuario: str):
     """Return all appointments associated with a user."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT servicio, fecha, hora, estado FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
@@ -103,6 +105,7 @@ def registro():
 
     
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         intentos = 0
         while True:
@@ -117,6 +120,7 @@ def registro():
 
     try:
         with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO usuarios (id, telefono, contrasena) VALUES (?, ?, ?)",
@@ -134,6 +138,7 @@ def login():
     contrasena = datos.get("contrasena")
 
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(
             "SELECT * FROM usuarios WHERE telefono = ? AND contrasena = ?",
