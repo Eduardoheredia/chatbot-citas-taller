@@ -175,31 +175,30 @@
     }
 
     // Inyectamos el chat dentro de #webchat y forzamos embedded:true
-      WebChat.default({
-        initPayload: "/saludo",
-        socketUrl,
-        socketPath: "/socket.io/",
-        metadata: { sender: id_usuario },       // <- requerido
-        customData: { sender: id_usuario },     // <- requerido
-        session_id: id_usuario, 
-        title: "Asistente de Taller",
-        subtitle: "¿En qué puedo ayudarte?",
-        embedded: true,
-        showFullScreenButton: false,
-        showCloseButton: false,
-      }, document.getElementById("webchat"));
+    WebChat.default({
+      initPayload: "/saludo",
+      socketUrl,
+      socketPath: "/socket.io/",
+      /* 1) Envía tu ID bajo `sessionId` para que Webchat lo incluya en cada mensaje */
+      session_id: id_usuario,
+      /* 2) Y pon tu metadata bajo la misma clave que pusiste en channels: `customData` */
+      customData: { sender: id_usuario },
+      title: "Asistente de Taller",
+      subtitle: "¿En qué puedo ayudarte?",
+      embedded: true,
+      showFullScreenButton: false,
+      showCloseButton: false,
+    }, document.getElementById("webchat"));
 
-      // Emitir session_request explícitamente para asegurar que el
-      // identificador y la metadata lleguen al backend.
-      window.addEventListener("rasa_webchat_ready", () => {
-        const socket = window.WebChat?.defaultInstance?.socket;
-        if (socket) {
-          socket.emit("session_request", {
-            session_id: id_usuario,
-            metadata: { sender: id_usuario }
-          });
-        }
-      });
+    window.addEventListener("rasa_webchat_ready", () => {
+      const socket = window.WebChat.defaultInstance.socket;
+      if (socket) {
+        socket.emit("session_request", {
+          session_id: id_usuario,
+          customData: { sender: id_usuario }
+        });
+      }
+    });
 
 
     // Logout
