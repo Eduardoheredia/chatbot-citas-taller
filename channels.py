@@ -59,12 +59,11 @@ class SessionSocketIOInput(SocketIOInput):
             logger.debug(f"User {sid} disconnected from socketIO endpoint.")
 
         @sio.on("session_request", namespace=self.namespace)
-        async def session_request(sid, data):
-            sender = data.get("session_id")
-            await sio.save_session(sid, {"sender_id": sender})
-            if self.session_persistence:
-                await sio.enter_room(sid, sender)
-            await sio.emit("session_confirm", {"session_id": sender}, room=sid)
+        async def session_request(sid, sender):
+            if not isinstance(sender, str):
+                logger.warning(f"❌ Valor inválido para session_id recibido: {sender}")
+                return
+
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:

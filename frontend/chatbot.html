@@ -193,10 +193,7 @@
     window.addEventListener("rasa_webchat_ready", () => {
       const socket = window.WebChat.defaultInstance.socket;
       if (socket) {
-        socket.emit("session_request", {
-          session_id: id_usuario,
-          customData: { sender: id_usuario }
-        });
+        socket.emit("session_request", id_usuario);
       }
     });
 
