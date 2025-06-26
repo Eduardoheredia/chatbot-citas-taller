@@ -78,8 +78,8 @@ class ActionAgendarCita(Action):
         fecha = tracker.get_slot("fecha") or "Fecha no definida"
         hora = tracker.get_slot("hora") or "Hora no definida"
 
-        # Almacenar la cita en la base de datos utilizando id_usuario y 
-        # id_citas que el frontend envía como sender ID.
+        # Almacenar la cita en la base de datos utilizando "id_usuario" e  
+        # "id_citas" que el frontend envía como sender ID.
         # El frontend envía el id_usuario en los metadata de cada
         # mensaje como `sender`. Usamos ese valor para persistir la cita de
         # forma consistente aún cuando el session_id de Rasa cambie entre
