@@ -29,25 +29,16 @@ def _init_db() -> None:
     """Ensure the appointments table exists with the proper columns."""
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS citas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id TEXT PRIMARY KEY,
                 telefono TEXT NOT NULL,
                 servicio TEXT NOT NULL,
                 fecha TEXT NOT NULL,
                 hora TEXT NOT NULL,
-                estado TEXT NOT NULL DEFAULT 'confirmada'
+                estado TEXT NOT NULL
             )
-            """
-        )
-        # Add the estado column if the table was created previously without it
-        cursor.execute("PRAGMA table_info(citas)")
-        cols = [row[1] for row in cursor.fetchall()]
-        if "estado" not in cols:
-            cursor.execute(
-                "ALTER TABLE citas ADD COLUMN estado TEXT NOT NULL DEFAULT 'confirmada'"
-            )
+            """)
         conn.commit()
 
 

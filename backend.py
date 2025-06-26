@@ -4,6 +4,11 @@ from flask_cors import CORS
 import sqlite3
 import hashlib
 import os
+import random
+import string
+
+def generar_id_aleatorio(longitud=8):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
 
 app = Flask(
     __name__,
@@ -43,21 +48,21 @@ def crear_bd():
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                telefono TEXT UNIQUE NOT NULL,
+                id TEXT PRIMARY KEY,
+                telefono INTEGER UNIQUE NOT NULL,
                 contrasena TEXT NOT NULL
             )
         ''')
         conn.commit()
 
-def obtener_citas(telefono: str):
+def obtener_citas(id_usuario: str):
     """Return all appointments associated with a user."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT servicio, fecha, hora, estado FROM citas WHERE telefono = ? ORDER BY fecha ASC, hora ASC",
-                (telefono,),
+                (id_usuario,),
             )
             rows = cursor.fetchall()
     except Exception:
@@ -86,14 +91,36 @@ def registro():
     contrasena = datos.get("contrasena")
 
     if not telefono or not contrasena:
-        return jsonify({"error": "Faltan datos"}), 400
+        return jsonify({"error": "RELLENE LOS CAMPOS"}), 400
+    if not telefono:
+        return jsonify({"error": "El número de teléfono es obligatorio"}), 400
+    if not contrasena:
+        return jsonify({"error": "La contraseña es obligatoria"}), 400
+    if not telefono.isdigit() or len(telefono) != 8:
+        return jsonify({"error": "El número de teléfono debe tener exactamente 8 dígitos numéricos para bolivia"}), 400
+    if len(contrasena) < 6:
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        intentos = 0
+        while True:
+            id_usuario = generar_id_aleatorio()
+            cursor.execute("SELECT 1 FROM usuarios WHERE id = ?", (id_usuario,))
+            if not cursor.fetchone():
+                break
+            intentos += 1
+            if intentos > 10:
+                return jsonify({"error": "No se pudo generar un ID único"}), 500
+
 
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO usuarios (telefono, contrasena) VALUES (?, ?)",
-                (telefono, hash_contrasena(contrasena))
+                "INSERT INTO usuarios (id, telefono, contrasena) VALUES (?, ?, ?)",
+                (id_usuario, telefono, hash_contrasena(contrasena))
             )
             conn.commit()
         return jsonify({"mensaje": "Registro exitoso"}), 200
@@ -114,7 +141,7 @@ def login():
         )
         usuario = cursor.fetchone()
     if usuario:
-        session["telefono"] = telefono
+        session["id_usuario"] = usuario[0]
         return redirect(url_for("chatbot_view"))  # 302 Redirect
     else:
         return jsonify({"error": "Credenciales incorrectas"}), 401
@@ -122,42 +149,42 @@ def login():
 @app.route("/chatbot")
 def chatbot_view():
     """Renderiza la interfaz del chatbot con la información del usuario."""
-    if "telefono" not in session:
+    if "id_usuario" not in session:
         return redirect(url_for("index"))
 
-    telefono = session["telefono"]
+    id_usuario = session["id_usuario"]
     socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
 
     # Enviamos el número de teléfono al frontend para que sea utilizado
     # como identificador de sesión al conectar con el WebSocket de Rasa.
     return render_template(
         "chatbot.html",
-        telefono=telefono,
+        telefono=id_usuario,
         socket_url=socket_url,
     )
 
 
 @app.route("/logout")
 def logout():
-    session.pop("telefono", None)
+    session.pop("id_usuario", None)
     return redirect(url_for("index"))
 
 
 @app.route("/historial")
 def historial():
-    if "telefono" not in session:
+    if "id_usuario" not in session:
         return jsonify([])
-    telefono = session["telefono"]
-    return jsonify(obtener_historial(telefono))
+    id_usuario = session["id_usuario"]
+    return jsonify(obtener_historial(id_usuario))
 
 
 @app.route("/citas")
 def citas():
-    """Return all appointments for the authenticated user."""
-    if "telefono" not in session:
+    """Devolver todas las citas del usuario autenticado."""
+    if "id_usuario" not in session:
         return jsonify([])
-    telefono = session["telefono"]
-    return jsonify(obtener_citas(telefono))
+    id_usuario = session["id_usuario"]
+    return jsonify(obtener_citas(id_usuario))
 
 if __name__ == "__main__":
     crear_bd()

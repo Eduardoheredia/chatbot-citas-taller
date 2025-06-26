@@ -3,9 +3,6 @@ import os
 import json
 import uuid
 import logging
-import asyncio
-
-logger = logging.getLogger(__name__)
 from http.cookies import SimpleCookie
 
 from sanic.request import Request
@@ -22,6 +19,7 @@ import rasa.shared.utils.io
 from socketio import AsyncServer
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 
+logger = logging.getLogger(__name__)
 
 class SessionRestInput(RestInput):
     """REST channel that retrieves ``sender_id`` from a session cookie."""
@@ -31,7 +29,6 @@ class SessionRestInput(RestInput):
         return "session_rest"
 
     async def _extract_sender(self, request: Request) -> Optional[Text]:
-        """Read sender ID from session cookie or fall back to body field."""
         cookie_name = os.environ.get("SESSION_COOKIE_NAME", "session")
         cookie = request.cookies.get(cookie_name)
         if cookie:
@@ -52,7 +49,6 @@ class SessionSocketIOInput(SocketIOInput):
         return "session_socketio"
 
     def _sender_from_cookie(self, environ: Dict[str, Any]) -> Optional[Text]:
-        """Extract the phone or user ID from Flask's session cookie."""
         cookie_header = environ.get("HTTP_COOKIE") or ""
         cookie = SimpleCookie()
         cookie.load(cookie_header)
@@ -72,7 +68,6 @@ class SessionSocketIOInput(SocketIOInput):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        """Return a custom blueprint that overrides the session ID."""
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=[])
         socketio_webhook = SocketBlueprint(
             sio, self.socketio_path, "socketio_webhook", __name__
@@ -85,14 +80,13 @@ class SessionSocketIOInput(SocketIOInput):
 
         @socketio_webhook.route("/", methods=["GET", "POST"])
         async def handle_request(request: Request) -> HTTPResponse:
-            """Forward the request to ``python-socketio`` and return an ``HTTPResponse``."""
             result = await sio.handle_request(request)
             if isinstance(result, HTTPResponse):
                 return result
             if isinstance(result, dict):
                 return response.json(result)
             if result is None:
-                return response.empty()  
+                return response.empty()
             return response.text(str(result))
 
         @sio.on("connect", namespace=self.namespace)
@@ -100,9 +94,9 @@ class SessionSocketIOInput(SocketIOInput):
             logger.debug(f"User {sid} connected to socketIO endpoint.")
             sender = self._sender_from_cookie(environ)
             if sender:
-                await sio.save_session(sid, {"sender_id": sender})  
+                await sio.save_session(sid, {"sender_id": sender})
                 if self.session_persistence:
-                    sio.enter_room(sid, sender)
+                    await sio.enter_room(sid, sender)
                     await sio.emit("session_confirm", sender, room=sid)
             return True
 
@@ -119,9 +113,9 @@ class SessionSocketIOInput(SocketIOInput):
                     sender = session.get("sender_id")
             if not sender:
                 sender = uuid.uuid4().hex
-            await sio.save_session(sid, {"sender_id": sender})  
+            await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
-                sio.enter_room(sid, sender)
+                await sio.enter_room(sid, sender)
             await sio.emit("session_confirm", sender, room=sid)
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
