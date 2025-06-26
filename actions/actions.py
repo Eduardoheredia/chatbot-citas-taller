@@ -2,6 +2,7 @@ from typing import Any, Text, Dict, List
 from datetime import datetime, time
 from dateparser import parse
 from pytz import timezone
+from uuid import uuid4
 import logging
 import sqlite3
 from rasa_sdk import Action, Tracker, FormValidationAction
@@ -24,6 +25,10 @@ TZ = timezone("America/La_Paz")
 # ya que el frontend envía el ID de usuario como `sender` al conectarse
 # al socket de Rasa.
 DB_PATH = "usuarios.db"
+
+def generar_id_cita() -> str:
+    """Return a unique identifier for a new appointment."""
+    return uuid4().hex
 
 def _init_db() -> None:
     """Asegúrese de que la tabla de citas exista con las columnas adecuadas."""
@@ -81,13 +86,14 @@ class ActionAgendarCita(Action):
             tracker.latest_message.get("metadata", {}).get("sender")
             or tracker.sender_id
         )
+        id_cita = generar_id_cita()
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
-                     "INSERT INTO citas (id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?)",
-                    (id_usuario, servicio, fecha, hora, "confirmada"),
+                     "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?, ?)",
+                    (id_cita, id_usuario, servicio, fecha, hora, "confirmada"),
                 )
                 conn.commit()
         except Exception as exc:
@@ -117,7 +123,7 @@ class ActionReprogramarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT id_usuario, servicio FROM citas
+                     SELECT id_citas, servicio FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -126,7 +132,7 @@ class ActionReprogramarCita(Action):
                 row = cursor.fetchone()
                 if row:
                     cursor.execute(
-                        "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_usuario = ?",
+                        "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
                         (nueva_fecha, nueva_hora, row[0]),
                     )
                     conn.commit()
@@ -218,7 +224,7 @@ class ActionCancelarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT id_usuario, servicio, fecha, hora FROM citas
+                    SELECT id_citas, servicio, fecha, hora FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -227,7 +233,7 @@ class ActionCancelarCita(Action):
                 row = cursor.fetchone()
                 if row:
                     cursor.execute(
-                        "UPDATE citas SET estado = 'cancelada' WHERE id_usuario = ?",
+                        "UPDATE citas SET estado = 'cancelada' WHERE id_citas = ?",
                         (row[0],),
                     )
                     conn.commit()

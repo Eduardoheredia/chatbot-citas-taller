@@ -70,7 +70,7 @@ def obtener_citas(id_usuario: str):
             conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT servicio, fecha, hora, estado FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
+                "SELECT id_citas, servicio, fecha, hora, estado FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
                 (id_usuario,),
             )
             rows = cursor.fetchall()
@@ -78,12 +78,13 @@ def obtener_citas(id_usuario: str):
         rows = []
     return [
         {
+            "id_citas": cid,
             "servicio": s,
             "fecha": f,
             "hora": h,
             "estado": e,
         }
-        for s, f, h, e in rows
+        for cid, s, f, h, e in rows
     ]
 
 def hash_contrasena(password: str) -> str:
