@@ -10,7 +10,7 @@ from rasa.core.channels.channel import UserMessage
 from rasa.core.channels.socketio import (
     SocketIOInput,
     SocketIOOutput,
-    SocketBlueprint,
+    SocketIOBlueprint,
 )
 import rasa.shared.utils.io
 from socketio import AsyncServer
@@ -18,7 +18,7 @@ from socketio import AsyncServer
 logger = logging.getLogger(__name__)
 
 class SessionSocketIOInput(SocketIOInput):
-    """Socket.IO channel that uses session_request to set sender_id."""
+    """Canal Socket.IO que prioriza el session_id enviado desde el cliente."""
 
     @classmethod
     def name(cls) -> Text:
@@ -28,7 +28,7 @@ class SessionSocketIOInput(SocketIOInput):
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=[])
-        socketio_webhook = SocketBlueprint(
+        socketio_webhook = SocketIOBlueprint(
             sio, self.socketio_path, "socketio_webhook", __name__
         )
         self.sio = sio
@@ -59,42 +59,35 @@ class SessionSocketIOInput(SocketIOInput):
 
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
-            """Handle a new session request from the client."""
-
+            """Guarda el sender_id enviado desde el cliente para persistencia."""
             sender = data.get("sessionId") or data.get("session_id")
             if not isinstance(sender, str) or not sender:
                 logger.warning(f"Invalid sender_id received: {sender}")
                 return
 
             await sio.save_session(sid, {"sender_id": sender})
-
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
-
-            await sio.emit(
-                "session_confirm", {"sessionId": sender}, room=sid
-            )
+            await sio.emit("session_confirm", {"sessionId": sender}, room=sid)
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
-            # Extraemos metadata si existe
+            # Extrae metadata (customData)
             metadata = data.get(self.metadata_key, {})
-            if isinstance(metadata, Text):
-                metadata = json.loads(metadata)
+            if isinstance(metadata, str):
+                try:
+                    metadata = json.loads(metadata)
+                except Exception:
+                    metadata = {}
 
-            # Priorizamos el sender de customData
-            sender_id: Optional[str] = None
-            if isinstance(metadata, dict):
-                sender_id = metadata.get("sender")
-            # Si no vino en customData, probamos session_id
-            if not sender_id:
-                sender_id = data.get("session_id")
-            # Si aún no lo tenemos, buscamos en la sesión guardada
+            # 1) Prioriza el sender de metadata
+            sender_id: Optional[str] = metadata.get("sender") if isinstance(metadata, dict) else None
+            # 2) Si no existe, busca en la sesión guardada
             if not sender_id:
                 session = await sio.get_session(sid)
                 if session:
                     sender_id = session.get("sender_id")
-            # Finalmente, fallback al sid
+            # 3) Fallback final al sid
             if not sender_id:
                 sender_id = sid
 
