@@ -27,6 +27,8 @@ class SessionSocketIOInput(SocketIOInput):
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
         cors_origins = os.environ.get("SOCKET_CORS", "*")
+        if isinstance(cors_origins, str) and cors_origins != "*":
+            cors_origins = list({o.strip() for o in cors_origins.split(',') if o.strip()})
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)
         socketio_webhook = SocketBlueprint(
             sio, self.socketio_path, "socketio_webhook", __name__
