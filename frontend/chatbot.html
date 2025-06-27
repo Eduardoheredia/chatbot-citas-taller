@@ -164,24 +164,13 @@
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/index.min.js"></script>
   <script>
     const id_usuario = "{{ id_usuario }}";
-    const socketUrl = "{{ socket_url }}";
+    const socketUrl  = "{{ socket_url }}";
 
-    // Asegurar que el historial almacenado en el navegador
-    // corresponda con el usuario autenticado.
-    const storedUser = localStorage.getItem("chat_user");
-    if (storedUser !== id_usuario) {
-      localStorage.clear();
-      localStorage.setItem("chat_user", id_usuario);
-    }
-
-    // Inyectamos el chat dentro de #webchat y forzamos embedded:true
     WebChat.default({
       initPayload: "/saludo",
       socketUrl,
       socketPath: "/socket.io/",
-      /* 1) Envía tu ID bajo `sessionId` para que Webchat lo incluya en cada mensaje */
-      sessionId: id_usuario,
-      /* 2) Y pon tu metadata bajo la misma clave que pusiste en channels: `customData` */
+      sessionId: id_usuario,          // ← aquí
       customData: { sender: id_usuario },
       title: "Asistente de Taller",
       subtitle: "¿En qué puedo ayudarte?",
@@ -190,7 +179,6 @@
       showCloseButton: false,
     }, document.getElementById("webchat"));
 
-    
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {
