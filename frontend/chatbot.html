@@ -180,7 +180,7 @@
       socketUrl,
       socketPath: "/socket.io/",
       /* 1) Envía tu ID bajo `sessionId` para que Webchat lo incluya en cada mensaje */
-      session_id: id_usuario,
+      sessionId: id_usuario,
       /* 2) Y pon tu metadata bajo la misma clave que pusiste en channels: `customData` */
       customData: { sender: id_usuario },
       title: "Asistente de Taller",
@@ -190,13 +190,7 @@
       showCloseButton: false,
     }, document.getElementById("webchat"));
 
-    window.addEventListener("rasa_webchat_ready", () => {
-      const socket = window.WebChat.defaultInstance.socket;
-      if (socket) {
-        socket.emit("session_request", id_usuario);
-      }
-    });
-
+    
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {
