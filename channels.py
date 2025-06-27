@@ -1,6 +1,7 @@
 from typing import Optional, Text, Dict, Any, Callable, Awaitable
 import json
 import logging
+import os
 from urllib.parse import parse_qs
 
 from sanic.request import Request
@@ -25,7 +26,8 @@ class SessionSocketIOInput(SocketIOInput):
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
     ) -> Blueprint:
-        sio = AsyncServer(async_mode="sanic", cors_allowed_origins=[])
+        cors_origins = os.environ.get("SOCKET_CORS", "*")
+        sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)
         socketio_webhook = SocketBlueprint(
             sio, self.socketio_path, "socketio_webhook", __name__
         )
