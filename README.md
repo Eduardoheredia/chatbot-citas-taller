@@ -17,6 +17,22 @@ python backend.py
 
 De esta forma el frontend se conectará al WebSocket indicado.
 
+Si el navegador no recibe mensajes del bot, asegúrate de que el origen esté
+autorizado en el canal SocketIO. Por defecto `channels.py` permite cualquier
+origen usando la variable de entorno `SOCKET_CORS` (valor `"*"`). Puedes limitar
+los dominios permitidos especificando una lista separada por comas:
+
+```bash
+export SOCKET_CORS="http://localhost:8000"
+```
+
+Luego inicia Rasa con:
+
+```bash
+rasa run -m models --enable-api --cors "*" --credentials credentials.yml
+```
+
+
 ## Identificador de sesión fijo
 
 El frontend utiliza el número de teléfono del usuario como `session_id` cuando se conecta al WebSocket. Esto permite que el historial de conversaciones y las citas queden vinculadas de forma permanente con la cuenta del usuario. El valor se envía mediante el evento `session_request` al iniciar la conexión, por lo que el mismo identificador se reutiliza aunque el usuario cierre y vuelva a abrir el navegador.
