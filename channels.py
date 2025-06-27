@@ -1,6 +1,7 @@
 from typing import Optional, Text, Dict, Any, Callable, Awaitable
 import json
 import logging
+from urllib.parse import parse_qs
 
 from sanic.request import Request
 from sanic import response, Blueprint
@@ -14,6 +15,7 @@ from rasa.core.channels.socketio import (
 from socketio import AsyncServer
 
 logger = logging.getLogger(__name__)
+
 
 class SessionSocketIOInput(SocketIOInput):
     @classmethod
@@ -47,6 +49,23 @@ class SessionSocketIOInput(SocketIOInput):
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
             logger.debug(f"User {sid} connected to socketIO endpoint.")
+
+            sender = None
+            if isinstance(auth, dict):
+                sender = auth.get("sessionId") or auth.get("session_id")
+
+            if not sender:
+                query = environ.get("QUERY_STRING", "")
+                qs = parse_qs(query)
+                sender = (
+                    qs.get("sessionId", [None])[0] or qs.get("session_id", [None])[0]
+                )
+
+            if sender:
+                await sio.save_session(sid, {"sender_id": sender})
+                if self.session_persistence:
+                    await sio.enter_room(sid, sender)
+
             return True
 
         @sio.on("disconnect", namespace=self.namespace)
@@ -57,13 +76,21 @@ class SessionSocketIOInput(SocketIOInput):
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
             sender = data.get("sessionId") or data.get("session_id")
             if not isinstance(sender, str) or not sender:
+                session = await sio.get_session(sid)
+                if session:
+                    sender = session.get("sender_id")
+            if not isinstance(sender, str) or not sender:
                 logger.warning(f"Invalid sender_id received: {sender}")
                 return
 
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
-            await sio.emit("session_confirm", {"sessionId": sender}, room=sid)
+            await sio.emit(
+                "session_confirm",
+                {"sessionId": sender, "session_id": sender},
+                room=sid,
+            )
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
@@ -74,7 +101,9 @@ class SessionSocketIOInput(SocketIOInput):
                 except Exception:
                     metadata = {}
 
-            sender_id: Optional[str] = metadata.get("sender") if isinstance(metadata, dict) else None
+            sender_id: Optional[str] = (
+                metadata.get("sender") if isinstance(metadata, dict) else None
+            )
             if not sender_id:
                 session = await sio.get_session(sid)
                 if session:
