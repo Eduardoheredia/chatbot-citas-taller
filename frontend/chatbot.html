@@ -167,26 +167,30 @@
   
 
   <script>
-    // Inicializa el widget correctamente usando init()
-    WebChat.default.init({
-      selector: "#webchat",
-      socketUrl: "{{ socket_url }}",
-      socketPath: "/webhooks/session_socketio",
-      sessionId: "{{ id_usuario }}",
-      customData: { sender: "{{ id_usuario }}" },
-      initPayload: "/saludo",
-      embedded: true,
-      showFullScreenButton: false,
-      showCloseButton: false,
-      params: { storage: "session" }
+    document.addEventListener("DOMContentLoaded", () => {
+      // Llama al entry point UMD de la v1.x pasándole opciones y el contenedor
+      window.WebChat.default(
+        {
+          socketUrl: "{{ socket_url }}",
+          socketPath: "/webhooks/session_socketio",
+          // Aquí le indicamos tu id de usuario tanto para sessionId
+          // como para customData.sender
+          sessionId: "{{ id_usuario }}",
+          customData: { sender: "{{ id_usuario }}" },
+          initPayload: "/saludo",
+          embedded: true,
+          showFullScreenButton: false,
+          showCloseButton: false,
+          params: { storage: "session" }
+        },
+        document.getElementById("webchat")
+      );
     });
-
-    // Logout
+  
     document.getElementById("logout").addEventListener("click", () => {
       window.location.href = "/logout";
     });
-
-    // Cargar historial previo
+  
     fetch("/historial")
       .then(r => r.json())
       .then(hist => {
@@ -197,8 +201,7 @@
           historyDiv.appendChild(p);
         });
       });
-
-    // Cargar citas almacenadas
+  
     fetch("/citas")
       .then(r => r.json())
       .then(citas => {
@@ -215,5 +218,6 @@
         }
       });
   </script>
+  
 </body>
 </html>
