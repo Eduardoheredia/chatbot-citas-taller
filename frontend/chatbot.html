@@ -124,7 +124,6 @@
     .rw-full-screen-launcher {
       display: none !important;
     }
-    .rw-launcher { display: none !important; }
     .rw-widget-container {
       position: absolute !important;
       top: 0; left: 0;
@@ -168,6 +167,7 @@
   
 
   <script>
+    // Inicializa el widget correctamente usando init()
     WebChat.default.init({
       selector: "#webchat",
       socketUrl: "{{ socket_url }}",
