@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class SessionSocketIOInput(SocketIOInput):
+    """Socket.IO channel that persists the sender using the session."""
+
     @classmethod
     def name(cls) -> Text:
         return "session_socketio"
@@ -52,12 +54,22 @@ class SessionSocketIOInput(SocketIOInput):
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
-            ...
-            sender = auth.get("sessionId") or auth.get("session_id")
-            ...
+            sender = None
+            if auth:
+                sender = (
+                    auth.get("sessionId")
+                    or auth.get("session_id")
+                    or (auth.get("customData") or {}).get("sender")
+                )
+            if not sender:
+                query = parse_qs(environ.get("QUERY_STRING", ""))
+                sender = query.get("session_id", [None])[0]
+            if not sender:
+                sender = sid
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
+            return True
 
         @sio.on("disconnect", namespace=self.namespace)
         async def disconnect(sid: Text) -> None:
@@ -65,11 +77,22 @@ class SessionSocketIOInput(SocketIOInput):
 
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
-            sender = data.get("sessionId") or data.get("session_id")
-            ...
+            sender = (
+                data.get("sessionId")
+                or data.get("session_id")
+                or (data.get("customData") or {}).get("sender")
+            )
+            if not sender:
+                sender = sid
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
+            await sio.emit(
+                "session_confirm",
+                {"session_id": sender},
+                room=sid,
+                namespace=self.namespace,
+            )
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
