@@ -94,6 +94,16 @@ class SessionSocketIOInput(SocketIOInput):
                 namespace=self.namespace,
             )
 
+            # Disparar un saludo inicial apenas se confirma la sesión.
+            output_channel = SocketIOOutput(sio, self.bot_message_evt)
+            message = UserMessage(
+                "/saludo",
+                output_channel,
+                sender,
+                input_channel=self.name(),
+            )
+            await on_new_message(message)
+
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
             metadata = data.get(self.metadata_key, {})
