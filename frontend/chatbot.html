@@ -124,6 +124,7 @@
     .rw-full-screen-launcher {
       display: none !important;
     }
+    .rw-launcher { display: none !important; }
     .rw-widget-container {
       position: absolute !important;
       top: 0; left: 0;
@@ -167,22 +168,17 @@
   
 
   <script>
-    const id_usuario = "{{ id_usuario }}";
-    const socketUrl  = "{{ socket_url }}";
-
     WebChat.default.init({
-      selector: "#webchat",           // ¡OBLIGATORIO!
-      socketUrl,
-      socketPath: "/webhooks/session_socketio", // coincide con channels.py   
-      sessionId: id_usuario,          // string único por usuario
-      customData: { sender: id_usuario },
-      initPayload: "/saludo",         // tu saludo inicial
-      title: "Asistente de Taller",
-      subtitle: "¿En qué puedo ayudarte?",
+      selector: "#webchat",
+      socketUrl: "{{ socket_url }}",
+      socketPath: "/webhooks/session_socketio",
+      sessionId: "{{ id_usuario }}",
+      customData: { sender: "{{ id_usuario }}" },
+      initPayload: "/saludo",
       embedded: true,
       showFullScreenButton: false,
       showCloseButton: false,
-      params: { storage: "session" }  // persiste en sessionStorage
+      params: { storage: "session" }
     });
 
     // Logout
