@@ -111,8 +111,8 @@
       width: 100%;
       max-width: 1200px;
       margin: var(--spacing) auto;
-      height: 70vh;            /* ajusta altura según necesites */
-      position: relative;      /* para contener al widget */
+      height: 70vh;
+      position: relative;
       background: #fff;
       border-radius: var(--radius);
       box-shadow: var(--shadow-sm);
@@ -120,7 +120,7 @@
     }
 
     /* Fuerza al widget a no flotar y encajar en ese contenedor */
-    .rw-launcher, 
+    .rw-launcher,
     .rw-full-screen-launcher {
       display: none !important;
     }
@@ -139,9 +139,9 @@
         font-size: 0.875rem;
       }
       #webchat { margin: 1rem; height: 60vh; }
-    #history { margin: 0.5rem; }
-    #citas { max-width: 1200px; margin: var(--spacing) auto 0; padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem; }
-  }
+      #history { margin: 0.5rem; }
+      #citas { max-width: 1200px; margin: var(--spacing) auto 0; padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem; }
+    }
   </style>
 </head>
 
@@ -167,18 +167,20 @@
     const socketUrl  = "{{ socket_url }}";
 
     WebChat.default({
-      initPayload: "/saludo",
       socketUrl,
-      socketPath: "/socket.io/",
-      sessionId: id_usuario,          // ← aquí
+      socketPath: "/socket.io",
+      sessionId: id_usuario,
       customData: { sender: id_usuario },
+      initPayload: "/saludo",
       title: "Asistente de Taller",
       subtitle: "¿En qué puedo ayudarte?",
       embedded: true,
       showFullScreenButton: false,
       showCloseButton: false,
-    }, document.getElementById("webchat"));
-
+    }).then(({ socket }) => {
+      // Forzamos el handshake de sesión
+      socket.emit("session_request", { sessionId: id_usuario });
+    });
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {
@@ -186,7 +188,7 @@
     });
 
     // Cargar historial previo
-      fetch("/historial")
+    fetch("/historial")
       .then(r => r.json())
       .then(hist => {
         const historyDiv = document.getElementById("history");
@@ -197,22 +199,22 @@
         });
       });
 
-      // Cargar citas almacenadas
-      fetch("/citas")
-        .then(r => r.json())
-        .then(citas => {
-          const citasDiv = document.getElementById("citas");
-          if (citas.length) {
-            const titulo = document.createElement("h3");
-            titulo.textContent = "Tus citas";
-            citasDiv.appendChild(titulo);
-            citas.forEach(c => {
-              const p = document.createElement("p");
-              p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
-              citasDiv.appendChild(p);
-            });
-          }
-        });
+    // Cargar citas almacenadas
+    fetch("/citas")
+      .then(r => r.json())
+      .then(citas => {
+        const citasDiv = document.getElementById("citas");
+        if (citas.length) {
+          const titulo = document.createElement("h3");
+          titulo.textContent = "Tus citas";
+          citasDiv.appendChild(titulo);
+          citas.forEach(c => {
+            const p = document.createElement("p");
+            p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
+            citasDiv.appendChild(p);
+          });
+        }
+      });
   </script>
 </body>
 </html>

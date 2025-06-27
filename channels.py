@@ -7,7 +7,6 @@ from sanic.request import Request
 from sanic import response, Blueprint
 from sanic.response import HTTPResponse
 from rasa.core.channels.channel import UserMessage
-from rasa.core.channels.rest import RestInput
 from rasa.core.channels.socketio import (
     SocketIOInput,
     SocketIOOutput,
@@ -78,24 +77,28 @@ class SessionSocketIOInput(SocketIOInput):
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
-            output_channel = SocketIOOutput(sio, self.bot_message_evt)
+            # Extraemos metadata si existe
+            metadata = data.get(self.metadata_key, {})
+            if isinstance(metadata, Text):
+                metadata = json.loads(metadata)
 
-            sender_id = data.get("session_id")
+            # Priorizamos el sender de customData
+            sender_id: Optional[str] = None
+            if isinstance(metadata, dict):
+                sender_id = metadata.get("sender")
+            # Si no vino en customData, probamos session_id
+            if not sender_id:
+                sender_id = data.get("session_id")
+            # Si aún no lo tenemos, buscamos en la sesión guardada
             if not sender_id:
                 session = await sio.get_session(sid)
                 if session:
                     sender_id = session.get("sender_id")
-            if self.session_persistence and not sender_id:
-                rasa.shared.utils.io.raise_warning(
-                    "A message without a valid session_id was received."
-                )
-                return
+            # Finalmente, fallback al sid
             if not sender_id:
                 sender_id = sid
 
-            metadata = data.get(self.metadata_key, {})
-            if isinstance(metadata, Text):
-                metadata = json.loads(metadata)
+            output_channel = SocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
                 data.get("message", ""),
                 output_channel,
