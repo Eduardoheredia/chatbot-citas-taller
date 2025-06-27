@@ -164,7 +164,7 @@
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <!-- 2. Rasa Webchat -->
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/index.min.js"></script>
-
+  
 
   <script>
     const id_usuario = "{{ id_usuario }}";
@@ -173,7 +173,7 @@
     WebChat.default.init({
       selector: "#webchat",           // ¡OBLIGATORIO!
       socketUrl,
-      socketPath: "/socket.io",       // coincide con tu Rasa --cors y channels
+      socketPath: "/webhooks/session_socketio", // coincide con channels.py   
       sessionId: id_usuario,          // string único por usuario
       customData: { sender: id_usuario },
       initPayload: "/saludo",         // tu saludo inicial
