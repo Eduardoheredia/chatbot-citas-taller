@@ -93,7 +93,7 @@
       window.WebChat.default(
         {
           socketUrl: "{{ socket_url }}",
-          socketPath: "/webhooks/session_socketio",
+          socketPath: "/socket.io",
           sessionId: "{{ id_usuario }}",
           customData: { sender: "{{ id_usuario }}" },
           embedded: true,
