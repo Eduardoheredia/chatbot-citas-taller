@@ -50,25 +50,12 @@ class SessionSocketIOInput(SocketIOInput):
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
-            logger.debug(f"User {sid} connected to socketIO endpoint.")
-
-            sender = None
-            if isinstance(auth, dict):
-                sender = auth.get("sessionId") or auth.get("session_id")
-
-            if not sender:
-                query = environ.get("QUERY_STRING", "")
-                qs = parse_qs(query)
-                sender = (
-                    qs.get("sessionId", [None])[0] or qs.get("session_id", [None])[0]
-                )
-
-            if sender:
-                await sio.save_session(sid, {"sender_id": sender})
-                if self.session_persistence:
-                    await sio.enter_room(sid, sender)
-
-            return True
+            ...
+            sender = auth.get("sessionId") or auth.get("session_id")
+            ...
+            await sio.save_session(sid, {"sender_id": sender})
+            if self.session_persistence:
+                await sio.enter_room(sid, sender)
 
         @sio.on("disconnect", namespace=self.namespace)
         async def disconnect(sid: Text) -> None:
@@ -77,24 +64,10 @@ class SessionSocketIOInput(SocketIOInput):
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
             sender = data.get("sessionId") or data.get("session_id")
-            if isinstance(sender, dict):
-                sender = sender.get("sessionId") or sender.get("session_id")
-            if not isinstance(sender, str) or not sender:
-                session = await sio.get_session(sid)
-                if session:
-                    sender = session.get("sender_id")
-            if not isinstance(sender, str) or not sender:
-                logger.warning(f"Invalid sender_id received: {sender}")
-                return
-
+            ...
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
-            await sio.emit(
-                "session_confirm",
-                {"sessionId": sender, "session_id": sender},
-                room=sid,
-            )
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
