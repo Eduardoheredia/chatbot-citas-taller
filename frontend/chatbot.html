@@ -171,7 +171,7 @@
     WebChat.default({
       socketUrl,
       socketPath: "/socket.io",
-      sessionId: id_usuario,
+      session_id: id_usuario,
       customData: { sender: id_usuario },
       initPayload: "/saludo",
       title: "Asistente de Taller",
@@ -181,7 +181,7 @@
       showCloseButton: false,
     }).then(({ socket }) => {
       // Forzamos el handshake de sesión
-      socket.emit("session_request", { sessionId: id_usuario });
+      socket.emit("session_request", { session_id: id_usuario });
     });
 
     // Logout
