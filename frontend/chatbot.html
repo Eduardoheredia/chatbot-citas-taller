@@ -180,9 +180,15 @@
       showFullScreenButton: false,
       showCloseButton: false,
     }).then(({ socket }) => {
-      // Forzamos el handshake de sesión
-      socket.emit("session_request", { sessionId: id_usuario });
+      // Validación segura del sessionId
+      if (typeof id_usuario === "string" && id_usuario.trim() !== "") {
+        console.log("✅ Enviando session_request con ID:", id_usuario);
+        socket.emit("session_request", { sessionId: id_usuario });
+      } else {
+        console.warn("❌ id_usuario no válido para session_request:", id_usuario);
+      }
     });
+
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {

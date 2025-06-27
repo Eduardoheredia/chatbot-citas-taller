@@ -75,6 +75,8 @@ class SessionSocketIOInput(SocketIOInput):
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
             sender = data.get("sessionId") or data.get("session_id")
+            if isinstance(sender, dict):
+                sender = sender.get("sessionId") or sender.get("session_id")
             if not isinstance(sender, str) or not sender:
                 session = await sio.get_session(sid)
                 if session:
