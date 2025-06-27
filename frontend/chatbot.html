@@ -171,7 +171,7 @@
         .default(
           {
             socketUrl: "{{ socket_url }}",
-            socketPath: "/webhooks/session_socketio",
+            socketPath: "/socket.io",
             sessionId: "{{ id_usuario }}",
             customData: { sender: "{{ id_usuario }}" },
             initPayload: "/saludo",
@@ -181,9 +181,14 @@
           },
           document.getElementById("webchat")
         )
-        .then(({ sendMessage }) => {
-          // Si initPayload no llegó, lo mandamos a mano:
-          sendMessage("/saludo");
+        .then(({ store }) => {
+          const unsubscribe = store.subscribe(() => {
+            const state = store.getState();
+            if (state.connection && state.connection.isConnected) {
+              unsubscribe();
+              store.dispatch({ type: "emit", payload: { message: "/saludo" } });
+            }
+          });
         });
     });
   
