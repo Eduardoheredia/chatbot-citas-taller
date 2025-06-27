@@ -33,7 +33,7 @@ class SessionSocketIOInput(SocketIOInput):
             cors_origins = list({o.strip() for o in cors_origins.split(',') if o.strip()})
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)
         socketio_webhook = SocketBlueprint(
-            sio, self.socketio_path, "socketio_webhook", __name__
+            sio, self.socketio_path, "session_socketio_webhook", __name__
         )
         self.sio = sio
 
