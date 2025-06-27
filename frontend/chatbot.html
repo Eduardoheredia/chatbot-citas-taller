@@ -3,199 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <title>Chatbot de Citas</title>
-  <!-- Estilos base de Rasa Webchat -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/styles.css" />
-
   <style>
     :root {
-      /* Colores */
       --color-primary: #1890ff;
       --color-danger: #ff4d4f;
       --color-danger-hover: #ff7875;
       --color-text: #333333;
       --color-bg-light: #f0f2f5;
       --color-border: #d9d9d9;
-
-      /* Espaciados y radios */
       --spacing: 1rem;
       --radius: 0.5rem;
-
-      /* Sombras */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
       --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-
-      /* Transiciones */
       --transition-fast: all 0.2s ease-in-out;
       --transition-base: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
     }
-
-    /* Reset y box-sizing */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      height: 100%;
-      background-color: var(--color-bg-light);
-      color: var(--color-text);
-      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      height: 100%; background-color: var(--color-bg-light);
+      color: var(--color-text); font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       scroll-behavior: smooth;
     }
-
     body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      display: flex; flex-direction: column; min-height: 100vh;
     }
-
-    /* Header */
     header {
-      position: sticky;
-      top: 0;
-      width: 100%;
-      padding: var(--spacing);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: rgba(255,255,255,0.98);
-      backdrop-filter: blur(8px);
+      position: sticky; top: 0; width: 100%; padding: var(--spacing);
+      display: flex; justify-content: center; align-items: center;
+      background: rgba(255,255,255,0.98); backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--color-border);
-      font-size: 1.25rem;
-      font-weight: 600;
-      box-shadow: var(--shadow-sm);
-      z-index: 100;
-      transition: background var(--transition-fast);
+      font-size: 1.25rem; font-weight: 600; box-shadow: var(--shadow-sm);
+      z-index: 100; transition: background var(--transition-fast);
     }
-    header:hover {
-      background: rgba(255,255,255,1);
-    }
-
-    /* Cerrar sesión */
+    header:hover { background: rgba(255,255,255,1); }
     #logout {
-      position: absolute;
-      right: calc(var(--spacing)*1.5);
-      padding: 0.5rem 1.25rem;
-      background: var(--color-danger);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-weight: 500;
-      cursor: pointer;
-      box-shadow: var(--shadow-sm);
+      position: absolute; right: calc(var(--spacing)*1.5);
+      padding: 0.5rem 1.25rem; background: var(--color-danger);
+      color: #fff; border: none; border-radius: var(--radius);
+      font-weight: 500; cursor: pointer; box-shadow: var(--shadow-sm);
       transition: var(--transition-base);
     }
     #logout:hover, #logout:focus {
-      background: var(--color-danger-hover);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      outline: none;
+      background: var(--color-danger-hover); transform: translateY(-2px);
+      box-shadow: var(--shadow-md); outline: none;
     }
-    #logout:active {
-      transform: translateY(0);
-      box-shadow: var(--shadow-sm);
+    #logout:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+    #history, #citas {
+      max-width: 1200px; margin: var(--spacing) auto 0;
+      padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem;
     }
-
-    /* Historial opcional */
-    #history {
-      max-width: 1200px;
-      margin: var(--spacing) auto 0;
-      padding: 0.5rem var(--spacing);
-      color: #555;
-      font-size: 0.95rem;
-    }
-
-    /* Contenedor fijo del chat */
     #webchat {
-      width: 100%;
-      max-width: 1200px;
-      margin: var(--spacing) auto;
-      height: 70vh;
-      position: relative;
-      background: #fff;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
+      width: 100%; max-width: 1200px; margin: var(--spacing) auto;
+      height: 70vh; position: relative; background: #fff;
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
-
-    /* Fuerza al widget a no flotar y encajar en ese contenedor */
-    .rw-launcher,
-    .rw-full-screen-launcher {
-      display: none !important;
-    }
+    .rw-launcher, .rw-full-screen-launcher { display: none !important; }
     .rw-widget-container {
-      position: absolute !important;
-      top: 0; left: 0;
-      width: 100% !important;
-      height: 100% !important;
+      position: absolute !important; top: 0; left: 0;
+      width: 100% !important; height: 100% !important;
     }
-
     @media (max-width: 768px) {
       header { font-size: 1.1rem; }
       #logout {
-        right: var(--spacing);
-        padding: 0.4rem 1rem;
+        right: var(--spacing); padding: 0.4rem 1rem;
         font-size: 0.875rem;
       }
       #webchat { margin: 1rem; height: 60vh; }
-      #history { margin: 0.5rem; }
-      #citas { max-width: 1200px; margin: var(--spacing) auto 0; padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem; }
+      #history, #citas { margin: 0.5rem; }
     }
   </style>
 </head>
-
 <body>
   <header>
     Asistente Virtual del Taller
     <button id="logout">Cerrar sesión</button>
   </header>
-
-  <!-- Historial previo (opcional) -->
   <div id="history"></div>
-
-  <!-- Citas almacenadas -->
   <div id="citas"></div>
-
-  <!-- Contenedor del chat (no flotante) -->
   <div id="webchat"></div>
 
-  <!-- 1. Socket.IO client -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <!-- 2. Rasa Webchat -->
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat@1.0.1/lib/index.min.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      window.WebChat
-        .default(
-          {
-            socketUrl: "{{ socket_url }}",
-            socketPath: "/socket.io",
-            sessionId: "{{ id_usuario }}",
-            customData: { sender: "{{ id_usuario }}" },
-            initPayload: "/saludo",
-            embedded: true,
-            showFullScreenButton: false,
-            showCloseButton: false
-          },
-          document.getElementById("webchat")
-        )
-        .then(({ store }) => {
-          const unsubscribe = store.subscribe(() => {
-            const state = store.getState();
-            if (state.connection && state.connection.isConnected) {
-              unsubscribe();
-              store.dispatch({ type: "emit", payload: { message: "/saludo" } });
-            }
-          });
+      const id_usuario = "{{ id_usuario }}";
+      window.WebChat.default(
+        {
+          socketUrl: "{{ socket_url }}",
+          socketPath: "/socket.io",
+          sessionId: id_usuario,
+          metadata: { sender: id_usuario },
+          embedded: true,
+          showFullScreenButton: false,
+          showCloseButton: false
+        },
+        document.getElementById("webchat")
+      ).then(({ store }) => {
+        const unsubscribe = store.subscribe(() => {
+          const state = store.getState();
+          if (state.connection && state.connection.isConnected) {
+            unsubscribe();
+            store.dispatch({ type: "emit", payload: { message: "/saludo" } });
+          }
         });
+      });
     });
-  
+
     document.getElementById("logout").addEventListener("click", () => {
       window.location.href = "/logout";
     });
-  
+
     fetch("/historial")
       .then(r => r.json())
       .then(hist => {
@@ -206,7 +126,7 @@
           historyDiv.appendChild(p);
         });
       });
-  
+
     fetch("/citas")
       .then(r => r.json())
       .then(citas => {
@@ -223,6 +143,5 @@
         }
       });
   </script>
-  
 </body>
 </html>
