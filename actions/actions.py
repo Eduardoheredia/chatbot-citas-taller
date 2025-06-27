@@ -24,7 +24,7 @@ TZ = timezone("America/La_Paz")
 # usuario. La columna "id_usuario" actúa como identificador del cliente
 # ya que el frontend envía el ID de usuario como `sender` al conectarse
 # al socket de Rasa.
-DB_PATH = os.path.join(os.path.dirname(__file__), "usuarios.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "usuarios.db")
 
 def _init_db() -> None:
     """Asegúrese de que la tabla de citas exista con las columnas adecuadas."""

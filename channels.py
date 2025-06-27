@@ -59,15 +59,22 @@ class SessionSocketIOInput(SocketIOInput):
             logger.debug(f"User {sid} disconnected from socketIO endpoint.")
 
         @sio.on("session_request", namespace=self.namespace)
-        async def session_request(sid, session_id):
-            # ahora recibimos directamente el string que envía Webchat
-            if not isinstance(session_id, str):
-                logger.warning(f"❌ session_id no es string: {session_id}")
+        async def session_request(sid: Text, data: Dict[str, Any]) -> None:
+            """Handle a new session request from the client."""
+
+            sender = data.get("sessionId") or data.get("session_id")
+            if not isinstance(sender, str) or not sender:
+                logger.warning(f"Invalid sender_id received: {sender}")
                 return
 
-            # Guarda el sender_id en la sesión de Socket.IO
-            await sio.save_session(sid, {"sender_id": session_id})
-            logger.debug(f"✨ session_request OK, sender_id: {session_id}")
+            await sio.save_session(sid, {"sender_id": sender})
+
+            if self.session_persistence:
+                await sio.enter_room(sid, sender)
+
+            await sio.emit(
+                "session_confirm", {"sessionId": sender}, room=sid
+            )
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
