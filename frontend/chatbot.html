@@ -93,19 +93,19 @@
       window.WebChat.default(
         {
           socketUrl: "{{ socket_url }}",
-          socketPath: "/socket.io",
-          sessionId: id_usuario,
-          metadata: { sender: id_usuario },
+          socketPath: "/webhooks/session_socketio",
+          sessionId: "{{ id_usuario }}",
+          customData: { sender: "{{ id_usuario }}" },
           embedded: true,
           showFullScreenButton: false,
           showCloseButton: false
         },
         document.getElementById("webchat")
       ).then(({ store }) => {
-        const unsubscribe = store.subscribe(() => {
+        const unsub = store.subscribe(() => {
           const state = store.getState();
-          if (state.connection && state.connection.isConnected) {
-            unsubscribe();
+          if (state.connection.isConnected) {
+            unsub();
             store.dispatch({ type: "emit", payload: { message: "/saludo" } });
           }
         });

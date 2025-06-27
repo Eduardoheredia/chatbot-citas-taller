@@ -17,13 +17,12 @@ from socketio import AsyncServer
 
 logger = logging.getLogger(__name__)
 
-
-class SessionSocketIOInput(SocketIOInput):
-    """Socket.IO channel that persists the sender using the session."""
+class CustomSocketIOInput(SocketIOInput):
+    """Canal Socket.IO personalizado que usa el ID de sesión como sender_id."""
 
     @classmethod
     def name(cls) -> Text:
-        return "session_socketio"
+        return "custom_socketio"  # importante para evitar conflictos
 
     def blueprint(
         self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
@@ -31,9 +30,9 @@ class SessionSocketIOInput(SocketIOInput):
         cors_origins = os.environ.get("SOCKET_CORS", "*")
         if isinstance(cors_origins, str) and cors_origins != "*":
             cors_origins = list({o.strip() for o in cors_origins.split(',') if o.strip()})
-        sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)
+        sio = AsyncServer(async_mode="sanic")
         socketio_webhook = SocketBlueprint(
-            sio, self.socketio_path, "session_socketio_webhook", __name__
+            sio, self.socketio_path, "custom_socketio_webhook", __name__
         )
         self.sio = sio
 
@@ -94,7 +93,7 @@ class SessionSocketIOInput(SocketIOInput):
                 namespace=self.namespace,
             )
 
-            # Disparar un saludo inicial apenas se confirma la sesión.
+            # Saludo automático al iniciar sesión
             output_channel = SocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
                 "/saludo",
@@ -134,5 +133,3 @@ class SessionSocketIOInput(SocketIOInput):
             await on_new_message(message)
 
         return socketio_webhook
-    
-    
