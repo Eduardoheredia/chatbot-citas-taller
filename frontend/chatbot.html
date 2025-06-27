@@ -163,28 +163,28 @@
   <!-- 1. Socket.IO client -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <!-- 2. Rasa Webchat -->
-  <script src="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/index.min.js"></script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/rasa-webchat@1.0.1/lib/index.min.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Llama al entry point UMD de la v1.x pasándole opciones y el contenedor
-      window.WebChat.default(
-        {
-          socketUrl: "{{ socket_url }}",
-          socketPath: "/webhooks/session_socketio",
-          // Aquí le indicamos tu id de usuario tanto para sessionId
-          // como para customData.sender
-          sessionId: "{{ id_usuario }}",
-          customData: { sender: "{{ id_usuario }}" },
-          initPayload: "/saludo",
-          embedded: true,
-          showFullScreenButton: false,
-          showCloseButton: false,
-          params: { storage: "session" }
-        },
-        document.getElementById("webchat")
-      );
+      window.WebChat
+        .default(
+          {
+            socketUrl: "{{ socket_url }}",
+            socketPath: "/webhooks/session_socketio",
+            sessionId: "{{ id_usuario }}",
+            customData: { sender: "{{ id_usuario }}" },
+            initPayload: "/saludo",
+            embedded: true,
+            showFullScreenButton: false,
+            showCloseButton: false
+          },
+          document.getElementById("webchat")
+        )
+        .then(({ sendMessage }) => {
+          // Si initPayload no llegó, lo mandamos a mano:
+          sendMessage("/saludo");
+        });
     });
   
     document.getElementById("logout").addEventListener("click", () => {
