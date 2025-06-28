@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 class CustomSocketIOInput(SocketIOInput):
     """Canal Socket.IO personalizado que usa el ID de sesión como sender_id."""
 
+
     @classmethod
     def name(cls) -> Text:
         return "custom_socketio"  # importante para evitar conflictos
