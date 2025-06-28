@@ -4,9 +4,6 @@ import logging
 import os
 from urllib.parse import parse_qs
 
-from http import cookies
-from urllib.parse import parse_qs
-
 from sanic.request import Request
 from sanic import response, Blueprint
 from sanic.response import HTTPResponse
@@ -64,31 +61,14 @@ class CustomSocketIOInput(SocketIOInput):
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
-            # 1) intentar leer de auth (solo funciona en WS handshake)
-            sender = None
-            if isinstance(auth, dict):
-                sender = auth.get("sessionId") or auth.get("session_id") \
-                        or (auth.get("customData") or {}).get("sender")
-            # 2) fallback a query string (HTTP polling handshake)
+            sender = parse_qs(environ.get("QUERY_STRING", "")).get("session_id", [None])[0]
             if not sender:
-                qs = environ.get("QUERY_STRING", "")
-                sender = parse_qs(qs).get("session_id", [None])[0]
-            # 3) **cookie**: si lo anterior falla, parsear HTTP_COOKIE
-            if not sender:
-                cookie_header = environ.get("HTTP_COOKIE", "")
-                jar = cookies.SimpleCookie()
-                jar.load(cookie_header)
-                morsel = jar.get("session_id")
-                if morsel:
-                    sender = morsel.value
-            # 4) si TODO falla, usar el sid
-            if not sender:
-                sender = sid
+                sender = sid  # fallback
 
-            # guardar en sesión de socket.io
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
+            logger.info(f"[SOCKET CONNECT] SID={sid}, sender_id={sender}")
             return True
 
         @sio.on("disconnect", namespace=self.namespace)
@@ -99,6 +79,7 @@ class CustomSocketIOInput(SocketIOInput):
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
             session = await sio.get_session(sid)
             sender = session.get("sender_id") if session else None
+
             if not sender:
                 sender = (
                     data.get("sessionId")
@@ -109,6 +90,8 @@ class CustomSocketIOInput(SocketIOInput):
                 await sio.save_session(sid, {"sender_id": sender})
                 if self.session_persistence:
                     await sio.enter_room(sid, sender)
+
+            logger.info(f"[SOCKET SESSION_CONFIRM] SID={sid}, session_confirm={sender}, sender_id={sender}")
 
             await sio.emit(
                 "session_confirm",
