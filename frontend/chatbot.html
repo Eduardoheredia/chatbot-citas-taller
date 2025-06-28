@@ -100,8 +100,7 @@
           embedded: true,
           showFullScreenButton: false,
           showCloseButton: false
-        },
-        document.getElementById("webchat")
+        },document.getElementById("webchat")
       ).then(({ store }) => {
         const unsubscribe = store.subscribe(() => {
           const state = store.getState();

@@ -172,7 +172,7 @@ def chatbot_view():
     # como identificador de sesión al conectar con el WebSocket de Rasa.
     return render_template(
         "chatbot.html",
-        id_usuario=id_usuario,
+        id_usuario=session["id_usuario"],
         socket_url=socket_url,
     )
 
