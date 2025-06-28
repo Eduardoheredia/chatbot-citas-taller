@@ -28,9 +28,12 @@ class CustomSocketIOInput(SocketIOInput):
     def blueprint(
     self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
 ) -> Blueprint:
-        cors_origins = os.environ.get("SOCKET_CORS", "*").strip()
-        if "," in cors_origins:
-            cors_origins = cors_origins.split(",")[0].strip()
+        cors_raw = os.environ.get("SOCKET_CORS", "*")
+        if "," in cors_raw:
+            cors_origins = [o.strip() for o in cors_raw.split(",")]
+        else:
+            cors_origins = cors_raw
+
         
         # ✅ Asegurar que 'sio' siempre se defina
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)

@@ -89,26 +89,29 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const id_usuario = "{{ id_usuario }}";
+    const id_usuario = "{{ id_usuario }}";
 
-      window.WebChat.default(
+    const webchatInstance = window.WebChat.default(
         {
           socketUrl: "{{ socket_url }}",
-          socketPath: "/socket.io", // importante: coincide con credentials.yml
+          socketPath: "/socket.io",
           sessionId: "{{ id_usuario }}",
           customData: { sender: id_usuario },
           embedded: true,
           showFullScreenButton: false,
           showCloseButton: false
-        },document.getElementById("webchat")
-      ).then(({ store }) => {
-        const unsubscribe = store.subscribe(() => {
-          const state = store.getState();
+        },
+        document.getElementById("webchat")
+      );
+
+      if (webchatInstance && webchatInstance.store) {
+        const unsubscribe = webchatInstance.store.subscribe(() => {
+          const state = webchatInstance.store.getState();
           if (state.connection && state.connection.isConnected) {
             unsubscribe();
 
-            // ⚠️ Importante: enviar evento session_request manual
-            store.dispatch({
+            // Evento session_request
+            webchatInstance.store.dispatch({
               type: "session_request",
               payload: {
                 session_id: id_usuario,
@@ -116,14 +119,14 @@
               }
             });
 
-            // ⚠️ Importante: enviar /saludo luego del session_request
-            store.dispatch({
+            // Mensaje de saludo
+            webchatInstance.store.dispatch({
               type: "emit",
               payload: { message: "/saludo" }
             });
           }
         });
-      });
+      }
     });
 
     document.getElementById("logout").addEventListener("click", () => {
