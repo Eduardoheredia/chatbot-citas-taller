@@ -26,16 +26,20 @@ class CustomSocketIOInput(SocketIOInput):
         return "custom_socketio"  # importante para evitar conflictos
 
     def blueprint(
-        self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
-    ) -> Blueprint:
-        cors_origins = os.environ.get("SOCKET_CORS", "*")
-        if isinstance(cors_origins, str) and cors_origins != "*":
-            cors_origins = list({o.strip() for o in cors_origins.split(',') if o.strip()})
+    self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
+) -> Blueprint:
+        cors_origins = os.environ.get("SOCKET_CORS", "*").strip()
+        if "," in cors_origins:
+            cors_origins = cors_origins.split(",")[0].strip()
+        
+        # ✅ Asegurar que 'sio' siempre se defina
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)
+
         socketio_webhook = SocketBlueprint(
             sio, self.socketio_path, "custom_socketio_webhook", __name__
         )
         self.sio = sio
+
 
         @socketio_webhook.route("/health", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:
