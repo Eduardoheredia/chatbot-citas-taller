@@ -20,40 +20,29 @@ logger = logging.getLogger(__name__)
 class CustomSocketIOInput(SocketIOInput):
     """Canal Socket.IO personalizado que usa el ID de sesión como sender_id."""
 
-
     @classmethod
     def name(cls) -> Text:
         return "custom_socketio"  # importante para evitar conflictos
 
     def blueprint(
-    self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
-) -> Blueprint:
-        # 1. Lee la cadena de orígenes y la separa en una lista
+        self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
+    ) -> Blueprint:
         cors_raw = os.environ.get("SOCKET_CORS", "*")
         cors_items = [origin.strip() for origin in cors_raw.split(",") if origin.strip()]
-       # 2. Elimina duplicados manteniendo el orden
         seen = set()
         cors_list = []
         for origin in cors_items:
             if origin not in seen:
                 seen.add(origin)
                 cors_list.append(origin)
-        
-        # 3. Si sólo hay un origen, pásalo como string; si hay varios, como lista
-        if len(cors_list) == 1:
-            cors_allowed = cors_list[0]
-        else:
-            cors_allowed = cors_list
 
-        # 4. Crea el servidor Socket.IO con los orígenes correctos
+        cors_allowed = cors_list[0] if len(cors_list) == 1 else cors_list
         sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_allowed)
-
 
         socketio_webhook = SocketBlueprint(
             sio, self.socketio_path, "custom_socketio_webhook", __name__
         )
         self.sio = sio
-
 
         @socketio_webhook.route("/health", methods=["GET"])
         async def health(_: Request) -> HTTPResponse:
@@ -72,24 +61,21 @@ class CustomSocketIOInput(SocketIOInput):
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
-            # extrae primero del query string
-            query = parse_qs(environ.get("QUERY_STRING", ""))
-            sender = query.get("session_id", [None])[0]
+            sender = (
+                auth.get("sessionId")
+                or auth.get("session_id")
+                or (auth.get("customData") or {}).get("sender")
+            ) if auth else None
 
-            # o si no, del auth
-            if not sender and auth:
-                sender = (
-                    auth.get("sessionId")
-                    or auth.get("session_id")
-                    or (auth.get("customData") or {}).get("sender")
-                )
+            if not sender:
+                sender = parse_qs(environ.get("QUERY_STRING", "")).get("session_id", [None])[0]
             if not sender:
                 sender = sid
+
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
             return True
-
 
         @sio.on("disconnect", namespace=self.namespace)
         async def disconnect(sid: Text) -> None:
@@ -97,16 +83,19 @@ class CustomSocketIOInput(SocketIOInput):
 
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
-            sender = (
-                data.get("sessionId")
-                or data.get("session_id")
-                or (data.get("customData") or {}).get("sender")
-            )
+            session = await sio.get_session(sid)
+            sender = session.get("sender_id") if session else None
             if not sender:
-                sender = sid
-            await sio.save_session(sid, {"sender_id": sender})
-            if self.session_persistence:
-                await sio.enter_room(sid, sender)
+                sender = (
+                    data.get("sessionId")
+                    or data.get("session_id")
+                    or (data.get("customData") or {}).get("sender")
+                    or sid
+                )
+                await sio.save_session(sid, {"sender_id": sender})
+                if self.session_persistence:
+                    await sio.enter_room(sid, sender)
+
             await sio.emit(
                 "session_confirm",
                 {"session_id": sender},
@@ -114,7 +103,6 @@ class CustomSocketIOInput(SocketIOInput):
                 namespace=self.namespace,
             )
 
-            # Saludo automático al iniciar sesión
             output_channel = SocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
                 "/saludo",
@@ -124,7 +112,7 @@ class CustomSocketIOInput(SocketIOInput):
             )
             await on_new_message(message)
 
-        @ sio.on(self.user_message_evt, namespace=self.namespace)
+        @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
             metadata = data.get(self.metadata_key, {})
             if isinstance(metadata, str):
@@ -143,5 +131,14 @@ class CustomSocketIOInput(SocketIOInput):
             if not sender_id:
                 sender_id = sid
 
+            output_channel = SocketIOOutput(sio, self.bot_message_evt)
+            message = UserMessage(
+                data.get("message", ""),
+                output_channel,
+                sender_id,
+                input_channel=self.name(),
+                metadata=metadata,
+            )
+            await on_new_message(message)
 
         return socketio_webhook
