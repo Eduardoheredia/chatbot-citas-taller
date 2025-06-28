@@ -166,7 +166,7 @@ def chatbot_view():
         return redirect(url_for("index"))
 
     id_usuario = session["id_usuario"]
-    socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
+    socket_url = os.environ.get("SOCKET_URL", "http://localhost:5055/webhook")
 
     # Enviamos el id_usuario al frontend para que sea utilizado
     # como identificador de sesión al conectar con el WebSocket de Rasa.
