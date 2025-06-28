@@ -90,17 +90,15 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const id_usuario = "{{ id_usuario }}";
-      // MODIFICACIÓN: Forzar query string en socketUrl
       const socketUrl = "{{ socket_url }}";
       const socketPath = "/socket.io";
-      // Aquí armamos la URL con el query string del session_id
       const socketUrlWithSession = socketUrl + "?session_id=" + id_usuario;
 
-      const webchatInstance = window.WebChat.default(
+      window.WebChat.default(
         {
-          socketUrl: socketUrlWithSession, // Usar la URL modificada
+          socketUrl: socketUrlWithSession,   // <-- Se fuerza en la URL
           socketPath: socketPath,
-          sessionId: id_usuario,
+          sessionId: id_usuario,             // <-- Viaja explícito al canal Rasa
           customData: { sender: id_usuario },
           embedded: true,
           showFullScreenButton: false,
@@ -110,20 +108,21 @@
       );
     });
 
+
     document.getElementById("logout").addEventListener("click", () => {
       window.location.href = "/logout";
     });
 
-    fetch("/historial")
-      .then(r => r.json())
-      .then(hist => {
-        const historyDiv = document.getElementById("history");
-        hist.forEach(m => {
-          const p = document.createElement("p");
-          p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
-          historyDiv.appendChild(p);
-        });
-      });
+    //fetch("/historial")
+      //.then(r => r.json())
+      //.then(hist => {
+        //const historyDiv = document.getElementById("history");
+        //hist.forEach(m => {
+          //const p = document.createElement("p");
+          //p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
+          //historyDiv.appendChild(p);
+        //});
+      //});
 
       fetch("/citas")
       .then(r => r.json())

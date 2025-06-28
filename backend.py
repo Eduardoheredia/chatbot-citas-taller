@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, make_response
 import requests
 from flask_cors import CORS
 import sqlite3
@@ -170,11 +170,14 @@ def chatbot_view():
 
     # Enviamos el id_usuario al frontend para que sea utilizado
     # como identificador de sesión al conectar con el WebSocket de Rasa.
-    return render_template(
+    resp = make_response(render_template(
         "chatbot.html",
         id_usuario=id_usuario,
         socket_url=socket_url,
-    )
+    ))
+
+    resp.set_cookie("session_id", id_usuario, httponly=True, samesite="Lax")
+    return resp
 
 
 @app.route("/logout")
