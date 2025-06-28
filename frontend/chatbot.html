@@ -91,10 +91,13 @@
     document.addEventListener("DOMContentLoaded", () => {
       const id_usuario = "{{ id_usuario }}";
 
-      window.WebChat.default(
+      window.WebChat.default.init(
         {
+          // URL de tu Rasa socket
           socketUrl: "{{ socket_url }}",
-          socketPath: "/socket.io", // importante: coincide con credentials.yml
+          // Path del Socket.IO
+          socketPath: "/socket.io",
+          // sessionId / sender
           sessionId: "{{ id_usuario }}",
           customData: { sender: id_usuario },
           embedded: true,
@@ -103,12 +106,13 @@
         },
         document.getElementById("webchat")
       ).then(({ store }) => {
+        // Ahora sí ‘store’ existe y puedes suscribirte a los cambios de estado
         const unsubscribe = store.subscribe(() => {
           const state = store.getState();
           if (state.connection && state.connection.isConnected) {
             unsubscribe();
-
-            // ⚠️ Importante: enviar evento session_request manual
+  
+            // Dispara manualmente session_request y luego el saludo
             store.dispatch({
               type: "session_request",
               payload: {
@@ -116,12 +120,7 @@
                 customData: { sender: id_usuario }
               }
             });
-
-            // ⚠️ Importante: enviar /saludo luego del session_request
-            store.dispatch({
-              type: "emit",
-              payload: { message: "/saludo" }
-            });
+            store.dispatch({ type: "emit", payload: { message: "/saludo" } });
           }
         });
       });
