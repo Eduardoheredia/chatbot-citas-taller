@@ -94,7 +94,7 @@
       window.WebChat.default(
         {
           socketUrl: "{{ socket_url }}",
-          socketPath: "/webhooks/custom_socketio", // importante: coincide con credentials.yml
+          socketPath: "/socket.io", // importante: coincide con credentials.yml
           sessionId: id_usuario,
           customData: { sender: id_usuario },
           embedded: true,
