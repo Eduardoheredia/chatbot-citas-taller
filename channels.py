@@ -72,22 +72,24 @@ class CustomSocketIOInput(SocketIOInput):
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
-            sender = None
-            if auth:
+            # extrae primero del query string
+            query = parse_qs(environ.get("QUERY_STRING", ""))
+            sender = query.get("session_id", [None])[0]
+
+            # o si no, del auth
+            if not sender and auth:
                 sender = (
                     auth.get("sessionId")
                     or auth.get("session_id")
                     or (auth.get("customData") or {}).get("sender")
                 )
             if not sender:
-                query = parse_qs(environ.get("QUERY_STRING", ""))
-                sender = query.get("session_id", [None])[0]
-            if not sender:
                 sender = sid
             await sio.save_session(sid, {"sender_id": sender})
             if self.session_persistence:
                 await sio.enter_room(sid, sender)
             return True
+
 
         @sio.on("disconnect", namespace=self.namespace)
         async def disconnect(sid: Text) -> None:
@@ -122,7 +124,7 @@ class CustomSocketIOInput(SocketIOInput):
             )
             await on_new_message(message)
 
-        @sio.on(self.user_message_evt, namespace=self.namespace)
+        @ sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
             metadata = data.get(self.metadata_key, {})
             if isinstance(metadata, str):
@@ -141,14 +143,5 @@ class CustomSocketIOInput(SocketIOInput):
             if not sender_id:
                 sender_id = sid
 
-            output_channel = SocketIOOutput(sio, self.bot_message_evt)
-            message = UserMessage(
-                data.get("message", ""),
-                output_channel,
-                sender_id,
-                input_channel=self.name(),
-                metadata=metadata,
-            )
-            await on_new_message(message)
 
         return socketio_webhook

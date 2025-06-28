@@ -89,13 +89,18 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-    const id_usuario = "{{ id_usuario }}";
+      const id_usuario = "{{ id_usuario }}";
+      // MODIFICACIÓN: Forzar query string en socketUrl
+      const socketUrl = "{{ socket_url }}";
+      const socketPath = "/socket.io";
+      // Aquí armamos la URL con el query string del session_id
+      const socketUrlWithSession = socketUrl + "?session_id=" + id_usuario;
 
-    const webchatInstance = window.WebChat.default(
+      const webchatInstance = window.WebChat.default(
         {
-          socketUrl: "{{ socket_url }}",
-          socketPath: "/socket.io",
-          sessionId: "{{ id_usuario }}",
+          socketUrl: socketUrlWithSession, // Usar la URL modificada
+          socketPath: socketPath,
+          sessionId: id_usuario,
           customData: { sender: id_usuario },
           embedded: true,
           showFullScreenButton: false,
