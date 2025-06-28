@@ -90,15 +90,20 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const id_usuario = "{{ id_usuario }}";
-      const socketUrl = "{{ socket_url }}";
-      const socketPath = "/socket.io";
+      const socketUrl   = "{{ socket_url }}";
+      const socketPath  = "/socket.io";
       const socketUrlWithSession = socketUrl + "?session_id=" + id_usuario;
 
-      window.WebChat.default(
+      // Guarda la instancia para acceder al socket
+      const webchatInstance = window.WebChat.default(
         {
-          socketUrl: socketUrlWithSession,   // <-- Se fuerza en la URL
+          socketUrl: socketUrlWithSession,    
           socketPath: socketPath,
-          sessionId: id_usuario,             // <-- Viaja explícito al canal Rasa
+          socketOptions: {
+            transports: ["websocket"],
+            query: { session_id: id_usuario }
+          },
+          sessionId: id_usuario,
           customData: { sender: id_usuario },
           embedded: true,
           showFullScreenButton: false,
@@ -106,6 +111,15 @@
         },
         document.getElementById("webchat")
       );
+
+      setTimeout(() => {
+        const socket = webchatInstance && webchatInstance._socketIO;
+        if (socket) {
+          socket.on("session_confirm", (data) => {
+            console.log("session_confirm", data.session_id);
+          });
+        }
+      }, 700); // Puedes subir o bajar el tiempo si te hace falta
     });
 
 
@@ -113,16 +127,16 @@
       window.location.href = "/logout";
     });
 
-    //fetch("/historial")
-      //.then(r => r.json())
-      //.then(hist => {
-        //const historyDiv = document.getElementById("history");
-        //hist.forEach(m => {
-          //const p = document.createElement("p");
-          //p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
-          //historyDiv.appendChild(p);
-        //});
-      //});
+    fetch("/historial")
+      .then(r => r.json())
+      .then(hist => {
+        const historyDiv = document.getElementById("history");
+        hist.forEach(m => {
+          const p = document.createElement("p");
+          p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
+          historyDiv.appendChild(p);
+        });
+      });
 
       fetch("/citas")
       .then(r => r.json())
