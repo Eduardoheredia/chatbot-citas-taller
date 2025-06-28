@@ -28,15 +28,26 @@ class CustomSocketIOInput(SocketIOInput):
     def blueprint(
     self, on_new_message: Callable[[UserMessage], Awaitable[Any]]
 ) -> Blueprint:
+        # 1. Lee la cadena de orígenes y la separa en una lista
         cors_raw = os.environ.get("SOCKET_CORS", "*")
-        if "," in cors_raw:
-            cors_origins = [o.strip() for o in cors_raw.split(",")]
-        else:
-            cors_origins = cors_raw
-
+        cors_items = [origin.strip() for origin in cors_raw.split(",") if origin.strip()]
+       # 2. Elimina duplicados manteniendo el orden
+        seen = set()
+        cors_list = []
+        for origin in cors_items:
+            if origin not in seen:
+                seen.add(origin)
+                cors_list.append(origin)
         
-        # ✅ Asegurar que 'sio' siempre se defina
-        sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_origins)
+        # 3. Si sólo hay un origen, pásalo como string; si hay varios, como lista
+        if len(cors_list) == 1:
+            cors_allowed = cors_list[0]
+        else:
+            cors_allowed = cors_list
+
+        # 4. Crea el servidor Socket.IO con los orígenes correctos
+        sio = AsyncServer(async_mode="sanic", cors_allowed_origins=cors_allowed)
+
 
         socketio_webhook = SocketBlueprint(
             sio, self.socketio_path, "custom_socketio_webhook", __name__
