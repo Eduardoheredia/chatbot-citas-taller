@@ -91,51 +91,72 @@
     document.addEventListener("DOMContentLoaded", () => {
       const id_usuario = "{{ id_usuario }}";
 
-      // --- NUEVA INICIALIZACIÓN DEL WEBCHAT ---
-      const webchat = document.createElement("rasa-webchat");
-      webchat.setAttribute("socketUrl", "{{ socket_url }}");
-      webchat.setAttribute("socketPath", "/socket.io");
-      webchat.setAttribute("sessionId", id_usuario);
-      webchat.setAttribute("customData", JSON.stringify({ sender: id_usuario }));
-      webchat.setAttribute("embedded", "true");
-      webchat.setAttribute("showFullScreenButton", "false");
-      webchat.setAttribute("showCloseButton", "false");
-      document.getElementById("webchat").appendChild(webchat);
+      window.WebChat.default(
+        {
+          socketUrl: "{{ socket_url }}",
+          socketPath: "/socket.io", // importante: coincide con credentials.yml
+          sessionId: "{{ id_usuario }}",
+          customData: { sender: id_usuario },
+          embedded: true,
+          showFullScreenButton: false,
+          showCloseButton: false
+        },
+        document.getElementById("webchat")
+      ).then(({ store }) => {
+        const unsubscribe = store.subscribe(() => {
+          const state = store.getState();
+          if (state.connection && state.connection.isConnected) {
+            unsubscribe();
 
-      // Botón logout
-      document.getElementById("logout").addEventListener("click", () => {
-        window.location.href = "/logout";
-      });
+            // ⚠️ Importante: enviar evento session_request manual
+            store.dispatch({
+              type: "session_request",
+              payload: {
+                session_id: id_usuario,
+                customData: { sender: id_usuario }
+              }
+            });
 
-      // Mostrar historial
-      fetch("/historial")
-        .then(r => r.json())
-        .then(hist => {
-          const historyDiv = document.getElementById("history");
-          hist.forEach(m => {
-            const p = document.createElement("p");
-            p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
-            historyDiv.appendChild(p);
-          });
-        });
-
-      // Mostrar citas
-      fetch("/citas")
-        .then(r => r.json())
-        .then(citas => {
-          const citasDiv = document.getElementById("citas");
-          if (citas.length) {
-            const titulo = document.createElement("h3");
-            titulo.textContent = "Tus citas";
-            citasDiv.appendChild(titulo);
-            citas.forEach(c => {
-              const p = document.createElement("p");
-              p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
-              citasDiv.appendChild(p);
+            // ⚠️ Importante: enviar /saludo luego del session_request
+            store.dispatch({
+              type: "emit",
+              payload: { message: "/saludo" }
             });
           }
         });
+      });
     });
+
+    document.getElementById("logout").addEventListener("click", () => {
+      window.location.href = "/logout";
+    });
+
+    fetch("/historial")
+      .then(r => r.json())
+      .then(hist => {
+        const historyDiv = document.getElementById("history");
+        hist.forEach(m => {
+          const p = document.createElement("p");
+          p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
+          historyDiv.appendChild(p);
+        });
+      });
+
+    fetch("/citas")
+      .then(r => r.json())
+      .then(citas => {
+        const citasDiv = document.getElementById("citas");
+        if (citas.length) {
+          const titulo = document.createElement("h3");
+          titulo.textContent = "Tus citas";
+          citasDiv.appendChild(titulo);
+          citas.forEach(c => {
+            const p = document.createElement("p");
+            p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
+            citasDiv.appendChild(p);
+          });
+        }
+      });
   </script>
 </body>
 </html>
