@@ -95,7 +95,7 @@
         {
           socketUrl: "{{ socket_url }}",
           socketPath: "/socket.io", // importante: coincide con credentials.yml
-          sessionId: id_usuario,
+          sessionId: "{{ id_usuario }}",
           customData: { sender: id_usuario },
           embedded: true,
           showFullScreenButton: false,
