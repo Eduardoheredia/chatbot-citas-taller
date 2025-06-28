@@ -103,30 +103,6 @@
         },
         document.getElementById("webchat")
       );
-
-      if (webchatInstance && webchatInstance.store) {
-        const unsubscribe = webchatInstance.store.subscribe(() => {
-          const state = webchatInstance.store.getState();
-          if (state.connection && state.connection.isConnected) {
-            unsubscribe();
-
-            // Evento session_request
-            webchatInstance.store.dispatch({
-              type: "session_request",
-              payload: {
-                session_id: id_usuario,
-                customData: { sender: id_usuario }
-              }
-            });
-
-            // Mensaje de saludo
-            webchatInstance.store.dispatch({
-              type: "emit",
-              payload: { message: "/saludo" }
-            });
-          }
-        });
-      }
     });
 
     document.getElementById("logout").addEventListener("click", () => {
@@ -144,7 +120,7 @@
         });
       });
 
-    fetch("/citas")
+      fetch("/citas")
       .then(r => r.json())
       .then(citas => {
         const citasDiv = document.getElementById("citas");
@@ -158,7 +134,7 @@
             citasDiv.appendChild(p);
           });
         }
-      });
+      });s
   </script>
 </body>
 </html>
