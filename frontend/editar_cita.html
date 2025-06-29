@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Editar Cita</title>
+<style>
+  body {font-family: Arial, sans-serif; padding: 1rem;}
+  form {max-width: 400px;}
+  label {display: block; margin-top: 0.5rem;}
+  input, select {width: 100%; padding: 0.5rem; margin-top: 0.25rem;}
+  button {margin-top: 1rem; padding: 0.5rem 1rem;}
+</style>
+</head>
+<body>
+  <h1>Editar Cita</h1>
+  <form method="post">
+    <input type="hidden" name="id_citas" value="{{ cita['id_citas'] }}">
+
+    <label>ID Usuario
+      <input type="text" name="id_usuario" value="{{ cita['id_usuario'] }}" required>
+    </label>
+    <label>Servicio
+      <input type="text" name="servicio" value="{{ cita['servicio'] }}" required>
+    </label>
+    <label>Fecha
+      <input type="text" name="fecha" value="{{ cita['fecha'] }}" required>
+    </label>
+    <label>Hora
+      <input type="text" name="hora" value="{{ cita['hora'] }}" required>
+    </label>
+    <label>Estado
+      <select name="estado">
+        {% for estado in ['confirmada', 'reprogramada', 'cancelada', 'completada'] %}
+        <option value="{{ estado }}" {% if cita['estado']==estado %}selected{% endif %}>{{ estado }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button type="submit">Guardar</button>
+  </form>
+  <p><a href="/admin">Volver al panel</a></p>
+</body>
+</html>

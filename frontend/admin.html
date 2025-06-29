@@ -28,7 +28,7 @@
 
   <h2>Citas</h2>
   <table>
-    <tr><th>ID</th><th>Usuario</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th></tr>
+    <tr><th>ID</th><th>Usuario</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th><th>Acciones</th></tr>
     {% for c in citas %}
     <tr>
       <td>{{ c['id_citas'] }}</td>
@@ -37,6 +37,7 @@
       <td>{{ c['fecha'] }}</td>
       <td>{{ c['hora'] }}</td>
       <td>{{ c['estado'] }}</td>
+      <td><a href="/editar_cita/{{ c['id_citas'] }}">Editar</a></td>
     </tr>
     {% endfor %}
   </table>
