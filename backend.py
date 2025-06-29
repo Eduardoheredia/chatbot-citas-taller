@@ -65,6 +65,15 @@ def crear_bd():
             )
             """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS mecanicos (
+                id_mecanico TEXT PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                telefono TEXT
+            )
+            """
+        )
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
         cols = [c[1] for c in cursor.fetchall()]
@@ -82,6 +91,12 @@ def crear_bd():
             VALUES (?, ?, ?, 1)
             """,
             ("admin", admin_phone, hash_contrasena(admin_pass)),
+        )
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO mecanicos (id_mecanico, nombre, telefono)
+            VALUES ('mec1', 'Mecánico Ejemplo', '00000000')
+            """
         )
         conn.commit()
         
@@ -223,8 +238,12 @@ def admin_panel():
             "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas"
         )
         citas = cursor.fetchall()
+        cursor.execute(
+            "SELECT id_mecanico, nombre, telefono FROM mecanicos"
+        )
+        mecanicos = cursor.fetchall()
 
-    return render_template("admin.html", usuarios=usuarios, citas=citas)
+    return render_template("admin.html", usuarios=usuarios, citas=citas, mecanicos=mecanicos)
 
 @app.route("/admin/actualizar_cita/<id_cita>", methods=["POST"])
 def actualizar_cita(id_cita):

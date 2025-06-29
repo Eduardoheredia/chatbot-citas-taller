@@ -58,5 +58,17 @@
     </form>
     {% endfor %}
   </table>
+
+  <h2>Mecánicos</h2>
+  <table>
+    <tr><th>ID</th><th>Nombre</th><th>Teléfono</th></tr>
+    {% for m in mecanicos %}
+    <tr>
+      <td>{{ m['id_mecanico'] }}</td>
+      <td>{{ m['nombre'] }}</td>
+      <td>{{ m['telefono'] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
 </body>
 </html>
