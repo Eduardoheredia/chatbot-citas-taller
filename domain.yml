@@ -98,6 +98,7 @@ actions:
   - action_responder_consulta_mecanica
   - action_consultar_cita
   - action_mostrar_historial
+  - action_session_start
 
 session_config:
   session_expiration_time: 7200       # en segundos (2 horas)
