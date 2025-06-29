@@ -186,12 +186,16 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/historial")
+@app.route("/historial", methods=["GET"])
 def historial():
-    if "id_usuario" not in session:
-        return jsonify([])
-    id_usuario = session["id_usuario"]
-    return jsonify(obtener_historial(id_usuario))
+    """Return chat history for the authenticated user."""
+    id_usuario = session.get("id_usuario")
+    if not id_usuario:
+        # If the user is not logged in, return empty history with 401 status
+        return jsonify([]), 401
+
+    history = obtener_historial(id_usuario)
+    return jsonify(history)
 
 
 @app.route("/citas")
