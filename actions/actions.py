@@ -41,9 +41,18 @@ def _init_db() -> None:
                 estado TEXT NOT NULL CHECK (
                     estado IN ('confirmada','reprogramada','cancelada','completada')
                 ),
-                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario)
+                id_mecanico TEXT,
+                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),
+                FOREIGN KEY(id_mecanico) REFERENCES mecanicos(id_mecanico)
             )
         ''')
+        # Add the column id_mecanico if the table already existed
+        cursor.execute("PRAGMA table_info(citas)")
+        cols = [c[1] for c in cursor.fetchall()]
+        if "id_mecanico" not in cols:
+            cursor.execute(
+                "ALTER TABLE citas ADD COLUMN id_mecanico TEXT REFERENCES mecanicos(id_mecanico)"
+            )
         conn.commit()
 
 
