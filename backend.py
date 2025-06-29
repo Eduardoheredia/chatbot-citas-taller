@@ -74,6 +74,7 @@ def crear_bd():
             )
             """
         )
+    
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
         cols = [c[1] for c in cursor.fetchall()]
@@ -81,7 +82,7 @@ def crear_bd():
             cursor.execute(
                 "ALTER TABLE usuarios ADD COLUMN es_admin INTEGER NOT NULL DEFAULT 0"
             )
-
+            
         # Crear un usuario administrador por defecto
         admin_phone = os.environ.get("ADMIN_PHONE", "99999999")
         admin_pass = os.environ.get("ADMIN_PASS", "admin123")
@@ -108,7 +109,7 @@ def obtener_citas(id_usuario: str):
             conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT id_citas, servicio, fecha, hora, estado FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
+                "SELECT id_citas, servicio, fecha, hora, estado, id_mecanico FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
                 (id_usuario,),
             )
             rows = cursor.fetchall()
@@ -121,8 +122,9 @@ def obtener_citas(id_usuario: str):
             "fecha": f,
             "hora": h,
             "estado": e,
+            "id_mecanico": m,
         }
-        for cid, s, f, h, e in rows
+        for cid, s, f, h, e, m in rows
     ]
 
 def hash_contrasena(password: str) -> str:
@@ -237,9 +239,11 @@ def admin_panel():
         cursor.execute(
             """
             SELECT c.id_citas, c.id_usuario, u.telefono, c.servicio,
-                   c.fecha, c.hora, c.estado
+                   c.fecha, c.hora, c.estado, c.id_mecanico,
+                   m.nombre AS nombre_mecanico
             FROM citas AS c
             JOIN usuarios AS u ON c.id_usuario = u.id_usuario
+            LEFT JOIN mecanicos AS m ON c.id_mecanico = m.id_mecanico
             """
         )
         citas = cursor.fetchall()
@@ -260,13 +264,14 @@ def actualizar_cita(id_cita):
     fecha = request.form.get("fecha")
     hora = request.form.get("hora")
     estado = request.form.get("estado")
+    id_mecanico = request.form.get("id_mecanico")
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE citas SET servicio = ?, fecha = ?, hora = ?, estado = ? WHERE id_citas = ?",
-            (servicio, fecha, hora, estado, id_cita),
+            "UPDATE citas SET servicio = ?, fecha = ?, hora = ?, estado = ?, id_mecanico = ? WHERE id_citas = ?",
+            (servicio, fecha, hora, estado, id_mecanico, id_cita),
         )
         conn.commit()
 
@@ -283,14 +288,15 @@ def agregar_cita():
     fecha = request.form.get("fecha")
     hora = request.form.get("hora")
     estado = request.form.get("estado") or "confirmada"
+    id_mecanico = request.form.get("id_mecanico")
 
     id_cita = generar_id_aleatorio()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?, ?)",
-            (id_cita, id_usuario, servicio, fecha, hora, estado),
+            "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado, id_mecanico) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (id_cita, id_usuario, servicio, fecha, hora, estado, id_mecanico),
         )
         conn.commit()
 
