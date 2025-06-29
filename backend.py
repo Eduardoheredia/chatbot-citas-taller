@@ -73,22 +73,6 @@ def crear_bd():
                 telefono INTEGER UNIQUE NOT NULL
             )
             """
-        )
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS citas (
-                id_citas TEXT PRIMARY KEY,
-                id_usuario TEXT NOT NULL,
-                servicio TEXT NOT NULL,
-                fecha TEXT NOT NULL,
-                hora TEXT NOT NULL,
-                estado TEXT NOT NULL CHECK (
-                    estado IN ('confirmada','reprogramada','cancelada','completada')
-                ),
-                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario)
-            )
-            """
-        )
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
         cols = [c[1] for c in cursor.fetchall()]
