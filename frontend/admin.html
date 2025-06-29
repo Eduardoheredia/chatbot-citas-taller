@@ -58,6 +58,7 @@
       <tr>
         <th>ID</th>
         <th>Usuario</th>
+        <th>Teléfono</th>
         <th>Servicio</th>
         <th>Fecha</th>
         <th>Hora</th>
@@ -70,6 +71,7 @@
       <tr data-id="{{ c.id_citas }}">
         <td>{{ c.id_citas }}</td>
         <td>{{ c.id_usuario }}</td>
+        <td>{{ c.telefono }}</td>
         <td><input type="text" name="servicio" value="{{ c.servicio }}" disabled></td>
         <td><input type="date" name="fecha" value="{{ c.fecha }}" disabled></td>
         <td><input type="time" name="hora" value="{{ c.hora }}" disabled></td>
@@ -91,6 +93,7 @@
       <tr>
         <td>Nuevo</td>
         <td><input type="text" id="new-usuario" placeholder="Usuario"></td>
+        <td></td>
         <td><input type="text" id="new-servicio" placeholder="Servicio"></td>
         <td><input type="date" id="new-fecha"></td>
         <td><input type="time" id="new-hora"></td>
