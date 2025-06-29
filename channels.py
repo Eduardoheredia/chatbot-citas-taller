@@ -70,6 +70,12 @@ class CustomSocketIOInput(SocketIOInput):
             sender = None
             if auth:
                 sender = auth.get("session_id")
+
+            
+            if not sender:
+                query = parse_qs(environ.get("QUERY_STRING", ""))
+                sender = query.get("session_id", [None])[0]
+
             if not sender:
                 sender = sid  # fallback when no session id is provided
 
