@@ -70,11 +70,11 @@
       <tr data-id="{{ c.id_citas }}">
         <td>{{ c.id_citas }}</td>
         <td>{{ c.id_usuario }}</td>
-        <td><input type="text" name="servicio" value="{{ c.servicio }}"></td>
-        <td><input type="date" name="fecha" value="{{ c.fecha }}"></td>
-        <td><input type="time" name="hora" value="{{ c.hora }}"></td>
+        <td><input type="text" name="servicio" value="{{ c.servicio }}" disabled></td>
+        <td><input type="date" name="fecha" value="{{ c.fecha }}" disabled></td>
+        <td><input type="time" name="hora" value="{{ c.hora }}" disabled></td>
         <td>
-          <select name="estado">
+          <select name="estado" disabled>
             <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
             <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
             <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
@@ -82,10 +82,28 @@
           </select>
         </td>
         <td>
-          <button class="save-cita-btn save-btn">Guardar</button>
+          <button class="edit-cita-btn">Editar</button>
+          <button class="save-cita-btn save-btn" style="display:none;">Guardar</button>
+          <button class="delete-cita-btn delete-btn">Eliminar</button>
         </td>
       </tr>
       {% endfor %}
+      <tr>
+        <td>Nuevo</td>
+        <td><input type="text" id="new-usuario" placeholder="Usuario"></td>
+        <td><input type="text" id="new-servicio" placeholder="Servicio"></td>
+        <td><input type="date" id="new-fecha"></td>
+        <td><input type="time" id="new-hora"></td>
+        <td>
+          <select id="new-estado">
+            <option value="confirmada">confirmada</option>
+            <option value="reprogramada">reprogramada</option>
+            <option value="cancelada">cancelada</option>
+            <option value="completada">completada</option>
+          </select>
+        </td>
+        <td><button id="add-cita-btn">Agregar</button></td>
+      </tr>
     </tbody>
   </table>
 
@@ -123,7 +141,16 @@
   </table>
 
   <script>
-    // — Guardar cambios en la tabla de citas —
+    // — CRUD Citas —
+    document.querySelectorAll('.edit-cita-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        tr.querySelectorAll('input, select').forEach(i => i.disabled = false);
+        btn.style.display = 'none';
+        tr.querySelector('.save-cita-btn').style.display = 'inline-block';
+      });
+    });
+
     document.querySelectorAll('.save-cita-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const tr = btn.closest('tr');
@@ -138,8 +165,42 @@
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString()
         });
-        if (!res.ok) alert('Error al actualizar la cita');
+        if (res.ok) {
+          tr.querySelectorAll('input, select').forEach(i => i.disabled = true);
+          btn.style.display = 'none';
+          tr.querySelector('.edit-cita-btn').style.display = 'inline-block';
+        } else {
+          alert('Error al actualizar la cita');
+        }
       });
+    });
+
+    document.querySelectorAll('.delete-cita-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        if (confirm('¿Eliminar esta cita?')) {
+          fetch(`/admin/eliminar_cita/${id}`, { method: 'POST' })
+            .then(res => res.ok ? location.reload() : alert('Error al eliminar'));
+        }
+      });
+    });
+
+    document.getElementById('add-cita-btn').addEventListener('click', async () => {
+      const usuario = document.getElementById('new-usuario').value.trim();
+      const servicio = document.getElementById('new-servicio').value.trim();
+      const fecha = document.getElementById('new-fecha').value;
+      const hora = document.getElementById('new-hora').value;
+      const estado = document.getElementById('new-estado').value;
+      if (!usuario || !servicio || !fecha || !hora) return alert('Complete los campos');
+      const params = new URLSearchParams({ id_usuario: usuario, servicio, fecha, hora, estado });
+      const res = await fetch('/admin/agregar_cita', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      });
+      if (res.ok) location.reload();
+      else alert('Error al agregar cita');
     });
 
     // — CRUD Mecánicos —

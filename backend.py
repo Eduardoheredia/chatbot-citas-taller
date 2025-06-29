@@ -74,6 +74,21 @@ def crear_bd():
             )
             """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS citas (
+                id_citas TEXT PRIMARY KEY,
+                id_usuario TEXT NOT NULL,
+                servicio TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                hora TEXT NOT NULL,
+                estado TEXT NOT NULL CHECK (
+                    estado IN ('confirmada','reprogramada','cancelada','completada')
+                ),
+                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario)
+            )
+            """
+        )
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
         cols = [c[1] for c in cursor.fetchall()]
@@ -262,6 +277,47 @@ def actualizar_cita(id_cita):
         cursor.execute(
             "UPDATE citas SET servicio = ?, fecha = ?, hora = ?, estado = ? WHERE id_citas = ?",
             (servicio, fecha, hora, estado, id_cita),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/agregar_cita", methods=["POST"])
+def agregar_cita():
+    """Agregar una nueva cita desde el panel de administración."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    id_usuario = request.form.get("id_usuario")
+    servicio = request.form.get("servicio")
+    fecha = request.form.get("fecha")
+    hora = request.form.get("hora")
+    estado = request.form.get("estado") or "confirmada"
+
+    id_cita = generar_id_aleatorio()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?, ?)",
+            (id_cita, id_usuario, servicio, fecha, hora, estado),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/eliminar_cita/<id_cita>", methods=["POST"])
+def eliminar_cita(id_cita):
+    """Eliminar una cita de la base de datos."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM citas WHERE id_citas = ?",
+            (id_cita,),
         )
         conn.commit()
 
