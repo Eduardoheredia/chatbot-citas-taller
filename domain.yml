@@ -76,7 +76,7 @@ responses:
   utter_error_hora:
     - text: "⚠️ Hora fuera de nuestro horario (08:00 - 18:00)"
   utter_horarios:
-    - text: "Horarios de atención:\nLunes a Viernes: 08:00 - 18:00\nSábados: 09:00 - 14:00"
+    - text: "Horarios de atención:\nLunes a Viernes: 08:00 - 18:00\nSábados: 08:00 - 18:00  y \ndomingos cerrado"
   utter_default:
     - text: "🤖 No entendí. ¿Podrías repetirlo?"
   utter_duracion_servicios:
