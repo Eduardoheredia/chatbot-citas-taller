@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nueva Cita</title>
+  <style>
+    body { font-family: Arial; padding:2rem; background:#f2f2f2; }
+    label { display:block; margin-top:0.5rem; }
+    select, input { padding:0.4rem; margin-top:0.3rem; }
+  </style>
+</head>
+<body>
+<h1>Registrar Cita</h1>
+<form method="post" action="/admin/nueva_cita">
+  <label>Usuario:
+    <select name="id_usuario">
+      {% for u in usuarios %}
+      <option value="{{ u[0] }}">{{ u[0] }} - {{ u[1] }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Servicio:
+    <select name="servicio_id" id="servicio">
+      {% for s in servicios %}
+      <option value="{{ s[0] }}" data-duracion="{{ s[2] }}">{{ s[1] }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Mecánico:
+    <select name="mecanico_id" id="mecanico">
+      {% for m in mecanicos %}
+      <option value="{{ m[0] }}">{{ m[1] }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Fecha:
+    <input type="date" name="fecha" id="fecha" required>
+  </label>
+  <label>Hora:
+    <select name="hora_inicio" id="hora" required></select>
+  </label>
+  <button type="submit">Guardar</button>
+</form>
+<a href="/admin">Volver</a>
+<script>
+async function loadHoras() {
+  const s = document.getElementById('servicio').value;
+  const m = document.getElementById('mecanico').value;
+  const f = document.getElementById('fecha').value;
+  if(!s || !m || !f) return;
+  const res = await fetch(`/disponibilidad?servicio_id=${s}&mecanico_id=${m}&fecha=${f}`);
+  const horas = await res.json();
+  const sel = document.getElementById('hora');
+  sel.innerHTML = '';
+  horas.forEach(h => {
+    const o = document.createElement('option');
+    o.value = h;
+    o.textContent = h;
+    sel.appendChild(o);
+  });
+}
+['servicio','mecanico','fecha'].forEach(id => {
+  document.getElementById(id).addEventListener('change', loadHoras);
+});
+</script>
+</body>
+</html>
