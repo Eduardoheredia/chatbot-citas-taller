@@ -235,7 +235,12 @@ def admin_panel():
         cursor.execute("SELECT id_usuario, telefono, es_admin FROM usuarios")
         usuarios = cursor.fetchall()
         cursor.execute(
-            "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas"
+            """
+            SELECT c.id_citas, c.id_usuario, u.telefono, c.servicio,
+                   c.fecha, c.hora, c.estado
+            FROM citas AS c
+            JOIN usuarios AS u ON c.id_usuario = u.id_usuario
+            """
         )
         citas = cursor.fetchall()
         cursor.execute(
