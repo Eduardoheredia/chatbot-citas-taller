@@ -103,6 +103,19 @@ def tabla_horarios(horarios: List[Text], html: bool = False) -> Text:
 
     return ", ".join(horarios)
 
+
+class ActionSessionStart(Action):
+    """Greets the user once when a new session starts."""
+
+    def name(self) -> Text:
+        return "action_session_start"
+
+    async def run(
+        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
+    ) -> List[EventType]:
+        dispatcher.utter_message(response="utter_saludo")
+        return [SessionStarted(), ActionExecuted("action_listen")]
+
 class ActionDefaultFallback(Action):
     def name(self) -> str:
         return "action_default_fallback"

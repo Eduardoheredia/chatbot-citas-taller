@@ -112,14 +112,7 @@ class CustomSocketIOInput(SocketIOInput):
                 namespace=self.namespace,
             )
 
-            output_channel = CustomSocketIOOutput(sio, self.bot_message_evt)
-            message = UserMessage(
-                "/saludo",
-                output_channel,
-                sender,
-                input_channel=self.name(),
-            )
-            await on_new_message(message)
+
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
