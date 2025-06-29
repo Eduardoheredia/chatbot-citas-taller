@@ -222,19 +222,96 @@ def citas():
 
 @app.route("/admin")
 def admin_view():
-    """Muestra las tablas de usuarios y citas para el administrador."""
+    """Muestra y filtra las tablas de usuarios y citas."""
     if not session.get("es_admin"):
         return redirect(url_for("index"))
+
+    servicio = request.args.get("servicio")
+    fecha = request.args.get("fecha")
+    hora = request.args.get("hora")
+
+    query = "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas WHERE 1=1"
+    params = []
+    if servicio:
+        query += " AND servicio LIKE ?"
+        params.append(f"%{servicio}%")
+    if fecha:
+        query += " AND fecha = ?"
+        params.append(fecha)
+    if hora:
+        query += " AND hora = ?"
+        params.append(hora)
+    query += " ORDER BY fecha ASC, hora ASC"
+
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         usuarios = cursor.execute(
             "SELECT id_usuario, telefono, es_admin FROM usuarios"
         ).fetchall()
-        citas = cursor.execute(
+        citas = cursor.execute(query, params).fetchall()
+
+    filtros = {"servicio": servicio or "", "fecha": fecha or "", "hora": hora or ""}
+    return render_template("admin.html", usuarios=usuarios, citas=citas, filtros=filtros)
+
+
+@app.route("/admin/update_cita", methods=["POST"])
+def update_cita():
+    """Permite modificar fecha, hora o estado de una cita."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    id_cita = request.form.get("id_citas")
+    fecha = request.form.get("fecha")
+    hora = request.form.get("hora")
+    estado = request.form.get("estado")
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE citas SET fecha = ?, hora = ?, estado = ? WHERE id_citas = ?",
+            (fecha, hora, estado, id_cita),
+        )
+        conn.commit()
+    return redirect(url_for("admin_view"))
+
+
+@app.route("/admin/delete_cita", methods=["POST"])
+def delete_cita():
+    """Elimina una cita de la base de datos."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+    id_cita = request.form.get("id_citas")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM citas WHERE id_citas = ?", (id_cita,))
+        conn.commit()
+    return redirect(url_for("admin_view"))
+
+
+@app.route("/admin/export_csv")
+def export_csv():
+    """Exporta las citas agendadas en formato CSV."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        rows = cursor.execute(
             "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas"
         ).fetchall()
-    return render_template("admin.html", usuarios=usuarios, citas=citas)
+    import csv
+    from io import StringIO
+    si = StringIO()
+    writer = csv.writer(si)
+    writer.writerow(["id_citas", "id_usuario", "servicio", "fecha", "hora", "estado"])
+    writer.writerows(rows)
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=citas.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 if __name__ == "__main__":
     crear_bd()
