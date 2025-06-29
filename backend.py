@@ -56,10 +56,25 @@ def crear_bd():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
                 id_usuario TEXT PRIMARY KEY,
-                telefono INTEGER UNIQUE NOT NULL,
-                contrasena TEXT NOT NULL
+                telefono TEXT UNIQUE NOT NULL,
+                contrasena TEXT NOT NULL,
+                rol TEXT NOT NULL DEFAULT 'usuario'
             )
         ''')
+        try:
+            cursor.execute("ALTER TABLE usuarios ADD COLUMN rol TEXT NOT NULL DEFAULT 'usuario'")
+        except sqlite3.OperationalError:
+            pass
+        cursor.execute("SELECT 1 FROM usuarios WHERE rol='admin'")
+        if not cursor.fetchone():
+            admin_tel = os.environ.get("ADMIN_TEL", "99999999")
+            admin_pass = hash_contrasena(os.environ.get("ADMIN_PASS", "admin123"))
+            admin_id = generar_id_aleatorio()
+            cursor.execute(
+                "INSERT INTO usuarios (id_usuario, telefono, contrasena, rol) VALUES (?, ?, ?, 'admin')",
+                (admin_id, admin_tel, admin_pass),
+            )
+        conn.commit()
         
 
 def obtener_citas(id_usuario: str):
@@ -129,7 +144,7 @@ def registro():
             conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO usuarios (id_usuario, telefono, contrasena) VALUES (?, ?, ?)",
+                "INSERT INTO usuarios (id_usuario, telefono, contrasena, rol) VALUES (?, ?, ?, 'usuario')",
                 (id_usuario, telefono, hash_contrasena(contrasena))
             )
             conn.commit()
@@ -153,6 +168,9 @@ def login():
         usuario = cursor.fetchone()
     if usuario:
         session["id_usuario"] = usuario[0]
+        session["rol"] = usuario[3] if len(usuario) > 3 else 'usuario'
+        if session["rol"] == 'admin':
+            return redirect(url_for("admin_panel"))
         return redirect(url_for("chatbot_view"))  # 302 Redirect
     else:
         return jsonify({"error": "Credenciales incorrectas"}), 401
@@ -180,6 +198,7 @@ def chatbot_view():
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)
+    session.pop("rol", None)
     return redirect(url_for("index"))
 
 @app.route("/historial", methods=["GET"])
@@ -200,6 +219,54 @@ def citas():
         return jsonify([])
     id_usuario = session["id_usuario"]
     return jsonify(obtener_citas(id_usuario))
+
+@app.route("/admin")
+def admin_panel():
+    if session.get("rol") != "admin":
+        return redirect(url_for("index"))
+    return render_template("admin.html")
+
+@app.route("/admin/usuarios")
+def admin_usuarios():
+    if session.get("rol") != "admin":
+        return jsonify([]), 403
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("SELECT id_usuario, telefono, rol FROM usuarios")
+        rows = cursor.fetchall()
+    return jsonify([
+        {"id_usuario": uid, "telefono": tel, "rol": rol} for uid, tel, rol in rows
+    ])
+
+@app.route("/admin/usuario/<id_usuario>", methods=["PUT"])
+def admin_actualizar_usuario(id_usuario):
+    if session.get("rol") != "admin":
+        return jsonify({"error": "No autorizado"}), 403
+    datos = request.get_json(force=True)
+    telefono = datos.get("telefono")
+    contrasena = datos.get("contrasena")
+    rol = datos.get("rol")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        if telefono:
+            cursor.execute(
+                "UPDATE usuarios SET telefono = ? WHERE id_usuario = ?",
+                (telefono, id_usuario),
+            )
+        if contrasena:
+            cursor.execute(
+                "UPDATE usuarios SET contrasena = ? WHERE id_usuario = ?",
+                (hash_contrasena(contrasena), id_usuario),
+            )
+        if rol:
+            cursor.execute(
+                "UPDATE usuarios SET rol = ? WHERE id_usuario = ?",
+                (rol, id_usuario),
+            )
+        conn.commit()
+    return jsonify({"mensaje": "Usuario actualizado"})
 
 if __name__ == "__main__":
     crear_bd()
