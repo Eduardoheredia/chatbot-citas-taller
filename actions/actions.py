@@ -1,5 +1,5 @@
 from typing import Any, Text, Dict, List
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from dateparser import parse
 from pytz import timezone
 import logging
@@ -58,6 +58,47 @@ def _init_db() -> None:
 
 # Create the table on module import so actions can write de inmediato
 _init_db()
+
+
+def obtener_horarios_disponibles(fecha: Text) -> List[Text]:
+    """Return available 2-hour time slots for the given date."""
+    ocupados: set = set()
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT hora FROM citas WHERE fecha = ? AND estado IN ('confirmada','reprogramada')",
+                (fecha,),
+            )
+            ocupados = {row[0] for row in cursor.fetchall()}
+    except Exception as exc:
+        logger.error(f"Error consultando horarios: {exc}")
+
+    horarios: List[Text] = []
+    inicio = datetime.strptime("08:00", "%H:%M")
+    fin = datetime.strptime("18:00", "%H:%M")
+    actual = inicio
+    while actual <= fin:
+        hora_str = actual.strftime("%H:%M")
+        if hora_str not in ocupados:
+            horarios.append(hora_str)
+        actual += timedelta(hours=2)
+    return horarios
+
+
+def tabla_horarios(horarios: List[Text], html: bool = False) -> Text:
+    """Format available times as a plain text or HTML table."""
+    if not horarios:
+        return "No hay horarios disponibles para ese día."
+
+    if html:
+        filas = "".join(f"<tr><td>{h}</td></tr>" for h in horarios)
+        return f"<table><thead><tr><th>Hora</th></tr></thead><tbody>{filas}</tbody></table>"
+
+    encabezado = "| Hora |\n|------|\n"
+    filas = "\n".join(f"| {h} |" for h in horarios)
+    return encabezado + filas
 
 class ActionDefaultFallback(Action):
     def name(self) -> str:
@@ -180,11 +221,14 @@ class ValidateAgendarCitaForm(FormValidationAction):
 
     async def validate_fecha(self, slot_value, dispatcher, tracker, domain):
         try:
-            parsed = parse(slot_value, settings={
-                'TIMEZONE': TZ.zone,
-                'PREFER_DATES_FROM': 'future',
-                'RELATIVE_BASE': datetime.now(TZ)
-            })
+            parsed = parse(
+                slot_value,
+                settings={
+                    'TIMEZONE': TZ.zone,
+                    'PREFER_DATES_FROM': 'future',
+                    'RELATIVE_BASE': datetime.now(TZ),
+                },
+            )
             if not parsed:
                 raise ValueError("Formato no reconocido")
             fecha = parsed.date()
@@ -192,7 +236,12 @@ class ValidateAgendarCitaForm(FormValidationAction):
             if fecha < hoy:
                 dispatcher.utter_message(response="utter_error_fecha")
                 return {"fecha": None}
-            return {"fecha": fecha.isoformat()}
+            fecha_str = fecha.isoformat()
+            horarios = obtener_horarios_disponibles(fecha_str)
+            html = tracker.get_latest_input_channel() == "custom_socketio"
+            tabla = tabla_horarios(horarios, html=html)
+            dispatcher.utter_message(text=tabla)
+            return {"fecha": fecha_str}
         except Exception as e:
             logger.error(f"Error validando fecha: {str(e)}")
             dispatcher.utter_message(response="utter_error_fecha")
