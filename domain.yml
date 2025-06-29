@@ -64,7 +64,7 @@ responses:
   utter_ask_fecha:
     - text: "¿Para qué fecha deseas agendar la cita? (Ejemplo: 2025-06-15)"
   utter_ask_hora:
-    - text: "¿A qué hora deseas la cita? (Ejemplo: 10:00, entre 08:00 y 18:00)"
+    - text: "¿A qué hora deseas la cita? Elige una de las horas disponibles (Ejemplo: 10:00, entre 08:00 y 18:00)"
   utter_confirmar_cita:
     - text: "Resumen de cita:\nServicio: {servicio}\nFecha: {fecha}\nHora: {hora}\n¿Confirmar?"
   utter_cancelar_cita:
