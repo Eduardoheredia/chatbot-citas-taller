@@ -88,12 +88,20 @@ def obtener_horarios_disponibles(fecha: Text) -> List[Text]:
 
 
 def tabla_horarios(horarios: List[Text], html: bool = False) -> Text:
-    """Return the available times formatted as an HTML table."""
+    """Return the available times formatted either as plain text or Markdown.
+
+    When ``html`` is ``True`` a Markdown table is generated so that the
+    webchat renders a table instead of showing raw HTML tags. If no horarios
+    are provided a short message is returned.
+    """
     if not horarios:
         return "No hay horarios disponibles para ese día."
 
-    filas = "".join(f"<tr><td>{h}</td></tr>" for h in horarios)
-    return f"<table><thead><tr><th>Hora</th></tr></thead><tbody>{filas}</tbody></table>"
+    if html:
+        filas = "\n".join(f"| {h} |" for h in horarios)
+        return "| Hora |\n| --- |\n" + filas
+
+    return ", ".join(horarios)
 
 class ActionDefaultFallback(Action):
     def name(self) -> str:
