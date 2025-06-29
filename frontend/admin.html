@@ -92,7 +92,14 @@
       {% endfor %}
       <tr>
         <td>Nuevo</td>
-        <td><input type="text" id="new-usuario" placeholder="Usuario"></td>
+        <td>
+          <select id="new-usuario">
+            <option value="" selected disabled>Seleccione teléfono</option>
+            {% for u in usuarios %}
+            <option value="{{ u.id_usuario }}">{{ u.telefono }}</option>
+            {% endfor %}
+          </select>
+        </td>
         <td></td>
         <td><input type="text" id="new-servicio" placeholder="Servicio"></td>
         <td><input type="date" id="new-fecha"></td>
