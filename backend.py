@@ -226,6 +226,45 @@ def admin_panel():
 
     return render_template("admin.html", usuarios=usuarios, citas=citas)
 
+@app.route("/editar_cita/<id_cita>", methods=["GET", "POST"])
+def editar_cita(id_cita):
+    """Permite editar una cita existente."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        if request.method == "POST":
+            cursor.execute(
+                """
+                UPDATE citas
+                SET id_usuario = ?, servicio = ?, fecha = ?, hora = ?, estado = ?
+                WHERE id_citas = ?
+                """,
+                (
+                    request.form.get("id_usuario"),
+                    request.form.get("servicio"),
+                    request.form.get("fecha"),
+                    request.form.get("hora"),
+                    request.form.get("estado"),
+                    id_cita,
+                ),
+            )
+            conn.commit()
+            return redirect(url_for("admin_panel"))
+
+        cursor.execute(
+            "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas WHERE id_citas = ?",
+            (id_cita,),
+        )
+        cita = cursor.fetchone()
+        if not cita:
+            return redirect(url_for("admin_panel"))
+
+    return render_template("editar_cita.html", cita=cita)
+
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)
