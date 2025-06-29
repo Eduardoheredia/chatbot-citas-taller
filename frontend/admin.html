@@ -1,141 +1,202 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Panel de Administración</title>
-<style>
-  body {font-family: Arial, sans-serif; padding: 1rem;}
-  table {border-collapse: collapse; width: 100%; margin-bottom: 2rem;}
-  th, td {border: 1px solid #ccc; padding: 0.75rem; text-align: left;}
-  th {background-color: #f0f0f0;}
-  button {
-    padding: 0.4rem 0.8rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    background-color: #3498db;
-    color: #fff;
-  }
-  button.delete-btn {background-color: #e74c3c;}
-  button.edit-btn.save {background-color: #2ecc71;}
-  @media (max-width: 600px) {
-    table {font-size: 0.9rem;}
-    th, td {padding: 0.5rem;}
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Panel de Administración</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: left; }
+    th { background-color: #f0f0f0; }
+    button {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #3498db;
+      color: #fff;
+      margin-right: 0.5rem;
+    }
+    button.delete-btn { background-color: #e74c3c; }
+    button.save-btn { background-color: #2ecc71; }
+    @media (max-width: 600px) {
+      table { font-size: 0.9rem; }
+      th, td { padding: 0.5rem; }
+      button { padding: 0.3rem 0.6rem; }
+    }
+  </style>
 </head>
 <body>
   <h1>Panel de Administración</h1>
   <a href="/logout">Cerrar sesión</a>
 
+  <!-- === Usuarios (solo lectura) === -->
   <h2>Usuarios</h2>
-  <table>
-    <tr><th>ID</th><th>Teléfono</th><th>Es admin</th></tr>
-    {% for u in usuarios %}
-    <tr>
-      <td>{{ u['id_usuario'] }}</td>
-      <td>{{ u['telefono'] }}</td>
-      <td>{{ u['es_admin'] }}</td>
-    </tr>
-    {% endfor %}
+  <table id="usuarios-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Teléfono</th>
+        <th>Es admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in usuarios %}
+      <tr>
+        <td>{{ u.id_usuario }}</td>
+        <td>{{ u.telefono }}</td>
+        <td>{{ 'Sí' if u.es_admin else 'No' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 
+  <!-- === Citas (edición rápida) === -->
   <h2>Citas</h2>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>Usuario</th>
-      <th>Servicio</th>
-      <th>Fecha</th>
-      <th>Hora</th>
-      <th>Estado</th>
-      <th></th>
-    </tr>
-    {% for c in citas %}
-    <form action="/admin/actualizar_cita/{{ c['id_citas'] }}" method="post" style="display: contents;">
+  <table id="citas-table">
+    <thead>
       <tr>
-        <td>{{ c['id_citas'] }}</td>
-        <td>{{ c['id_usuario'] }}</td>
-        <td><input name="servicio" value="{{ c['servicio'] }}"></td>
-        <td><input type="date" name="fecha" value="{{ c['fecha'] }}"></td>
-        <td><input type="time" name="hora" value="{{ c['hora'] }}"></td>
+        <th>ID</th>
+        <th>Usuario</th>
+        <th>Servicio</th>
+        <th>Fecha</th>
+        <th>Hora</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in citas %}
+      <tr data-id="{{ c.id_citas }}">
+        <td>{{ c.id_citas }}</td>
+        <td>{{ c.id_usuario }}</td>
+        <td><input type="text" name="servicio" value="{{ c.servicio }}"></td>
+        <td><input type="date" name="fecha" value="{{ c.fecha }}"></td>
+        <td><input type="time" name="hora" value="{{ c.hora }}"></td>
         <td>
           <select name="estado">
-            <option value="confirmada" {% if c['estado']=='confirmada' %}selected{% endif %}>confirmada</option>
-            <option value="reprogramada" {% if c['estado']=='reprogramada' %}selected{% endif %}>reprogramada</option>
-            <option value="cancelada" {% if c['estado']=='cancelada' %}selected{% endif %}>cancelada</option>
-            <option value="completada" {% if c['estado']=='completada' %}selected{% endif %}>completada</option>
+            <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
+            <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
+            <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
+            <option value="completada" {% if c.estado=='completada' %}selected{% endif %}>completada</option>
           </select>
         </td>
-        <td><button type="submit">Guardar</button></td>
+        <td>
+          <button class="save-cita-btn save-btn">Guardar</button>
+        </td>
       </tr>
-    </form>
-    {% endfor %}
+      {% endfor %}
+    </tbody>
   </table>
 
+  <!-- === Mecánicos (CRUD) === -->
   <h2>Mecánicos</h2>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>Nombre</th>
-      <th>Teléfono</th>
-      <th></th>
-      <th></th>
-    </tr>
-    {% for m in mecanicos %}
-    <tr>
-      <form data-id="{{ m['id_mecanico'] }}" class="mecanico-form" action="/admin/actualizar_mecanico/{{ m['id_mecanico'] }}" method="post" style="display: contents;">
-        <td>{{ m['id_mecanico'] }}</td>
-        <td><input name="nombre" value="{{ m['nombre'] }}" disabled></td>
-        <td><input name="telefono" value="{{ m['telefono'] }}" disabled></td>
-        <td><button type="button" class="edit-btn">Editar</button></td>
-      </form>
-      <td>
-        <form action="/admin/eliminar_mecanico/{{ m['id_mecanico'] }}" method="post" style="display: inline;">
-          <button type="submit" class="delete-btn">Eliminar</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <form action="/admin/agregar_mecanico" method="post" style="display: contents;">
+  <table id="mecanicos-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in mecanicos %}
+      <tr data-id="{{ m.id_mecanico }}">
+        <td>{{ m.id_mecanico }}</td>
+        <td><input type="text" name="nombre" value="{{ m.nombre }}" disabled></td>
+        <td><input type="tel" name="telefono" value="{{ m.telefono }}" disabled></td>
+        <td>
+          <button class="edit-mecanico-btn">Editar</button>
+          <button class="save-mecanico-btn save-btn" style="display:none;">Guardar</button>
+          <button class="delete-mecanico-btn delete-btn">Eliminar</button>
+        </td>
+      </tr>
+      {% endfor %}
+      <tr>
         <td>Nuevo</td>
-        <td><input name="nombre" placeholder="Nombre"></td>
-        <td><input name="telefono" placeholder="Teléfono"></td>
-        <td colspan="2"><button type="submit">Agregar</button></td>
-      </form>
-    </tr>
+        <td><input type="text" id="new-nombre" placeholder="Nombre"></td>
+        <td><input type="tel" id="new-telefono" placeholder="Teléfono"></td>
+        <td><button id="add-mecanico-btn">Agregar</button></td>
+      </tr>
+    </tbody>
   </table>
+
   <script>
-    document.querySelectorAll('.mecanico-form .edit-btn').forEach(btn => {
+    // — Guardar cambios en la tabla de citas —
+    document.querySelectorAll('.save-cita-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const form = btn.closest('.mecanico-form');
-        const inputs = form.querySelectorAll('input');
-        const editing = btn.getAttribute('data-editing') === 'true';
-        if (!editing) {
-          inputs.forEach(i => i.disabled = false);
-          btn.setAttribute('data-editing', 'true');
-          btn.textContent = 'Guardar';
-          btn.classList.add('save');
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        const servicio = tr.querySelector('input[name="servicio"]').value;
+        const fecha = tr.querySelector('input[name="fecha"]').value;
+        const hora   = tr.querySelector('input[name="hora"]').value;
+        const estado = tr.querySelector('select[name="estado"]').value;
+        const params = new URLSearchParams({ servicio, fecha, hora, estado });
+        const res = await fetch(`/admin/actualizar_cita/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+        if (!res.ok) alert('Error al actualizar la cita');
+      });
+    });
+
+    // — CRUD Mecánicos —
+    document.querySelectorAll('.edit-mecanico-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        tr.querySelectorAll('input').forEach(i => i.disabled = false);
+        btn.style.display = 'none';
+        tr.querySelector('.save-mecanico-btn').style.display = 'inline-block';
+      });
+    });
+
+    document.querySelectorAll('.save-mecanico-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        const nombre  = tr.querySelector('input[name="nombre"]').value.trim();
+        const telefono = tr.querySelector('input[name="telefono"]').value.trim();
+        const params = new URLSearchParams({ nombre, telefono });
+        const res = await fetch(`/admin/actualizar_mecanico/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+        if (res.ok) {
+          tr.querySelectorAll('input').forEach(i => i.disabled = true);
+          btn.style.display = 'none';
+          tr.querySelector('.edit-mecanico-btn').style.display = 'inline-block';
         } else {
-          const params = new URLSearchParams();
-          inputs.forEach(i => params.append(i.name, i.value));
-          const id = form.dataset.id;
-          const res = await fetch(`/admin/actualizar_mecanico/${id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params.toString()
-          });
-          if (res.ok) {
-            inputs.forEach(i => i.disabled = true);
-            btn.setAttribute('data-editing', 'false');
-            btn.textContent = 'Editar';
-            btn.classList.remove('save');
-          } else {
-            alert('Error al guardar');
-          }
+          alert('Error al guardar cambios');
         }
       });
+    });
+
+    document.querySelectorAll('.delete-mecanico-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        if (confirm('¿Eliminar este mecánico?')) {
+          fetch(`/admin/eliminar_mecanico/${id}`, { method: 'POST' })
+            .then(res => res.ok ? location.reload() : alert('Error al eliminar'));
+        }
+      });
+    });
+
+    document.getElementById('add-mecanico-btn').addEventListener('click', async () => {
+      const nombre = document.getElementById('new-nombre').value.trim();
+      const telefono = document.getElementById('new-telefono').value.trim();
+      if (!nombre || !telefono) return alert('Complete los campos');
+      const params = new URLSearchParams({ nombre, telefono });
+      const res = await fetch('/admin/agregar_mecanico', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      });
+      if (res.ok) location.reload();
+      else alert('Error al agregar mecánico');
     });
   </script>
 </body>
