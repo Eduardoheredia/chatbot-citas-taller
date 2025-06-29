@@ -226,6 +226,28 @@ def admin_panel():
 
     return render_template("admin.html", usuarios=usuarios, citas=citas)
 
+@app.route("/admin/actualizar_cita/<id_cita>", methods=["POST"])
+def actualizar_cita(id_cita):
+    """Permite modificar una cita desde el panel de administración."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    servicio = request.form.get("servicio")
+    fecha = request.form.get("fecha")
+    hora = request.form.get("hora")
+    estado = request.form.get("estado")
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE citas SET servicio = ?, fecha = ?, hora = ?, estado = ? WHERE id_citas = ?",
+            (servicio, fecha, hora, estado, id_cita),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_panel"))
+
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)
