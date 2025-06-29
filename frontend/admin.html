@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel de Administración</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    input { width: 100%; padding: 0.25rem; }
+    button { padding: 0.25rem 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Panel de Administración</h1>
+  <table id="tbl">
+    <thead>
+      <tr><th>ID</th><th>Teléfono</th><th>Rol</th><th>Acciones</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    function cargar() {
+      fetch('/admin/usuarios')
+        .then(r => r.json())
+        .then(usuarios => {
+          const tbody = document.querySelector('#tbl tbody');
+          tbody.innerHTML = '';
+          usuarios.forEach(u => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${u.id_usuario}</td>
+                             <td><input value="${u.telefono}" data-f="tel-${u.id_usuario}"></td>
+                             <td><input value="${u.rol}" data-f="rol-${u.id_usuario}"></td>
+                             <td><button data-id="${u.id_usuario}">Guardar</button></td>`;
+            tbody.appendChild(row);
+          });
+        });
+    }
+    cargar();
+    document.addEventListener('click', ev => {
+      if (ev.target.tagName === 'BUTTON') {
+        const id = ev.target.getAttribute('data-id');
+        const tel = document.querySelector(`[data-f="tel-${id}"]`).value;
+        const rol = document.querySelector(`[data-f="rol-${id}"]`).value;
+        fetch('/admin/usuario/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telefono: tel, rol: rol })
+        }).then(r => r.json()).then(d => alert(d.mensaje || d.error));
+      }
+    });
+  </script>
+</body>
+</html>
