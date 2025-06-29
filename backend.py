@@ -51,6 +51,8 @@ def obtener_historial(id_usuario: str):
         return []
 
 def crear_bd():
+    """Inicializa la base de datos y crea un usuario administrador."""
+    inicial = not os.path.exists(DB_PATH)
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
@@ -58,9 +60,16 @@ def crear_bd():
             CREATE TABLE IF NOT EXISTS usuarios (
                 id_usuario TEXT PRIMARY KEY,
                 telefono INTEGER UNIQUE NOT NULL,
-                contrasena TEXT NOT NULL
+                contrasena TEXT NOT NULL,
+                es_admin INTEGER NOT NULL DEFAULT 0
             )
         ''')
+        if inicial:
+            cursor.execute(
+                "INSERT INTO usuarios (id_usuario, telefono, contrasena, es_admin) VALUES (?,?,?,1)",
+                ("admin", 99999999, hash_contrasena("admin123"))
+            )
+        conn.commit()
         
 
 def obtener_citas(id_usuario: str):
@@ -155,6 +164,7 @@ def login():
         usuario = cursor.fetchone()
     if usuario:
         session["id_usuario"] = usuario[0]
+        session["es_admin"] = bool(usuario[3])
         return redirect(url_for("chatbot_view"))  # 302 Redirect
     else:
         return jsonify({"error": "Credenciales incorrectas"}), 401
@@ -183,6 +193,7 @@ def chatbot_view():
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)
+    session.pop("es_admin", None)
     return redirect(url_for("index"))
 
 
@@ -205,6 +216,23 @@ def citas():
         return jsonify([])
     id_usuario = session["id_usuario"]
     return jsonify(obtener_citas(id_usuario))
+
+
+@app.route("/admin")
+def admin_view():
+    """Muestra las tablas de usuarios y citas para el administrador."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        usuarios = cursor.execute(
+            "SELECT id_usuario, telefono, es_admin FROM usuarios"
+        ).fetchall()
+        citas = cursor.execute(
+            "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas"
+        ).fetchall()
+    return render_template("admin.html", usuarios=usuarios, citas=citas)
 
 if __name__ == "__main__":
     crear_bd()

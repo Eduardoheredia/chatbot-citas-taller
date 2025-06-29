@@ -138,7 +138,7 @@
         const historyDiv = document.getElementById("history");
         hist.forEach(m => {
           const p = document.createElement("p");
-          p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
+          //p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
           historyDiv.appendChild(p);
         });
       });
