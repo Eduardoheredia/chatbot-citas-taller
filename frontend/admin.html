@@ -62,6 +62,7 @@
         <th>Servicio</th>
         <th>Fecha</th>
         <th>Hora</th>
+        <th>Mecánico</th>
         <th>Estado</th>
         <th>Acción</th>
       </tr>
@@ -75,6 +76,14 @@
         <td><input type="text" name="servicio" value="{{ c.servicio }}" disabled></td>
         <td><input type="date" name="fecha" value="{{ c.fecha }}" disabled></td>
         <td><input type="time" name="hora" value="{{ c.hora }}" disabled></td>
+        <td>
+          <select name="id_mecanico" disabled>
+            <option value="">Sin asignar</option>
+            {% for m in mecanicos %}
+            <option value="{{ m.id_mecanico }}" {% if c.id_mecanico == m.id_mecanico %}selected{% endif %}>{{ m.nombre }}</option>
+            {% endfor %}
+          </select>
+        </td>
         <td>
           <select name="estado" disabled>
             <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
@@ -104,6 +113,14 @@
         <td><input type="text" id="new-servicio" placeholder="Servicio"></td>
         <td><input type="date" id="new-fecha"></td>
         <td><input type="time" id="new-hora"></td>
+        <td>
+          <select id="new-mecanico">
+            <option value="" selected>Sin asignar</option>
+            {% for m in mecanicos %}
+            <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
+            {% endfor %}
+          </select>
+        </td>
         <td>
           <select id="new-estado">
             <option value="confirmada">confirmada</option>
@@ -168,8 +185,9 @@
         const servicio = tr.querySelector('input[name="servicio"]').value;
         const fecha = tr.querySelector('input[name="fecha"]').value;
         const hora   = tr.querySelector('input[name="hora"]').value;
+        const mecanico = tr.querySelector('select[name="id_mecanico"]').value;
         const estado = tr.querySelector('select[name="estado"]').value;
-        const params = new URLSearchParams({ servicio, fecha, hora, estado });
+        const params = new URLSearchParams({ servicio, fecha, hora, estado, id_mecanico: mecanico });
         const res = await fetch(`/admin/actualizar_cita/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -201,9 +219,10 @@
       const servicio = document.getElementById('new-servicio').value.trim();
       const fecha = document.getElementById('new-fecha').value;
       const hora = document.getElementById('new-hora').value;
+      const mecanico = document.getElementById('new-mecanico').value;
       const estado = document.getElementById('new-estado').value;
       if (!usuario || !servicio || !fecha || !hora) return alert('Complete los campos');
-      const params = new URLSearchParams({ id_usuario: usuario, servicio, fecha, hora, estado });
+      const params = new URLSearchParams({ id_usuario: usuario, servicio, fecha, hora, estado, id_mecanico: mecanico });
       const res = await fetch('/admin/agregar_cita', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
