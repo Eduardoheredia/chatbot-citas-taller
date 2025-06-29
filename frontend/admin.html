@@ -74,5 +74,64 @@
         </tr>
         {% endfor %}
     </table>
+
+    <h2>Mecánicos</h2>
+    <form method="post" action="/admin/add_mecanico">
+        <input type="text" name="nombre" placeholder="Nombre" required />
+        <input type="text" name="especialidad" placeholder="Especialidad" />
+        <button type="submit">Agregar</button>
+    </form>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Especialidad</th>
+            <th>Acciones</th>
+        </tr>
+        {% for m in mecanicos %}
+        <tr>
+            <form method="post" action="/admin/update_mecanico">
+                <td>{{ m[0] }}<input type="hidden" name="id" value="{{ m[0] }}" /></td>
+                <td><input type="text" name="nombre" value="{{ m[1] }}" /></td>
+                <td><input type="text" name="especialidad" value="{{ m[2] or '' }}" /></td>
+                <td>
+                    <button type="submit">Guardar</button>
+            </form>
+            <form method="post" action="/admin/delete_mecanico" style="display:inline" onsubmit="return confirm('¿Eliminar mecánico?');">
+                <input type="hidden" name="id" value="{{ m[0] }}" />
+                <button type="submit">Eliminar</button>
+            </form>
+                </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Asignación de Mecánicos</h2>
+    <form method="post" action="/admin/asignar_servicios">
+        <select name="servicio_id">
+            {% for s in servicios %}
+            <option value="{{ s[0] }}">{{ s[1] }}</option>
+            {% endfor %}
+        </select>
+        <div>
+            {% for m in mecanicos %}
+            <label>
+                <input type="checkbox" name="mecanicos" value="{{ m[0] }}" /> {{ m[1] }}
+            </label>
+            {% endfor %}
+        </div>
+        <button type="submit">Guardar</button>
+    </form>
+
+    <h3>Asignaciones actuales</h3>
+    <table>
+        <tr><th>Servicio</th><th>Mecánico</th></tr>
+        {% for sid, mid in asignaciones %}
+        <tr>
+            <td>{{ servicios|selectattr('0', 'equalto', sid)|map(attribute=1)|list|first }}</td>
+            <td>{{ mecanicos|selectattr('0', 'equalto', mid)|map(attribute=1)|list|first }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
