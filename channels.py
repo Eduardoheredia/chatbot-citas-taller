@@ -17,6 +17,12 @@ from socketio import AsyncServer
 
 logger = logging.getLogger(__name__)
 
+class CustomSocketIOOutput(SocketIOOutput):
+    """Output channel that sends events only to the user's room."""
+
+    async def _send_message(self, socket_id: Text, response: Any) -> None:
+        await self.sio.emit(self.bot_message_evt, response, room=socket_id)
+
 class CustomSocketIOInput(SocketIOInput):
     """Canal Socket.IO personalizado que usa el ID de sesión como sender_id."""
 
@@ -61,13 +67,14 @@ class CustomSocketIOInput(SocketIOInput):
 
         @sio.on("connect", namespace=self.namespace)
         async def connect(sid: Text, environ: Dict, auth: Optional[Dict]) -> bool:
-            sender = parse_qs(environ.get("QUERY_STRING", "")).get("session_id", [None])[0]
+            sender = None
+            if auth:
+                sender = auth.get("session_id")
             if not sender:
-                sender = sid  # fallback
+                sender = sid  # fallback when no session id is provided
 
             await sio.save_session(sid, {"sender_id": sender})
-            if self.session_persistence:
-                await sio.enter_room(sid, sender)
+            await sio.enter_room(sid, sender)
             logger.info(f"[SOCKET CONNECT] SID={sid}, sender_id={sender}")
             return True
 
@@ -88,8 +95,7 @@ class CustomSocketIOInput(SocketIOInput):
                     or sid
                 )
                 await sio.save_session(sid, {"sender_id": sender})
-                if self.session_persistence:
-                    await sio.enter_room(sid, sender)
+            await sio.enter_room(sid, sender)
 
             logger.info(f"[SOCKET SESSION_CONFIRM] SID={sid}, session_confirm={sender}, sender_id={sender}")
 
@@ -100,7 +106,7 @@ class CustomSocketIOInput(SocketIOInput):
                 namespace=self.namespace,
             )
 
-            output_channel = SocketIOOutput(sio, self.bot_message_evt)
+            output_channel = CustomSocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
                 "/saludo",
                 output_channel,
@@ -128,7 +134,7 @@ class CustomSocketIOInput(SocketIOInput):
             if not sender_id:
                 sender_id = sid
 
-            output_channel = SocketIOOutput(sio, self.bot_message_evt)
+            output_channel = CustomSocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
                 data.get("message", ""),
                 output_channel,
