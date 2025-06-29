@@ -13,6 +13,11 @@
 </head>
 <body>
     <h1>Panel de Administración</h1>
+    <p>
+        <a href="/admin/mecanicos">Mecánicos</a> |
+        <a href="/admin/asignaciones">Asignaciones</a> |
+        <a href="/admin/nueva_cita">Nueva Cita</a>
+    </p>
 
     <h2>Usuarios</h2>
     <table>
@@ -43,8 +48,10 @@
             <th>ID Cita</th>
             <th>ID Usuario</th>
             <th>Servicio</th>
+            <th>Mecánico</th>
             <th>Fecha</th>
-            <th>Hora</th>
+            <th>Inicio</th>
+            <th>Fin</th>
             <th>Estado</th>
             <th>Acciones</th>
         </tr>
@@ -54,12 +61,14 @@
                 <td>{{ c[0] }}<input type="hidden" name="id_citas" value="{{ c[0] }}" /></td>
                 <td>{{ c[1] }}</td>
                 <td>{{ c[2] }}</td>
-                <td><input type="date" name="fecha" value="{{ c[3] }}" /></td>
-                <td><input type="time" name="hora" value="{{ c[4] }}" /></td>
+                <td>{{ c[3] }}</td>
+                <td><input type="date" name="fecha" value="{{ c[4] }}" /></td>
+                <td><input type="time" name="hora" value="{{ c[5] }}" /></td>
+                <td>{{ c[6] }}</td>
                 <td>
                     <select name="estado">
                         {% for est in ['confirmada','reprogramada','cancelada','completada'] %}
-                        <option value="{{ est }}" {% if c[5]==est %}selected{% endif %}>{{ est }}</option>
+                        <option value="{{ est }}" {% if c[7]==est %}selected{% endif %}>{{ est }}</option>
                         {% endfor %}
                     </select>
                 </td>

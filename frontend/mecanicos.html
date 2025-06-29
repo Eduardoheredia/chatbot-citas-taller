@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Mecánicos</title>
+    <style>
+      body { font-family: Arial; padding:2rem; background:#f2f2f2; }
+      table { border-collapse: collapse; width: 100%; margin-top:1rem; }
+      th, td { border: 1px solid #ccc; padding:0.5rem; text-align:left; }
+      th { background:#eee; }
+    </style>
+</head>
+<body>
+<h1>Gestión de Mecánicos</h1>
+<form method="post" action="/admin/mecanicos">
+    <input type="text" name="nombre" placeholder="Nombre" required>
+    <input type="text" name="especialidad" placeholder="Especialidad" required>
+    <button type="submit">Agregar</button>
+</form>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Especialidad</th>
+        <th>Acciones</th>
+    </tr>
+    {% for m in mecanicos %}
+    <tr>
+        <form method="post" action="/admin/mecanicos/update/{{ m[0] }}">
+            <td>{{ m[0] }}</td>
+            <td><input type="text" name="nombre" value="{{ m[1] }}" /></td>
+            <td><input type="text" name="especialidad" value="{{ m[2] }}" /></td>
+            <td>
+                <button type="submit">Guardar</button>
+        </form>
+        <form method="post" action="/admin/mecanicos/delete/{{ m[0] }}" style="display:inline" onsubmit="return confirm('¿Eliminar?');">
+            <button type="submit">Eliminar</button>
+        </form>
+            </td>
+    </tr>
+    {% endfor %}
+</table>
+<a href="/admin">Volver</a>
+</body>
+</html>

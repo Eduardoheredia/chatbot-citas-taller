@@ -51,35 +51,144 @@ def obtener_historial(id_usuario: str):
         return []
 
 def crear_bd():
-    """Inicializa la base de datos y crea un usuario administrador."""
+    """Inicializa la base de datos con todas las tablas necesarias."""
     inicial = not os.path.exists(DB_PATH)
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute('''
+
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS usuarios (
                 id_usuario TEXT PRIMARY KEY,
                 telefono INTEGER UNIQUE NOT NULL,
                 contrasena TEXT NOT NULL,
                 es_admin INTEGER NOT NULL DEFAULT 0
             )
-        ''')
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS servicios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT UNIQUE NOT NULL,
+                duracion_min INTEGER NOT NULL
+            )
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS mecanicos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                especialidad TEXT
+            )
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS servicio_mecanico (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_servicio INTEGER NOT NULL,
+                id_mecanico INTEGER NOT NULL,
+                FOREIGN KEY(id_servicio) REFERENCES servicios(id) ON DELETE CASCADE,
+                FOREIGN KEY(id_mecanico) REFERENCES mecanicos(id) ON DELETE CASCADE,
+                UNIQUE(id_servicio, id_mecanico)
+            )
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS citas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_usuario TEXT NOT NULL,
+                id_servicio INTEGER NOT NULL,
+                id_mecanico INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                hora_inicio TEXT NOT NULL,
+                hora_fin TEXT NOT NULL,
+                estado TEXT NOT NULL CHECK (estado IN ('confirmada','reprogramada','cancelada','completada')),
+                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),
+                FOREIGN KEY(id_servicio) REFERENCES servicios(id),
+                FOREIGN KEY(id_mecanico) REFERENCES mecanicos(id)
+            )
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS trg_solapamiento_insert
+            BEFORE INSERT ON citas
+            BEGIN
+                SELECT CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM citas
+                    WHERE id_mecanico = NEW.id_mecanico
+                      AND fecha = NEW.fecha
+                      AND datetime(NEW.fecha || ' ' || NEW.hora_inicio) < datetime(fecha || ' ' || hora_fin, '+10 minutes')
+                      AND datetime(NEW.fecha || ' ' || NEW.hora_fin) > datetime(fecha || ' ' || hora_inicio, '-10 minutes')
+                ) THEN
+                    RAISE(ABORT, 'Conflicto de horario')
+                END;
+            END;
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS trg_solapamiento_update
+            BEFORE UPDATE ON citas
+            BEGIN
+                SELECT CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM citas
+                    WHERE id_mecanico = NEW.id_mecanico
+                      AND fecha = NEW.fecha
+                      AND id != OLD.id
+                      AND datetime(NEW.fecha || ' ' || NEW.hora_inicio) < datetime(fecha || ' ' || hora_fin, '+10 minutes')
+                      AND datetime(NEW.fecha || ' ' || NEW.hora_fin) > datetime(fecha || ' ' || hora_inicio, '-10 minutes')
+                ) THEN
+                    RAISE(ABORT, 'Conflicto de horario')
+                END;
+            END;
+            """
+        )
+
         if inicial:
             cursor.execute(
                 "INSERT INTO usuarios (id_usuario, telefono, contrasena, es_admin) VALUES (?,?,?,1)",
-                ("admin", 99999999, hash_contrasena("admin123"))
+                ("admin", 99999999, hash_contrasena("admin123")),
+            )
+            cursor.executemany(
+                "INSERT INTO servicios (nombre, duracion_min) VALUES (?, ?)",
+                [
+                    ("Cambio de aceite", 60),
+                    ("Revisión general", 90),
+                    ("Alineación", 45),
+                ],
             )
         conn.commit()
         
 
 def obtener_citas(id_usuario: str):
-    """Return all appointments associated with a user."""
+    """Devuelve todas las citas asociadas a un usuario."""
     try:
         with sqlite3.connect(DB_PATH) as conn:
             conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT id_citas, servicio, fecha, hora, estado FROM citas WHERE id_usuario = ? ORDER BY fecha ASC, hora ASC",
+                """
+                SELECT c.id, s.nombre, m.nombre, c.fecha, c.hora_inicio, c.hora_fin, c.estado
+                FROM citas c
+                JOIN servicios s ON c.id_servicio = s.id
+                JOIN mecanicos m ON c.id_mecanico = m.id
+                WHERE c.id_usuario = ?
+                ORDER BY c.fecha ASC, c.hora_inicio ASC
+                """,
                 (id_usuario,),
             )
             rows = cursor.fetchall()
@@ -87,13 +196,15 @@ def obtener_citas(id_usuario: str):
         rows = []
     return [
         {
-            "id_citas": cid,
-            "servicio": s,
+            "id_cita": cid,
+            "servicio": serv,
+            "mecanico": mec,
             "fecha": f,
-            "hora": h,
+            "hora_inicio": hi,
+            "hora_fin": hf,
             "estado": e,
         }
-        for cid, s, f, h, e in rows
+        for cid, serv, mec, f, hi, hf, e in rows
     ]
 
 def hash_contrasena(password: str) -> str:
@@ -230,18 +341,23 @@ def admin_view():
     fecha = request.args.get("fecha")
     hora = request.args.get("hora")
 
-    query = "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas WHERE 1=1"
+    query = (
+        "SELECT c.id, c.id_usuario, s.nombre, m.nombre, c.fecha, c.hora_inicio, c.hora_fin, c.estado "
+        "FROM citas c "
+        "JOIN servicios s ON c.id_servicio = s.id "
+        "JOIN mecanicos m ON c.id_mecanico = m.id WHERE 1=1"
+    )
     params = []
     if servicio:
-        query += " AND servicio LIKE ?"
+        query += " AND s.nombre LIKE ?"
         params.append(f"%{servicio}%")
     if fecha:
-        query += " AND fecha = ?"
+        query += " AND c.fecha = ?"
         params.append(fecha)
     if hora:
-        query += " AND hora = ?"
+        query += " AND c.hora_inicio = ?"
         params.append(hora)
-    query += " ORDER BY fecha ASC, hora ASC"
+    query += " ORDER BY c.fecha ASC, c.hora_inicio ASC"
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
@@ -269,9 +385,21 @@ def update_cita():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
+        cursor.execute("SELECT id_servicio FROM citas WHERE id = ?", (id_cita,))
+        row = cursor.fetchone()
+        if not row:
+            return redirect(url_for("admin_view"))
+        dur = cursor.execute(
+            "SELECT duracion_min FROM servicios WHERE id = ?", (row[0],)
+        ).fetchone()[0]
+        from datetime import datetime, timedelta
+
+        hi_dt = datetime.strptime(hora, "%H:%M")
+        hf_dt = hi_dt + timedelta(minutes=dur)
+
         cursor.execute(
-            "UPDATE citas SET fecha = ?, hora = ?, estado = ? WHERE id_citas = ?",
-            (fecha, hora, estado, id_cita),
+            "UPDATE citas SET fecha = ?, hora_inicio = ?, hora_fin = ?, estado = ? WHERE id = ?",
+            (fecha, hora, hf_dt.strftime("%H:%M"), estado, id_cita),
         )
         conn.commit()
     return redirect(url_for("admin_view"))
@@ -286,7 +414,7 @@ def delete_cita():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM citas WHERE id_citas = ?", (id_cita,))
+        cursor.execute("DELETE FROM citas WHERE id = ?", (id_cita,))
         conn.commit()
     return redirect(url_for("admin_view"))
 
@@ -300,18 +428,259 @@ def export_csv():
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         rows = cursor.execute(
-            "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas"
+            """
+            SELECT c.id, c.id_usuario, s.nombre, m.nombre, c.fecha, c.hora_inicio, c.hora_fin, c.estado
+            FROM citas c
+            JOIN servicios s ON c.id_servicio = s.id
+            JOIN mecanicos m ON c.id_mecanico = m.id
+            """
         ).fetchall()
     import csv
     from io import StringIO
     si = StringIO()
     writer = csv.writer(si)
-    writer.writerow(["id_citas", "id_usuario", "servicio", "fecha", "hora", "estado"])
+    writer.writerow([
+        "id_cita",
+        "id_usuario",
+        "servicio",
+        "mecanico",
+        "fecha",
+        "hora_inicio",
+        "hora_fin",
+        "estado",
+    ])
     writer.writerows(rows)
     output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=citas.csv"
     output.headers["Content-type"] = "text/csv"
     return output
+
+
+@app.route("/admin/mecanicos", methods=["GET", "POST"])
+def admin_mecanicos():
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        if request.method == "POST":
+            nombre = request.form.get("nombre")
+            especialidad = request.form.get("especialidad")
+            if nombre:
+                cursor.execute(
+                    "INSERT INTO mecanicos (nombre, especialidad) VALUES (?, ?)",
+                    (nombre, especialidad),
+                )
+                conn.commit()
+                return redirect(url_for("admin_mecanicos"))
+
+        mecanicos = cursor.execute(
+            "SELECT id, nombre, especialidad FROM mecanicos ORDER BY nombre"
+        ).fetchall()
+
+    return render_template("mecanicos.html", mecanicos=mecanicos)
+
+
+@app.route("/admin/mecanicos/update/<int:mec_id>", methods=["POST"])
+def update_mecanico(mec_id):
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+    nombre = request.form.get("nombre")
+    especialidad = request.form.get("especialidad")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE mecanicos SET nombre = ?, especialidad = ? WHERE id = ?",
+            (nombre, especialidad, mec_id),
+        )
+        conn.commit()
+    return redirect(url_for("admin_mecanicos"))
+
+
+@app.route("/admin/mecanicos/delete/<int:mec_id>", methods=["POST"])
+def delete_mecanico(mec_id):
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM mecanicos WHERE id = ?", (mec_id,))
+        conn.commit()
+    return redirect(url_for("admin_mecanicos"))
+
+
+@app.route("/admin/asignaciones", methods=["GET", "POST"])
+def admin_asignaciones():
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+
+        if request.method == "POST":
+            servicio_id = request.form.get("servicio_id")
+            mecanico_id = request.form.get("mecanico_id")
+            if servicio_id and mecanico_id:
+                cursor.execute(
+                    "INSERT OR IGNORE INTO servicio_mecanico (id_servicio, id_mecanico) VALUES (?, ?)",
+                    (servicio_id, mecanico_id),
+                )
+                conn.commit()
+                return redirect(url_for("admin_asignaciones"))
+
+        servicios = cursor.execute(
+            "SELECT id, nombre, duracion_min FROM servicios ORDER BY nombre"
+        ).fetchall()
+        mecanicos = cursor.execute(
+            "SELECT id, nombre FROM mecanicos ORDER BY nombre"
+        ).fetchall()
+        rows = cursor.execute(
+            """
+            SELECT s.id, s.nombre, m.id, m.nombre
+            FROM servicios s
+            LEFT JOIN servicio_mecanico sm ON sm.id_servicio = s.id
+            LEFT JOIN mecanicos m ON sm.id_mecanico = m.id
+            ORDER BY s.nombre, m.nombre
+            """
+        ).fetchall()
+
+    asign_dict = {}
+    for sid, sname, mid, mname in rows:
+        asign_dict.setdefault(sid, {"id_servicio": sid, "servicio": sname, "mecanicos": []})
+        if mid:
+            asign_dict[sid]["mecanicos"].append((mid, mname))
+    asignaciones = list(asign_dict.values())
+
+    return render_template(
+        "asignaciones.html",
+        servicios=servicios,
+        mecanicos=mecanicos,
+        asignaciones=asignaciones,
+    )
+
+
+@app.route("/admin/asignaciones/delete", methods=["POST"])
+def delete_asignacion():
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+    sid = request.form.get("servicio_id")
+    mid = request.form.get("mecanico_id")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM servicio_mecanico WHERE id_servicio = ? AND id_mecanico = ?",
+            (sid, mid),
+        )
+        conn.commit()
+    return redirect(url_for("admin_asignaciones"))
+
+
+@app.route("/admin/nueva_cita", methods=["GET", "POST"])
+def nueva_cita():
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        if request.method == "POST":
+            id_usuario = request.form.get("id_usuario")
+            servicio_id = request.form.get("servicio_id")
+            mecanico_id = request.form.get("mecanico_id")
+            fecha = request.form.get("fecha")
+            hora_inicio = request.form.get("hora_inicio")
+            dur = cursor.execute(
+                "SELECT duracion_min FROM servicios WHERE id = ?",
+                (servicio_id,),
+            ).fetchone()[0]
+            from datetime import datetime, timedelta
+
+            hi = datetime.strptime(hora_inicio, "%H:%M")
+            hf = hi + timedelta(minutes=dur)
+            cursor.execute(
+                """
+                INSERT INTO citas (id_usuario, id_servicio, id_mecanico, fecha, hora_inicio, hora_fin, estado)
+                VALUES (?,?,?,?,?,?,?)
+                """,
+                (
+                    id_usuario,
+                    servicio_id,
+                    mecanico_id,
+                    fecha,
+                    hora_inicio,
+                    hf.strftime("%H:%M"),
+                    "confirmada",
+                ),
+            )
+            conn.commit()
+            return redirect(url_for("admin_view"))
+
+        usuarios = cursor.execute(
+            "SELECT id_usuario, telefono FROM usuarios"
+        ).fetchall()
+        servicios = cursor.execute(
+            "SELECT id, nombre, duracion_min FROM servicios"
+        ).fetchall()
+        mecanicos = cursor.execute(
+            "SELECT id, nombre FROM mecanicos ORDER BY nombre"
+        ).fetchall()
+
+    return render_template(
+        "nueva_cita.html",
+        usuarios=usuarios,
+        servicios=servicios,
+        mecanicos=mecanicos,
+    )
+
+
+@app.route("/disponibilidad")
+def disponibilidad():
+    servicio_id = request.args.get("servicio_id")
+    mecanico_id = request.args.get("mecanico_id")
+    fecha = request.args.get("fecha")
+    if not servicio_id or not mecanico_id or not fecha:
+        return jsonify([])
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        row = cursor.execute(
+            "SELECT duracion_min FROM servicios WHERE id = ?", (servicio_id,)
+        ).fetchone()
+        if not row:
+            return jsonify([])
+        dur = row[0]
+        citas = cursor.execute(
+            "SELECT hora_inicio, hora_fin FROM citas WHERE fecha = ? AND id_mecanico = ?",
+            (fecha, mecanico_id),
+        ).fetchall()
+
+    from datetime import datetime, timedelta
+
+    inicio = datetime.strptime("08:00", "%H:%M")
+    fin = datetime.strptime("18:00", "%H:%M")
+    buffer = timedelta(minutes=10)
+    disponibles = []
+    actual = inicio
+    while actual + timedelta(minutes=dur) <= fin:
+        hi = actual
+        hf = hi + timedelta(minutes=dur)
+        solapa = False
+        for ci, cf in citas:
+            ci_dt = datetime.strptime(ci, "%H:%M") - buffer
+            cf_dt = datetime.strptime(cf, "%H:%M") + buffer
+            if hi < cf_dt and hf > ci_dt:
+                solapa = True
+                break
+        if not solapa:
+            disponibles.append(hi.strftime("%H:%M"))
+        actual += timedelta(minutes=30)
+
+    return jsonify(disponibles)
 
 if __name__ == "__main__":
     crear_bd()

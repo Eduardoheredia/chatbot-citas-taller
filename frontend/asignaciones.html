@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asignar Mecánicos</title>
+    <style>
+      body { font-family: Arial; padding:2rem; background:#f2f2f2; }
+      table { border-collapse: collapse; width:100%; margin-top:1rem; }
+      th, td { border:1px solid #ccc; padding:0.5rem; text-align:left; }
+      th { background:#eee; }
+      form.inline { display:inline; }
+    </style>
+</head>
+<body>
+<h1>Asignar Mecánicos a Servicios</h1>
+<form method="post" action="/admin/asignaciones">
+    <select name="servicio_id">
+        {% for s in servicios %}
+        <option value="{{ s[0] }}">{{ s[1] }}</option>
+        {% endfor %}
+    </select>
+    <select name="mecanico_id">
+        {% for m in mecanicos %}
+        <option value="{{ m[0] }}">{{ m[1] }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Asignar</button>
+</form>
+<table>
+    <tr>
+        <th>Servicio</th>
+        <th>Mecánicos asignados</th>
+    </tr>
+    {% for a in asignaciones %}
+    <tr>
+        <td>{{ a.servicio }}</td>
+        <td>
+            {% for m in a.mecanicos %}
+                {{ m[1] }}
+                <form method="post" action="/admin/asignaciones/delete" class="inline" onsubmit="return confirm('¿Quitar?');">
+                    <input type="hidden" name="servicio_id" value="{{ a.id_servicio }}">
+                    <input type="hidden" name="mecanico_id" value="{{ m[0] }}">
+                    <button type="submit">Eliminar</button>
+                </form>
+                <br/>
+            {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<a href="/admin">Volver</a>
+</body>
+</html>
