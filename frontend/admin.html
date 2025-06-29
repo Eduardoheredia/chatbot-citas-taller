@@ -3,170 +3,206 @@
 <head>
   <meta charset="UTF-8">
   <title>Panel de Administración</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; padding: 1rem; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
-    th, td { border: 1px solid #ccc; padding: 0.75rem; text-align: left; }
-    th { background-color: #f0f0f0; }
-    button {
-      padding: 0.4rem 0.8rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #3498db;
-      color: #fff;
-      margin-right: 0.5rem;
-    }
-    button.delete-btn { background-color: #e74c3c; }
-    button.save-btn { background-color: #2ecc71; }
+    body { background: #f8fafb; }
+    h1 { margin-top: 1.5rem; }
+    .btn { margin-right: 0.18rem; }
+    .table-responsive { border-radius: 10px; box-shadow: 0 2px 8px #0001; background: #fff; }
+    table { margin-bottom: 2rem; }
+    th, td { vertical-align: middle !important; }
+    .text-secondary { color: #b0b0b0 !important; }
     @media (max-width: 600px) {
-      table { font-size: 0.9rem; }
-      th, td { padding: 0.5rem; }
-      button { padding: 0.3rem 0.6rem; }
+      h1 { font-size: 1.25rem; }
+      th, td { font-size: 0.92rem; padding: 0.4rem; }
+      .btn { font-size: 0.85rem; padding: 0.25rem 0.65rem; }
     }
   </style>
 </head>
 <body>
-  <h1>Panel de Administración</h1>
-  <a href="/logout">Cerrar sesión</a>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+      <h1 class="h3 text-primary">Panel de Administración</h1>
+      <a href="/logout" class="btn btn-outline-secondary mb-2 mb-sm-0">
+        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+      </a>
+    </div>
 
-  <!-- === Usuarios (solo lectura) === -->
-  <h2>Usuarios</h2>
-  <table id="usuarios-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Teléfono</th>
-        <th>Es admin</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for u in usuarios %}
-      <tr>
-        <td>{{ u.id_usuario }}</td>
-        <td>{{ u.telefono }}</td>
-        <td>{{ 'Sí' if u.es_admin else 'No' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <!-- === Usuarios (solo lectura) === -->
+    <h2 class="h5 text-primary mt-4">Usuarios registrados</h2>
+    <div class="table-responsive mb-4">
+      <table id="usuarios-table" class="table table-bordered table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Teléfono</th>
+            <th>¿Administrador?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in usuarios %}
+          <tr>
+            <td>{{ u.id_usuario }}</td>
+            <td>{{ u.telefono }}</td>
+            <td>
+              {% if u.es_admin %}
+                <span class="badge bg-success">Sí</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-  <!-- === Citas (edición rápida) === -->
-  <h2>Citas</h2>
-  <table id="citas-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Usuario</th>
-        <th>Teléfono</th>
-        <th>Servicio</th>
-        <th>Fecha</th>
-        <th>Hora</th>
-        <th>Mecánico</th>
-        <th>Estado</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in citas %}
-      <tr data-id="{{ c.id_citas }}">
-        <td>{{ c.id_citas }}</td>
-        <td>{{ c.id_usuario }}</td>
-        <td>{{ c.telefono }}</td>
-        <td><input type="text" name="servicio" value="{{ c.servicio }}" disabled></td>
-        <td><input type="date" name="fecha" value="{{ c.fecha }}" disabled></td>
-        <td><input type="time" name="hora" value="{{ c.hora }}" disabled></td>
-        <td>
-          <select name="id_mecanico" disabled>
-            <option value="">Sin asignar</option>
-            {% for m in mecanicos %}
-            <option value="{{ m.id_mecanico }}" {% if c.id_mecanico == m.id_mecanico %}selected{% endif %}>{{ m.nombre }}</option>
-            {% endfor %}
-          </select>
-        </td>
-        <td>
-          <select name="estado" disabled>
-            <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
-            <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
-            <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
-            <option value="completada" {% if c.estado=='completada' %}selected{% endif %}>completada</option>
-          </select>
-        </td>
-        <td>
-          <button class="edit-cita-btn">Editar</button>
-          <button class="save-cita-btn save-btn" style="display:none;">Guardar</button>
-          <button class="delete-cita-btn delete-btn">Eliminar</button>
-        </td>
-      </tr>
-      {% endfor %}
-      <tr>
-        <td>Nuevo</td>
-        <td>
-          <select id="new-usuario">
-            <option value="" selected disabled>Seleccione teléfono</option>
-            {% for u in usuarios %}
-            <option value="{{ u.id_usuario }}">{{ u.telefono }}</option>
-            {% endfor %}
-          </select>
-        </td>
-        <td></td>
-        <td><input type="text" id="new-servicio" placeholder="Servicio"></td>
-        <td><input type="date" id="new-fecha"></td>
-        <td><input type="time" id="new-hora"></td>
-        <td>
-          <select id="new-mecanico">
-            <option value="" selected>Sin asignar</option>
-            {% for m in mecanicos %}
-            <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
-            {% endfor %}
-          </select>
-        </td>
-        <td>
-          <select id="new-estado">
-            <option value="confirmada">confirmada</option>
-            <option value="reprogramada">reprogramada</option>
-            <option value="cancelada">cancelada</option>
-            <option value="completada">completada</option>
-          </select>
-        </td>
-        <td><button id="add-cita-btn">Agregar</button></td>
-      </tr>
-    </tbody>
-  </table>
+    <!-- === Citas (edición rápida) === -->
+    <h2 class="h5 text-primary mt-4">Gestión de citas</h2>
+    <div class="table-responsive mb-4">
+      <table id="citas-table" class="table table-bordered table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Teléfono</th>
+            <th>Servicio</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Mecánico</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in citas %}
+          <tr data-id="{{ c.id_citas }}">
+            <td>{{ c.id_citas }}</td>
+            <td>{{ c.id_usuario }}</td>
+            <td>{{ c.telefono }}</td>
+            <td><input type="text" name="servicio" value="{{ c.servicio }}" class="form-control form-control-sm" disabled></td>
+            <td><input type="date" name="fecha" value="{{ c.fecha }}" class="form-control form-control-sm" disabled></td>
+            <td><input type="time" name="hora" value="{{ c.hora }}" class="form-control form-control-sm" disabled></td>
+            <td>
+              <select name="id_mecanico" class="form-select form-select-sm" disabled>
+                <option value="">Sin asignar</option>
+                {% for m in mecanicos %}
+                <option value="{{ m.id_mecanico }}" {% if c.id_mecanico == m.id_mecanico %}selected{% endif %}>{{ m.nombre }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <select name="estado" class="form-select form-select-sm" disabled>
+                <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
+                <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
+                <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
+                <option value="completada" {% if c.estado=='completada' %}selected{% endif %}>completada</option>
+              </select>
+            </td>
+            <td>
+              <button class="edit-cita-btn btn btn-sm btn-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="save-cita-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
+                <i class="bi bi-check-lg"></i>
+              </button>
+              <button class="delete-cita-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td class="text-secondary">Nuevo</td>
+            <td>
+              <select id="new-usuario" class="form-select form-select-sm">
+                <option value="" selected disabled>Seleccione teléfono</option>
+                {% for u in usuarios %}
+                <option value="{{ u.id_usuario }}">{{ u.telefono }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td></td>
+            <td><input type="text" id="new-servicio" placeholder="Servicio" class="form-control form-control-sm"></td>
+            <td><input type="date" id="new-fecha" class="form-control form-control-sm"></td>
+            <td><input type="time" id="new-hora" class="form-control form-control-sm"></td>
+            <td>
+              <select id="new-mecanico" class="form-select form-select-sm">
+                <option value="" selected>Sin asignar</option>
+                {% for m in mecanicos %}
+                <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <select id="new-estado" class="form-select form-select-sm">
+                <option value="confirmada">confirmada</option>
+                <option value="reprogramada">reprogramada</option>
+                <option value="cancelada">cancelada</option>
+                <option value="completada">completada</option>
+              </select>
+            </td>
+            <td>
+              <button id="add-cita-btn" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-lg"></i> Agregar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  <!-- === Mecánicos (CRUD) === -->
-  <h2>Mecánicos</h2>
-  <table id="mecanicos-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Teléfono</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in mecanicos %}
-      <tr data-id="{{ m.id_mecanico }}">
-        <td>{{ m.id_mecanico }}</td>
-        <td><input type="text" name="nombre" value="{{ m.nombre }}" disabled></td>
-        <td><input type="tel" name="telefono" value="{{ m.telefono }}" disabled></td>
-        <td>
-          <button class="edit-mecanico-btn">Editar</button>
-          <button class="save-mecanico-btn save-btn" style="display:none;">Guardar</button>
-          <button class="delete-mecanico-btn delete-btn">Eliminar</button>
-        </td>
-      </tr>
-      {% endfor %}
-      <tr>
-        <td>Nuevo</td>
-        <td><input type="text" id="new-nombre" placeholder="Nombre"></td>
-        <td><input type="tel" id="new-telefono" placeholder="Teléfono"></td>
-        <td><button id="add-mecanico-btn">Agregar</button></td>
-      </tr>
-    </tbody>
-  </table>
-
+    <!-- === Mecánicos (CRUD) === -->
+    <h2 class="h5 text-primary mt-4">Gestión de mecánicos</h2>
+    <div class="table-responsive mb-4">
+      <table id="mecanicos-table" class="table table-bordered table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mecanicos %}
+          <tr data-id="{{ m.id_mecanico }}">
+            <td>{{ m.id_mecanico }}</td>
+            <td><input type="text" name="nombre" value="{{ m.nombre }}" class="form-control form-control-sm" disabled></td>
+            <td><input type="tel" name="telefono" value="{{ m.telefono }}" class="form-control form-control-sm" disabled></td>
+            <td>
+              <button class="edit-mecanico-btn btn btn-sm btn-primary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="save-mecanico-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
+                <i class="bi bi-check-lg"></i>
+              </button>
+              <button class="delete-mecanico-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td class="text-secondary">Nuevo</td>
+            <td><input type="text" id="new-nombre" placeholder="Nombre" class="form-control form-control-sm"></td>
+            <td><input type="tel" id="new-telefono" placeholder="Teléfono" class="form-control form-control-sm"></td>
+            <td>
+              <button id="add-mecanico-btn" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-lg"></i> Agregar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Tu JavaScript CRUD, sin cambios -->
   <script>
     // — CRUD Citas —
     document.querySelectorAll('.edit-cita-btn').forEach(btn => {
