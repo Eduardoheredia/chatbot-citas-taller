@@ -73,7 +73,6 @@ def crear_bd():
                 telefono INTEGER UNIQUE NOT NULL
             )
             """
-        )
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
         cols = [c[1] for c in cursor.fetchall()]
