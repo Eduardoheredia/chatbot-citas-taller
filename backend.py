@@ -165,7 +165,9 @@ def login():
     if usuario:
         session["id_usuario"] = usuario[0]
         session["es_admin"] = bool(usuario[3])
-        return redirect(url_for("chatbot_view"))  # 302 Redirect
+        if session["es_admin"]:
+            return redirect(url_for("admin_view"))
+        return redirect(url_for("chatbot_view"))  
     else:
         return jsonify({"error": "Credenciales incorrectas"}), 401
 

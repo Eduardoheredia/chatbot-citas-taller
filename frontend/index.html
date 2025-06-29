@@ -65,8 +65,8 @@
   
       // Si es login exitoso y NO estamos en modo registro:
       if (res.ok && !modoRegistro) {
-        // Redirigimos manualmente al chatbot
-        window.location.href = "/chatbot";
+        // Redirigimos manualmente a la URL final que responda el servidor
+        window.location.href = res.url;
         return;
       }
   
