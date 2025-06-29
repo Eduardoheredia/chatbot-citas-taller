@@ -267,6 +267,65 @@ def actualizar_cita(id_cita):
 
     return redirect(url_for("admin_panel"))
 
+@app.route("/admin/agregar_mecanico", methods=["POST"])
+def agregar_mecanico():
+    """Agregar un nuevo mecánico desde el panel de administración."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    nombre = request.form.get("nombre")
+    telefono = request.form.get("telefono")
+    if not nombre:
+        return redirect(url_for("admin_panel"))
+
+    id_mecanico = generar_id_aleatorio()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO mecanicos (id_mecanico, nombre, telefono) VALUES (?, ?, ?)",
+            (id_mecanico, nombre, telefono),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/actualizar_mecanico/<id_mecanico>", methods=["POST"])
+def actualizar_mecanico(id_mecanico):
+    """Editar los datos de un mecánico."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    nombre = request.form.get("nombre")
+    telefono = request.form.get("telefono")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE mecanicos SET nombre = ?, telefono = ? WHERE id_mecanico = ?",
+            (nombre, telefono, id_mecanico),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/eliminar_mecanico/<id_mecanico>", methods=["POST"])
+def eliminar_mecanico(id_mecanico):
+    """Eliminar un mecánico de la base de datos."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM mecanicos WHERE id_mecanico = ?",
+            (id_mecanico,),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_panel"))
+
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)

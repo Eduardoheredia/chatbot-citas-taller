@@ -61,14 +61,36 @@
 
   <h2>Mecánicos</h2>
   <table>
-    <tr><th>ID</th><th>Nombre</th><th>Teléfono</th></tr>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Teléfono</th>
+      <th></th>
+      <th></th>
+    </tr>
     {% for m in mecanicos %}
     <tr>
-      <td>{{ m['id_mecanico'] }}</td>
-      <td>{{ m['nombre'] }}</td>
-      <td>{{ m['telefono'] }}</td>
+      <form action="/admin/actualizar_mecanico/{{ m['id_mecanico'] }}" method="post" style="display: contents;">
+        <td>{{ m['id_mecanico'] }}</td>
+        <td><input name="nombre" value="{{ m['nombre'] }}"></td>
+        <td><input name="telefono" value="{{ m['telefono'] }}"></td>
+        <td><button type="submit">Guardar</button></td>
+      </form>
+      <td>
+        <form action="/admin/eliminar_mecanico/{{ m['id_mecanico'] }}" method="post" style="display: inline;">
+          <button type="submit">Eliminar</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
+    <tr>
+      <form action="/admin/agregar_mecanico" method="post" style="display: contents;">
+        <td>Nuevo</td>
+        <td><input name="nombre" placeholder="Nombre"></td>
+        <td><input name="telefono" placeholder="Teléfono"></td>
+        <td colspan="2"><button type="submit">Agregar</button></td>
+      </form>
+    </tr>
   </table>
 </body>
 </html>
