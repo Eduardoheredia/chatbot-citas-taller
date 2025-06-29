@@ -50,16 +50,57 @@ def obtener_historial(id_usuario: str):
         return []
 
 def crear_bd():
+    """Ensure DB schema exists and create a default admin user."""
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute('''
+        # Tabla de usuarios con columna es_admin para privilegios
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS usuarios (
                 id_usuario TEXT PRIMARY KEY,
                 telefono INTEGER UNIQUE NOT NULL,
-                contrasena TEXT NOT NULL
+                contrasena TEXT NOT NULL,
+                es_admin INTEGER NOT NULL DEFAULT 0
             )
-        ''')
+            """
+        )
+        # Si la base ya existía sin la columna es_admin la añadimos
+        cursor.execute("PRAGMA table_info(usuarios)")
+        cols = [c[1] for c in cursor.fetchall()]
+        if "es_admin" not in cols:
+            cursor.execute(
+                "ALTER TABLE usuarios ADD COLUMN es_admin INTEGER NOT NULL DEFAULT 0"
+            )
+
+        # Tabla de citas (por si las acciones de Rasa no la crearon aún)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS citas (
+                id_citas TEXT PRIMARY KEY,
+                id_usuario TEXT NOT NULL,
+                servicio TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                hora TEXT NOT NULL,
+                estado TEXT NOT NULL CHECK (
+                    estado IN ('confirmada','reprogramada','cancelada','completada')
+                ),
+                FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario)
+            )
+            """
+        )
+
+        # Crear un usuario administrador por defecto
+        admin_phone = os.environ.get("ADMIN_PHONE", "99999999")
+        admin_pass = os.environ.get("ADMIN_PASS", "admin123")
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO usuarios (id_usuario, telefono, contrasena, es_admin)
+            VALUES (?, ?, ?, 1)
+            """,
+            ("admin", admin_phone, hash_contrasena(admin_pass)),
+        )
+        conn.commit()
         
 
 def obtener_citas(id_usuario: str):
@@ -129,7 +170,7 @@ def registro():
             conn.execute("PRAGMA foreign_keys = ON")
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO usuarios (id_usuario, telefono, contrasena) VALUES (?, ?, ?)",
+                "INSERT INTO usuarios (id_usuario, telefono, contrasena, es_admin) VALUES (?, ?, ?, 0)",
                 (id_usuario, telefono, hash_contrasena(contrasena))
             )
             conn.commit()
@@ -147,15 +188,21 @@ def login():
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM usuarios WHERE telefono = ? AND contrasena = ?",
+            "SELECT id_usuario, es_admin FROM usuarios WHERE telefono = ? AND contrasena = ?",
             (telefono, hash_contrasena(contrasena))
         )
         usuario = cursor.fetchone()
+
     if usuario:
+        # Guardamos el ID y si es administrador en la sesión
         session["id_usuario"] = usuario[0]
-        return redirect(url_for("chatbot_view"))  # 302 Redirect
-    else:
-        return jsonify({"error": "Credenciales incorrectas"}), 401
+        session["es_admin"] = bool(usuario[1])
+        # Si el usuario es admin redirigimos a su panel
+        if usuario[1]:
+            return redirect(url_for("admin_panel"))
+        return redirect(url_for("chatbot_view"))
+
+    return jsonify({"error": "Credenciales incorrectas"}), 401
 
 @app.route("/chatbot")
 def chatbot_view():
@@ -177,9 +224,29 @@ def chatbot_view():
     resp.set_cookie("session_id", id_usuario, httponly=True, samesite="Lax")
     return resp
 
+
+@app.route("/admin")
+def admin_panel():
+    """Muestra todas las tablas si el usuario es administrador."""
+    if not session.get("es_admin"):
+        return redirect(url_for("index"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT id_usuario, telefono, es_admin FROM usuarios")
+        usuarios = cursor.fetchall()
+        cursor.execute(
+            "SELECT id_citas, id_usuario, servicio, fecha, hora, estado FROM citas"
+        )
+        citas = cursor.fetchall()
+
+    return render_template("admin.html", usuarios=usuarios, citas=citas)
+
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)
+    session.pop("es_admin", None)
     return redirect(url_for("index"))
 
 @app.route("/historial", methods=["GET"])
