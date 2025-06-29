@@ -31,6 +31,13 @@
     </table>
 
     <h2>Citas</h2>
+    <form method="get" action="/admin">
+        <input type="text" name="servicio" placeholder="Servicio" value="{{ filtros.servicio }}" />
+        <input type="date" name="fecha" value="{{ filtros.fecha }}" />
+        <input type="time" name="hora" value="{{ filtros.hora }}" />
+        <button type="submit">Filtrar</button>
+        <a href="/admin/export_csv">Exportar CSV</a>
+    </form>
     <table>
         <tr>
             <th>ID Cita</th>
@@ -39,15 +46,31 @@
             <th>Fecha</th>
             <th>Hora</th>
             <th>Estado</th>
+            <th>Acciones</th>
         </tr>
         {% for c in citas %}
         <tr>
-            <td>{{ c[0] }}</td>
-            <td>{{ c[1] }}</td>
-            <td>{{ c[2] }}</td>
-            <td>{{ c[3] }}</td>
-            <td>{{ c[4] }}</td>
-            <td>{{ c[5] }}</td>
+            <form method="post" action="/admin/update_cita">
+                <td>{{ c[0] }}<input type="hidden" name="id_citas" value="{{ c[0] }}" /></td>
+                <td>{{ c[1] }}</td>
+                <td>{{ c[2] }}</td>
+                <td><input type="date" name="fecha" value="{{ c[3] }}" /></td>
+                <td><input type="time" name="hora" value="{{ c[4] }}" /></td>
+                <td>
+                    <select name="estado">
+                        {% for est in ['confirmada','reprogramada','cancelada','completada'] %}
+                        <option value="{{ est }}" {% if c[5]==est %}selected{% endif %}>{{ est }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <button type="submit">Guardar</button>
+            </form>
+            <form method="post" action="/admin/delete_cita" style="display:inline" onsubmit="return confirm('¿Eliminar cita?');">
+                <input type="hidden" name="id_citas" value="{{ c[0] }}" />
+                <button type="submit">Eliminar</button>
+            </form>
+                </td>
         </tr>
         {% endfor %}
     </table>
