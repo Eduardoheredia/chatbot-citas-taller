@@ -88,17 +88,12 @@ def obtener_horarios_disponibles(fecha: Text) -> List[Text]:
 
 
 def tabla_horarios(horarios: List[Text], html: bool = False) -> Text:
-    """Format available times as a plain text or HTML table."""
+    """Return the available times formatted as an HTML table."""
     if not horarios:
         return "No hay horarios disponibles para ese día."
 
-    if html:
-        filas = "".join(f"<tr><td>{h}</td></tr>" for h in horarios)
-        return f"<table><thead><tr><th>Hora</th></tr></thead><tbody>{filas}</tbody></table>"
-
-    encabezado = "| Hora |\n|------|\n"
-    filas = "\n".join(f"| {h} |" for h in horarios)
-    return encabezado + filas
+    filas = "".join(f"<tr><td>{h}</td></tr>" for h in horarios)
+    return f"<table><thead><tr><th>Hora</th></tr></thead><tbody>{filas}</tbody></table>"
 
 class ActionDefaultFallback(Action):
     def name(self) -> str:
@@ -238,8 +233,7 @@ class ValidateAgendarCitaForm(FormValidationAction):
                 return {"fecha": None}
             fecha_str = fecha.isoformat()
             horarios = obtener_horarios_disponibles(fecha_str)
-            html = tracker.get_latest_input_channel() == "custom_socketio"
-            tabla = tabla_horarios(horarios, html=html)
+            tabla = tabla_horarios(horarios, html=True)
             dispatcher.utter_message(text=tabla)
             return {"fecha": fecha_str}
         except Exception as e:
