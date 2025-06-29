@@ -90,6 +90,11 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const id_usuario = "{{ id_usuario }}";
+      const storedUser = localStorage.getItem("id_usuario");
+      if (storedUser && storedUser !== id_usuario) {
+        localStorage.clear();
+      }
+      localStorage.setItem("id_usuario", id_usuario);
       const socketUrl   = "{{ socket_url }}";
       const socketPath  = "/socket.io";
       const socketUrlWithSession = socketUrl + "?session_id=" + id_usuario;
