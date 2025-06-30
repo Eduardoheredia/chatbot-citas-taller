@@ -75,6 +75,8 @@ responses:
     - text: "⚠️ Fecha inválida. Ingresa una fecha igual o futura a la actual(Ej: 2025-05-30)"
   utter_error_hora:
     - text: "⚠️ Hora fuera de nuestro horario (08:00 - 18:00)"
+  utter_hora_ocupada:
+    - text: "⚠️ Esa hora ya está ocupada. Por favor elige otra."
   utter_horarios:
     - text: "Horarios de atención:\nLunes a Viernes: 08:00 - 18:00\nSábados: 08:00 - 18:00  y \ndomingos cerrado"
   utter_default:
