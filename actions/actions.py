@@ -159,6 +159,13 @@ class ActionAgendarCita(Action):
                 conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
+                    "SELECT 1 FROM citas WHERE fecha = ? AND hora = ? AND estado IN ('confirmada','reprogramada')",
+                    (fecha, hora),
+                )
+                if cursor.fetchone():
+                    dispatcher.utter_message(response="utter_hora_ocupada")
+                    return []
+                cursor.execute(
                      "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado) VALUES (?, ?, ?, ?, ?, ?)",
                     (id_cita, id_usuario, servicio, fecha, hora, "confirmada"),
                 )
@@ -278,7 +285,23 @@ class ValidateAgendarCitaForm(FormValidationAction):
             if hora < time(8, 0) or hora > time(18, 0):
                 dispatcher.utter_message(response="utter_error_hora")
                 return {"hora": None}
-            return {"hora": hora.strftime("%H:%M")}
+            hora_str = hora.strftime("%H:%M")
+            fecha = tracker.get_slot("fecha")
+            if fecha:
+                try:
+                    with sqlite3.connect(DB_PATH) as conn:
+                        conn.execute("PRAGMA foreign_keys = ON")
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            "SELECT 1 FROM citas WHERE fecha = ? AND hora = ? AND estado IN ('confirmada','reprogramada')",
+                            (fecha, hora_str),
+                        )
+                        if cursor.fetchone():
+                            dispatcher.utter_message(response="utter_hora_ocupada")
+                            return {"hora": None}
+                except Exception as exc:
+                    logger.error(f"Error validando hora ocupada: {exc}")
+            return {"hora": hora_str}
         except Exception:
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
