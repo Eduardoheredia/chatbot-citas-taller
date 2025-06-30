@@ -62,6 +62,59 @@
 
     <!-- === Citas (edición rápida) === -->
     <h2 class="h5 text-primary mt-4">Gestión de citas</h2>
+    <!-- Filtros -->
+    <div id="citas-filtros" class="row g-2 align-items-end mb-3">
+      <div class="col">
+        <div class="form-floating">
+          <input type="date" id="filtrar-desde" class="form-control" placeholder="Desde">
+          <label for="filtrar-desde">Desde</label>
+        </div>
+      </div>
+      <div class="col">
+        <div class="form-floating">
+          <input type="date" id="filtrar-hasta" class="form-control" placeholder="Hasta">
+          <label for="filtrar-hasta">Hasta</label>
+        </div>
+      </div>
+      <div class="col">
+        <div class="form-floating">
+          <select id="filtrar-estado" class="form-select" aria-label="Estado">
+            <option value="" selected>Todos</option>
+            <option value="confirmada">confirmada</option>
+            <option value="reprogramada">reprogramada</option>
+            <option value="cancelada">cancelada</option>
+            <option value="completada">completada</option>
+          </select>
+          <label for="filtrar-estado">Estado</label>
+        </div>
+      </div>
+      <div class="col">
+        <div class="form-floating">
+          <select id="filtrar-mecanico" class="form-select" aria-label="Mecánico">
+            <option value="" selected>Todos</option>
+            {% for m in mecanicos %}
+            <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
+            {% endfor %}
+          </select>
+          <label for="filtrar-mecanico">Mecánico</label>
+        </div>
+      </div>
+      <div class="col">
+        <div class="form-floating">
+          <input type="text" id="filtrar-servicio" class="form-control" placeholder="Servicio">
+          <label for="filtrar-servicio">Servicio</label>
+        </div>
+      </div>
+      <div class="col">
+        <div class="form-floating">
+          <input type="text" id="filtrar-busqueda" class="form-control" placeholder="Usuario o teléfono">
+          <label for="filtrar-busqueda">Usuario o teléfono</label>
+        </div>
+      </div>
+      <div class="col-12 col-md-auto">
+        <button id="limpiar-filtros" type="button" class="btn btn-outline-secondary w-100">Limpiar filtros</button>
+      </div>
+    </div>
     <div class="table-responsive mb-4">
       <table id="citas-table" class="table table-bordered table-hover align-middle mb-0">
         <thead class="table-light">
@@ -266,6 +319,50 @@
       });
       if (res.ok) location.reload();
       else alert('Error al agregar cita');
+    });
+
+    // — Filtros de Citas —
+    const filtros = {
+      desde: document.getElementById('filtrar-desde'),
+      hasta: document.getElementById('filtrar-hasta'),
+      estado: document.getElementById('filtrar-estado'),
+      mecanico: document.getElementById('filtrar-mecanico'),
+      servicio: document.getElementById('filtrar-servicio'),
+      busqueda: document.getElementById('filtrar-busqueda'),
+    };
+
+    function filtrarTabla() {
+      const d = filtros.desde.value;
+      const h = filtros.hasta.value;
+      const est = filtros.estado.value.toLowerCase();
+      const mec = filtros.mecanico.value;
+      const serv = filtros.servicio.value.toLowerCase();
+      const busc = filtros.busqueda.value.toLowerCase();
+      document.querySelectorAll('#citas-table tbody tr').forEach(tr => {
+        if (tr.querySelector('td.text-secondary')) return; // fila nueva
+        const fecha = tr.querySelector('input[name="fecha"]').value;
+        const estado = tr.querySelector('select[name="estado"]').value.toLowerCase();
+        const mecanico = tr.querySelector('select[name="id_mecanico"]').value;
+        const servicio = tr.querySelector('input[name="servicio"]').value.toLowerCase();
+        const usuario = tr.children[1].textContent.toLowerCase();
+        const telefono = tr.children[2].textContent.toLowerCase();
+
+        let mostrar = true;
+        if (d && fecha < d) mostrar = false;
+        if (h && fecha > h) mostrar = false;
+        if (est && estado !== est) mostrar = false;
+        if (mec && mecanico !== mec) mostrar = false;
+        if (serv && !servicio.includes(serv)) mostrar = false;
+        if (busc && !usuario.includes(busc) && !telefono.includes(busc)) mostrar = false;
+
+        tr.style.display = mostrar ? '' : 'none';
+      });
+    }
+
+    Object.values(filtros).forEach(el => el.addEventListener('input', filtrarTabla));
+    document.getElementById('limpiar-filtros').addEventListener('click', () => {
+      Object.values(filtros).forEach(el => el.value = '');
+      filtrarTabla();
     });
 
     // — CRUD Mecánicos —
