@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del Mecánico</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 0;
+      color: #0f172a;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f766e, #0d9488);
+      color: #ffffff;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.75rem;
+    }
+
+    header a {
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      transition: background 0.3s ease;
+    }
+
+    header a:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    section {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    section h2 {
+      margin-top: 0;
+      color: #0f766e;
+      font-size: 1.25rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #64748b;
+      margin: 1.5rem 0 0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Panel del Mecánico</h1>
+    <a href="/logout">Cerrar sesión</a>
+  </header>
+  <main>
+    <section>
+      <h2>Horarios asignados</h2>
+      {% if asignaciones %}
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Servicio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in asignaciones %}
+          <tr>
+            <td>{{ item['fecha'] }}</td>
+            <td>{{ item['hora'] }}</td>
+            <td>{{ item['servicio'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty-msg">Aún no tienes horarios asignados.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Clientes asignados</h2>
+      {% if asignaciones %}
+      <table>
+        <thead>
+          <tr>
+            <th>Teléfono del cliente</th>
+            <th>Servicio</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in asignaciones %}
+          <tr>
+            <td>{{ item['telefono_cliente'] }}</td>
+            <td>{{ item['servicio'] }}</td>
+            <td>{{ item['fecha'] }}</td>
+            <td>{{ item['hora'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty-msg">Sin clientes asignados por el momento.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
