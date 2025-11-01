@@ -15,10 +15,14 @@
     table { margin-bottom: 2rem; }
     th, td { vertical-align: middle !important; }
     .text-secondary { color: #b0b0b0 !important; }
+    .table-controls { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; padding: 0.6rem 1rem; }
+    .table-controls .form-range { min-width: 160px; }
+    .table-controls .pagination { margin-bottom: 0; }
     @media (max-width: 600px) {
       h1 { font-size: 1.25rem; }
       th, td { font-size: 0.92rem; padding: 0.4rem; }
       .btn { font-size: 0.85rem; padding: 0.25rem 0.65rem; }
+      .table-controls { padding: 0.75rem; }
     }
   </style>
 </head>
@@ -168,7 +172,7 @@
             </td>
           </tr>
           {% endfor %}
-          <tr>
+          <tr class="new-row">
             <td class="text-secondary">Nuevo</td>
             <td>
               <select id="new-usuario" class="form-select form-select-sm">
@@ -239,7 +243,7 @@
             </td>
           </tr>
           {% endfor %}
-          <tr>
+          <tr class="new-row">
             <td class="text-secondary">Nuevo</td>
             <td><input type="text" id="new-nombre" placeholder="Nombre" class="form-control form-control-sm"></td>
             <td><input type="tel" id="new-telefono" placeholder="Teléfono" class="form-control form-control-sm"></td>
@@ -257,6 +261,133 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Tu JavaScript CRUD, sin cambios -->
   <script>
+    class TablePaginator {
+      constructor(table, options = {}) {
+        this.table = table;
+        this.rowsPerPage = options.rowsPerPage || 7;
+        this.excludeSelector = options.excludeSelector || '';
+        this.currentPage = 1;
+        this.container = document.createElement('div');
+        this.container.className = 'table-controls d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mt-2';
+        this.info = document.createElement('div');
+        this.info.className = 'small text-secondary';
+        this.rangeWrapper = document.createElement('div');
+        this.rangeWrapper.className = 'd-flex align-items-center gap-2 flex-grow-1 w-100';
+        this.rangeLabel = document.createElement('span');
+        this.rangeLabel.className = 'small text-secondary text-nowrap';
+        this.slider = document.createElement('input');
+        this.slider.type = 'range';
+        this.slider.className = 'form-range flex-grow-1';
+        this.slider.min = 1;
+        this.slider.max = 1;
+        this.slider.value = 1;
+        this.slider.addEventListener('input', () => {
+          this.currentPage = Number(this.slider.value);
+          this.refresh();
+        });
+        this.rangeWrapper.append(this.rangeLabel, this.slider);
+        this.nav = document.createElement('nav');
+        this.nav.setAttribute('aria-label', 'Paginación de tabla');
+        this.container.append(this.info, this.rangeWrapper, this.nav);
+        this.table.parentElement.insertAdjacentElement('afterend', this.container);
+        this.refresh();
+      }
+
+      get dataRows() {
+        const selector = this.excludeSelector ? `tbody tr:not(${this.excludeSelector})` : 'tbody tr';
+        return Array.from(this.table.querySelectorAll(selector));
+      }
+
+      get filteredRows() {
+        return this.dataRows.filter(row => row.dataset.filteredOut !== 'true');
+      }
+
+      goToPage(page) {
+        this.currentPage = Math.max(1, Number(page) || 1);
+        this.refresh();
+      }
+
+      refresh() {
+        const rows = this.dataRows;
+        const visibleRows = this.filteredRows;
+        const totalPages = Math.max(1, Math.ceil(visibleRows.length / this.rowsPerPage));
+        this.currentPage = Math.min(this.currentPage, totalPages);
+        const start = (this.currentPage - 1) * this.rowsPerPage;
+        const end = start + this.rowsPerPage;
+
+        rows.forEach(row => {
+          if (row.dataset.filteredOut === 'true') {
+            row.style.display = 'none';
+          }
+        });
+
+        visibleRows.forEach((row, index) => {
+          row.style.display = (index >= start && index < end) ? '' : 'none';
+        });
+
+        if (this.excludeSelector) {
+          this.table.querySelectorAll(`tbody tr${this.excludeSelector}`).forEach(row => {
+            row.style.display = '';
+          });
+        }
+
+        const totalVisible = visibleRows.length;
+        const from = totalVisible ? start + 1 : 0;
+        const to = totalVisible ? Math.min(end, totalVisible) : 0;
+        this.info.textContent = totalVisible ? `Mostrando ${from}-${to} de ${totalVisible}` : 'Sin registros';
+
+        this.slider.max = totalPages;
+        this.slider.value = this.currentPage;
+        this.slider.disabled = totalPages <= 1;
+        this.rangeLabel.textContent = `Página ${this.currentPage} de ${totalPages}`;
+
+        this.renderPagination(totalPages);
+      }
+
+      renderPagination(totalPages) {
+        this.nav.innerHTML = '';
+        if (totalPages <= 1) {
+          this.nav.style.display = 'none';
+          return;
+        }
+
+        this.nav.style.display = '';
+        const ul = document.createElement('ul');
+        ul.className = 'pagination pagination-sm mb-0';
+
+        const createItem = (label, page, disabled = false, active = false) => {
+          const li = document.createElement('li');
+          li.className = 'page-item';
+          if (disabled) li.classList.add('disabled');
+          if (active) li.classList.add('active');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'page-link';
+          button.textContent = label;
+          if (!disabled) {
+            button.addEventListener('click', () => {
+              this.currentPage = page;
+              this.refresh();
+            });
+          }
+          li.appendChild(button);
+          return li;
+        };
+
+        ul.appendChild(createItem('«', Math.max(1, this.currentPage - 1), this.currentPage === 1));
+        for (let page = 1; page <= totalPages; page++) {
+          ul.appendChild(createItem(page, page, false, page === this.currentPage));
+        }
+        ul.appendChild(createItem('»', Math.min(totalPages, this.currentPage + 1), this.currentPage === totalPages));
+
+        this.nav.appendChild(ul);
+      }
+    }
+
+    const usuariosPaginator = new TablePaginator(document.getElementById('usuarios-table'), { rowsPerPage: 7 });
+    const citasPaginator = new TablePaginator(document.getElementById('citas-table'), { rowsPerPage: 7, excludeSelector: '.new-row' });
+    const mecanicosPaginator = new TablePaginator(document.getElementById('mecanicos-table'), { rowsPerPage: 7, excludeSelector: '.new-row' });
+
     // — CRUD Citas —
     document.querySelectorAll('.edit-cita-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -339,7 +470,7 @@
       const serv = filtros.servicio.value.toLowerCase();
       const busc = filtros.busqueda.value.toLowerCase();
       document.querySelectorAll('#citas-table tbody tr').forEach(tr => {
-        if (tr.querySelector('td.text-secondary')) return; // fila nueva
+        if (tr.classList.contains('new-row')) return; // fila nueva
         const fecha = tr.querySelector('input[name="fecha"]').value;
         const estado = tr.querySelector('select[name="estado"]').value.toLowerCase();
         const mecanico = tr.querySelector('select[name="id_mecanico"]').value;
@@ -354,9 +485,9 @@
         if (mec && mecanico !== mec) mostrar = false;
         if (serv && !servicio.includes(serv)) mostrar = false;
         if (busc && !usuario.includes(busc) && !telefono.includes(busc)) mostrar = false;
-
-        tr.style.display = mostrar ? '' : 'none';
+        tr.dataset.filteredOut = mostrar ? 'false' : 'true';
       });
+      citasPaginator.goToPage(1);
     }
 
     Object.values(filtros).forEach(el => el.addEventListener('input', filtrarTabla));
@@ -364,6 +495,8 @@
       Object.values(filtros).forEach(el => el.value = '');
       filtrarTabla();
     });
+
+    filtrarTabla();
 
     // — CRUD Mecánicos —
     document.querySelectorAll('.edit-mecanico-btn').forEach(btn => {
