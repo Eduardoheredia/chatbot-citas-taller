@@ -134,6 +134,11 @@ def hash_contrasena(password: str) -> str:
 def index():
     return render_template("index.html")
 
+
+@app.route("/acceso")
+def login_page():
+    return render_template("login.html")
+
 @app.route("/registro", methods=["POST"])
 def registro():
     datos = request.get_json()
@@ -208,7 +213,7 @@ def login():
 def chatbot_view():
     """Renderiza la interfaz del chatbot con la información del usuario."""
     if "id_usuario" not in session:
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     id_usuario = session["id_usuario"]
     socket_url = os.environ.get("SOCKET_URL", "http://localhost:5005")
@@ -229,7 +234,7 @@ def chatbot_view():
 def admin_panel():
     """Muestra todas las tablas si el usuario es administrador."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -258,7 +263,7 @@ def admin_panel():
 def actualizar_cita(id_cita):
     """Permite modificar una cita desde el panel de administración."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     servicio = request.form.get("servicio")
     fecha = request.form.get("fecha")
@@ -281,7 +286,7 @@ def actualizar_cita(id_cita):
 def agregar_cita():
     """Agregar una nueva cita desde el panel de administración."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     id_usuario = request.form.get("id_usuario")
     servicio = request.form.get("servicio")
@@ -306,7 +311,7 @@ def agregar_cita():
 def eliminar_cita(id_cita):
     """Eliminar una cita de la base de datos."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
@@ -323,7 +328,7 @@ def eliminar_cita(id_cita):
 def agregar_mecanico():
     """Agregar un nuevo mecánico desde el panel de administración."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     nombre = request.form.get("nombre")
     telefono = request.form.get("telefono")
@@ -346,7 +351,7 @@ def agregar_mecanico():
 def actualizar_mecanico(id_mecanico):
     """Editar los datos de un mecánico."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     nombre = request.form.get("nombre")
     telefono = request.form.get("telefono")
@@ -365,7 +370,7 @@ def actualizar_mecanico(id_mecanico):
 def eliminar_mecanico(id_mecanico):
     """Eliminar un mecánico de la base de datos."""
     if not session.get("es_admin"):
-        return redirect(url_for("index"))
+        return redirect(url_for("login_page"))
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
