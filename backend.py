@@ -139,6 +139,11 @@ def index():
 def login_page():
     return render_template("login.html")
 
+
+@app.route("/mecanicos/acceso")
+def mecanico_login_page():
+    return render_template("mecanico_login.html")
+
 @app.route("/registro", methods=["POST"])
 def registro():
     datos = request.get_json()
@@ -209,6 +214,32 @@ def login():
 
     return jsonify({"error": "Credenciales incorrectas"}), 401
 
+
+@app.route("/mecanicos/login", methods=["POST"])
+def mecanico_login():
+    datos = request.get_json()
+    telefono = datos.get("telefono")
+    nombre = datos.get("nombre")
+
+    if not telefono or not nombre:
+        return jsonify({"error": "Debe proporcionar teléfono y nombre"}), 400
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id_mecanico FROM mecanicos WHERE telefono = ? AND nombre = ?",
+            (telefono, nombre),
+        )
+        mecanico = cursor.fetchone()
+
+    if mecanico:
+        session.clear()
+        session["id_mecanico"] = mecanico[0]
+        return redirect(url_for("mecanico_panel"))
+
+    return jsonify({"error": "Credenciales incorrectas"}), 401
+
 @app.route("/chatbot")
 def chatbot_view():
     """Renderiza la interfaz del chatbot con la información del usuario."""
@@ -258,6 +289,35 @@ def admin_panel():
         mecanicos = cursor.fetchall()
 
     return render_template("admin.html", usuarios=usuarios, citas=citas, mecanicos=mecanicos)
+
+
+@app.route("/mecanicos/panel")
+def mecanico_panel():
+    """Panel para que el mecánico vea sus horarios y clientes asignados."""
+    id_mecanico = session.get("id_mecanico")
+    if not id_mecanico:
+        return redirect(url_for("mecanico_login_page"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT c.fecha, c.hora, c.servicio, u.telefono AS telefono_cliente, m.nombre
+            FROM citas AS c
+            JOIN usuarios AS u ON c.id_usuario = u.id_usuario
+            JOIN mecanicos AS m ON c.id_mecanico = m.id_mecanico
+            WHERE c.id_mecanico = ?
+            ORDER BY c.fecha, c.hora
+            """,
+            (id_mecanico,),
+        )
+        asignaciones = cursor.fetchall()
+
+    return render_template(
+        "mecanico_panel.html",
+        asignaciones=asignaciones,
+    )
 
 @app.route("/admin/actualizar_cita/<id_cita>", methods=["POST"])
 def actualizar_cita(id_cita):
@@ -387,6 +447,7 @@ def eliminar_mecanico(id_mecanico):
 def logout():
     session.pop("id_usuario", None)
     session.pop("es_admin", None)
+    session.pop("id_mecanico", None)
     return redirect(url_for("index"))
 
 @app.route("/historial", methods=["GET"])

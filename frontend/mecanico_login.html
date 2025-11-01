@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso de Mecánicos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #065f46, #0f766e);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      color: #0f172a;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 2.5rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+      width: min(360px, 90%);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #0f172a;
+      font-size: 1.75rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #cbd5f5;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #0d9488;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 0.85rem;
+      margin-top: 0.75rem;
+      background: linear-gradient(135deg, #0f766e, #0d9488);
+      color: #ffffff;
+      font-weight: 600;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(13, 148, 136, 0.3);
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 1rem;
+      color: #0d9488;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: block;
+    }
+
+    .back-link:hover {
+      color: #0f766e;
+    }
+
+    #error-msg {
+      margin-top: 0.75rem;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Acceso de Mecánicos</h1>
+    <form id="mecanico-form">
+      <input type="text" id="telefono" placeholder="Número de teléfono" required />
+      <input type="text" id="nombre" placeholder="Nombre (contraseña)" required />
+      <button type="submit">Entrar</button>
+    </form>
+    <a href="/acceso" class="back-link">Volver al acceso de clientes</a>
+    <div id="error-msg"></div>
+  </div>
+
+  <script>
+    document.getElementById("mecanico-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const telefono = document.getElementById("telefono").value;
+      const nombre = document.getElementById("nombre").value;
+
+      const res = await fetch("/mecanicos/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telefono, nombre })
+      });
+
+      if (res.ok) {
+        window.location.href = res.url;
+        return;
+      }
+
+      const data = await res.json();
+      document.getElementById("error-msg").innerText = data.error || "Credenciales incorrectas";
+    });
+  </script>
+</body>
+</html>
