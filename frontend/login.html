@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso a Taller Heredia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      color: #0f172a;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 2.5rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+      width: min(360px, 90%);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #1e293b;
+      font-size: 1.75rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #cbd5f5;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    button {
+      width: 100%;
+      padding: 0.85rem;
+      margin-top: 0.75rem;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #ffffff;
+      font-weight: 600;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    .toggle {
+      text-align: center;
+      margin-top: 1rem;
+      color: #2563eb;
+      cursor: pointer;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .toggle:hover {
+      color: #1d4ed8;
+    }
+
+    #message, #error-msg {
+      margin-top: 0.75rem;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    #message { color: #0f9d58; }
+    #error-msg { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="form-title">Iniciar sesión</h1>
+    <form id="auth-form">
+      <input type="text" id="telefono" placeholder="Número de teléfono" required />
+      <input type="password" id="contrasena" placeholder="Contraseña" required />
+      <button type="submit">Entrar</button>
+    </form>
+    <div class="toggle" onclick="toggleMode()">
+      ¿No tienes cuenta? Regístrate
+    </div>
+    <div id="message"></div>
+    <div id="error-msg"></div>
+  </div>
+
+  <script>
+    let modoRegistro = false;
+
+    function toggleMode() {
+      modoRegistro = !modoRegistro;
+      document.getElementById("form-title").innerText = modoRegistro
+        ? "Crear cuenta"
+        : "Iniciar sesión";
+      document.querySelector("button").innerText = modoRegistro
+        ? "Registrarme"
+        : "Entrar";
+      document.querySelector(".toggle").innerText = modoRegistro
+        ? "¿Ya tienes cuenta? Inicia sesión"
+        : "¿No tienes cuenta? Regístrate";
+      document.getElementById("message").innerText = "";
+      document.getElementById("error-msg").innerText = "";
+    }
+
+    document.getElementById("auth-form").addEventListener("submit", async e => {
+      e.preventDefault();
+
+      const telefono   = document.getElementById("telefono").value;
+      const contrasena = document.getElementById("contrasena").value;
+      const endpoint   = modoRegistro ? "/registro" : "/login";
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telefono, contrasena })
+      });
+
+      if (res.ok && !modoRegistro) {
+        window.location.href = res.url;
+        return;
+      }
+
+      const data = await res.json();
+      document.getElementById("message").innerText   = data.mensaje || "";
+      document.getElementById("error-msg").innerText = data.error   || "";
+    });
+  </script>
+</body>
+</html>

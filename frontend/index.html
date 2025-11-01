@@ -3,78 +3,306 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro e Inicio de Sesión</title>
+  <title>Taller Heredia | Trinidad, Beni</title>
   <style>
-    body { font-family: Arial; background: #f2f2f2; display: flex; justify-content: center; align-items: center; height:100vh; margin:0; }
-    .container { background: #fff; padding:2rem; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); width:300px; }
-    h2 { text-align:center; }
-    input { width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:4px; }
-    button { width:100%; padding:10px; background:#28a745; color:#fff; border:none; border-radius:4px; cursor:pointer; }
-    button:hover { background:#218838; }
-    .toggle { text-align:center; margin-top:10px; color:#007bff; cursor:pointer; }
-    #message { margin-top:8px; color:green; text-align:center; }
-    #error-msg { margin-top:8px; color:red; text-align:center; }
+    :root {
+      color-scheme: light;
+      --azul-oscuro: #0f172a;
+      --azul: #1d4ed8;
+      --turquesa: #0ea5e9;
+      --gris-claro: #e2e8f0;
+      --blanco: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background-color: var(--gris-claro);
+      color: var(--azul-oscuro);
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(29, 78, 216, 0.85)),
+                  url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1600&q=80') center/cover;
+      color: var(--blanco);
+      padding: clamp(3rem, 5vw + 2rem, 6rem) 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(14, 116, 144, 0.25), rgba(45, 212, 191, 0.2));
+      mix-blend-mode: screen;
+    }
+
+    .header-content {
+      position: relative;
+      max-width: 960px;
+      margin: 0 auto;
+      z-index: 1;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 4vw + 1rem, 4rem);
+      margin-bottom: 1rem;
+    }
+
+    .hero-text {
+      font-size: clamp(1.1rem, 2vw + 0.5rem, 1.6rem);
+      margin-bottom: 2rem;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.95rem 2.75rem;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--turquesa), #38bdf8);
+      color: var(--azul-oscuro);
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 1.05rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 18px 40px rgba(14, 165, 233, 0.25);
+    }
+
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 50px rgba(14, 165, 233, 0.3);
+    }
+
+    .info-banner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .info-card {
+      background-color: rgba(15, 23, 42, 0.65);
+      padding: 1.25rem;
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+      text-align: left;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: -3rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    section {
+      background-color: var(--blanco);
+      border-radius: 24px;
+      padding: clamp(2rem, 2vw + 1.5rem, 3rem);
+      margin-bottom: 2.5rem;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    }
+
+    section h2 {
+      font-size: clamp(1.75rem, 2vw + 1rem, 2.4rem);
+      margin-top: 0;
+      color: var(--azul-oscuro);
+    }
+
+    .services-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .service-item {
+      background: linear-gradient(135deg, rgba(226, 232, 240, 0.8), rgba(226, 232, 240, 0.6));
+      border-radius: 18px;
+      padding: 1.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .service-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+    }
+
+    .service-item h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      color: var(--azul);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      align-items: start;
+      margin-top: 2rem;
+    }
+
+    .highlight {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(14, 165, 233, 0.15));
+      border-radius: 18px;
+      padding: 1.5rem;
+    }
+
+    .contact-card {
+      background-color: var(--azul-oscuro);
+      color: var(--blanco);
+      border-radius: 18px;
+      padding: 2rem;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .contact-card a {
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem 3rem;
+      color: rgba(15, 23, 42, 0.7);
+    }
+
+    @media (max-width: 600px) {
+      header {
+        text-align: left;
+      }
+
+      .cta-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2 id="form-title">Iniciar Sesión</h2>
-    <form id="auth-form">
-      <input type="text" id="telefono" placeholder="Número de teléfono" required />
-      <input type="password" id="contrasena" placeholder="Contraseña" required />
-      <button type="submit">Entrar</button>
-    </form>
-    <div class="toggle" onclick="toggleMode()">
-      ¿No tienes cuenta? Regístrate
+  <header>
+    <div class="header-content">
+      <h1>Taller Heredia</h1>
+      <p class="hero-text">
+        Mantenimiento y reparación automotriz con precisión profesional en Trinidad, Beni.
+        Tu vehículo en manos de expertos comprometidos con la seguridad y el rendimiento.
+      </p>
+      <a class="cta-button" href="/acceso">Agendar mi cita</a>
+      <div class="info-banner">
+        <div class="info-card">
+          <strong>Ubicación</strong>
+          <p>Av. 6 de Agosto esquina Ayacucho, Trinidad</p>
+        </div>
+        <div class="info-card">
+          <strong>Horario</strong>
+          <p>Lunes a sábado · 8:00 a 18:30</p>
+        </div>
+        <div class="info-card">
+          <strong>Contacto</strong>
+          <p>Teléfono: +591 3 462 1122</p>
+        </div>
+      </div>
     </div>
-    <div id="message"></div>
-    <div id="error-msg"></div>
-  </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Servicios especializados</h2>
+      <ul class="services-list">
+        <li class="service-item">
+          <h3>Diagnóstico computarizado</h3>
+          <p>Identificamos fallas electrónicas y mecánicas con equipos de última generación para brindarte soluciones precisas.</p>
+        </li>
+        <li class="service-item">
+          <h3>Mecánica general</h3>
+          <p>Cambios de aceite, reparación de frenos, ajustes de suspensión y todo lo necesario para mantener tu vehículo seguro.</p>
+        </li>
+        <li class="service-item">
+          <h3>Sistema eléctrico</h3>
+          <p>Reparamos alternadores, arrancadores, cableado y sistemas de iluminación para un rendimiento óptimo.</p>
+        </li>
+        <li class="service-item">
+          <h3>Climatización automotriz</h3>
+          <p>Mantenimiento y recarga del aire acondicionado para que viajes con la temperatura ideal todo el año.</p>
+        </li>
+        <li class="service-item">
+          <h3>Alineación y balanceo</h3>
+          <p>Calibramos la dirección y el balance de neumáticos para mejorar la estabilidad y prolongar su vida útil.</p>
+        </li>
+        <li class="service-item">
+          <h3>Atención a flotas</h3>
+          <p>Planes personalizados para empresas con seguimiento preventivo y reportes detallados de cada unidad.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>¿Por qué elegir Taller Heredia?</h2>
+      <div class="grid-2">
+        <div class="highlight">
+          <h3>Experiencia local</h3>
+          <p>Más de 15 años atendiendo vehículos en la capital del Beni, con un equipo certificado y en constante capacitación.</p>
+          <h3>Garantía real</h3>
+          <p>Entregamos respaldo por escrito en cada servicio y utilizamos repuestos originales o equivalentes de alta calidad.</p>
+        </div>
+        <div>
+          <p>
+            Nuestra prioridad es tu tranquilidad. Controlamos cada proceso mediante un sistema de citas que optimiza tu tiempo
+            y garantiza la atención sin filas innecesarias.
+          </p>
+          <p>
+            Regístrate en nuestra plataforma, agenda la fecha y hora que más te convenga y recibe recordatorios automáticos.
+            El equipo de Taller Heredia estará listo para recibirte.
+          </p>
+          <a class="cta-button" href="/acceso">Ingresar para reservar</a>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Contacto directo</h2>
+      <div class="grid-2">
+        <div class="contact-card">
+          <strong>Visítanos</strong>
+          <span>Av. 6 de Agosto esquina Ayacucho</span>
+          <span>Trinidad, Beni - Bolivia</span>
+          <strong>Comunícate</strong>
+          <a href="tel:+59134621122">+591 3 462 1122</a>
+          <a href="mailto:contacto@tallerheredia.bo">contacto@tallerheredia.bo</a>
+        </div>
+        <div>
+          <p>
+            ¿Necesitas asesoramiento inmediato? Nuestro equipo está disponible para ayudarte a diagnosticar problemas urgentes
+            y coordinar asistencia en ruta dentro de la ciudad de Trinidad.
+          </p>
+          <p>
+            También atendemos consultas por WhatsApp y redes sociales para agilizar el seguimiento de tu vehículo.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="year"></span> Taller Heredia · Trinidad, Beni. Todos los derechos reservados.
+  </footer>
 
   <script>
-    let modoRegistro = false;
-  
-    function toggleMode() {
-      modoRegistro = !modoRegistro;
-      document.getElementById("form-title").innerText = modoRegistro
-        ? "Registrarse"
-        : "Iniciar Sesión";
-      document.querySelector("button").innerText = modoRegistro
-        ? "Registrarse"
-        : "Entrar";
-      document.querySelector(".toggle").innerText = modoRegistro
-        ? "¿Ya tienes cuenta? Inicia sesión"
-        : "¿No tienes cuenta? Regístrate";
-      document.getElementById("message").innerText = "";
-      document.getElementById("error-msg").innerText = "";
-    }
-  
-    document.getElementById("auth-form").addEventListener("submit", async e => {
-      e.preventDefault();
-  
-      const telefono   = document.getElementById("telefono").value;
-      const contrasena = document.getElementById("contrasena").value;
-      const endpoint   = modoRegistro ? "/registro" : "/login";
-  
-      // Hacemos el POST sin 'redirect: "follow"'
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ telefono, contrasena })
-      });
-  
-      // Si es login exitoso y NO estamos en modo registro:
-      if (res.ok && !modoRegistro) {
-        // Redirigimos manualmente a la URL final que responda el servidor
-        window.location.href = res.url;
-        return;
-      }
-  
-      // Si estamos registrando o hubo error, mostramos el mensaje:
-      const data = await res.json();
-      document.getElementById("message").innerText   = data.mensaje || "";
-      document.getElementById("error-msg").innerText = data.error   || "";
-    });
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
-  
+</body>
 </html>
