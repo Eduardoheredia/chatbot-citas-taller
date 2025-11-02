@@ -289,6 +289,50 @@ def admin_panel():
 
     return render_template("admin.html", usuarios=usuarios, citas=citas, mecanicos=mecanicos)
 
+
+@app.route("/admin/agregar_usuario", methods=["POST"])
+def agregar_usuario_admin():
+    """Permite al administrador crear nuevos usuarios desde el panel."""
+    if not session.get("es_admin"):
+        return redirect(url_for("login_page"))
+
+    telefono = (request.form.get("telefono") or "").strip()
+    contrasena = (request.form.get("contrasena") or "").strip()
+    es_admin = 1 if request.form.get("es_admin") in {"on", "true", "1"} else 0
+
+    if not telefono or not contrasena:
+        return jsonify({"error": "RELLENE LOS CAMPOS"}), 400
+    if not telefono.isdigit() or len(telefono) != 8:
+        return jsonify({"error": "El número de teléfono debe tener exactamente 8 dígitos numéricos para bolivia"}), 400
+    if len(contrasena) < 6:
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+
+        intentos = 0
+        while True:
+            nuevo_id = generar_id_aleatorio()
+            cursor.execute("SELECT 1 FROM usuarios WHERE id_usuario = ?", (nuevo_id,))
+            if not cursor.fetchone():
+                break
+            intentos += 1
+            if intentos > 10:
+                return jsonify({"error": "No se pudo generar un ID único"}), 500
+
+        try:
+            cursor.execute(
+                "INSERT INTO usuarios (id_usuario, telefono, contrasena, es_admin) VALUES (?, ?, ?, ?)",
+                (nuevo_id, telefono, hash_contrasena(contrasena), es_admin),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "Número ya registrado"}), 409
+
+    return jsonify({"mensaje": "Usuario creado"}), 200
+
+
 @app.route("/admin/actualizar_cita/<id_cita>", methods=["POST"])
 def actualizar_cita(id_cita):
     """Permite modificar una cita desde el panel de administración."""
