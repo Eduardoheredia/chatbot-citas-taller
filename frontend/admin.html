@@ -8,283 +8,543 @@
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
-    body { background: #f8fafb; }
-    h1 { margin-top: 1.5rem; }
-    .btn { margin-right: 0.18rem; }
-    .table-responsive { border-radius: 10px; box-shadow: 0 2px 8px #0001; background: #fff; }
-    table { margin-bottom: 2rem; }
-    th, td { vertical-align: middle !important; }
-    .text-secondary { color: #b0b0b0 !important; }
-    .table-controls { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; padding: 0.6rem 1rem; }
-    .table-controls .form-range { min-width: 160px; }
-    .table-controls .pagination { margin-bottom: 0; }
+    :root {
+      --bg-gradient-start: #eef2ff;
+      --bg-gradient-end: #f8fbff;
+      --primary-600: #1d4ed8;
+      --primary-500: #2563eb;
+      --primary-100: #dbeafe;
+      --neutral-900: #111827;
+      --neutral-600: #4b5563;
+      --neutral-200: #e5e7eb;
+      --success-500: #16a34a;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top right, var(--bg-gradient-start), var(--bg-gradient-end));
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--neutral-900);
+    }
+
+    .admin-header {
+      background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+      border-radius: 24px;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 20px 45px -20px rgba(29, 78, 216, 0.55);
+      color: #fff;
+    }
+
+    .admin-header h1 {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .admin-header p {
+      margin-bottom: 0;
+      opacity: 0.85;
+    }
+
+    .logout-link {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border: none;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .logout-link:hover,
+    .logout-link:focus {
+      background-color: rgba(255, 255, 255, 0.28);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--neutral-600);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-elevated {
+      background: #fff;
+      border: none;
+      border-radius: 18px;
+      box-shadow: 0 20px 50px -24px rgba(15, 23, 42, 0.35);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .card-elevated + .card-elevated {
+      margin-top: -0.5rem;
+    }
+
+    .card-elevated .card-header {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .table-responsive {
+      border-radius: 16px;
+      border: 1px solid rgba(37, 99, 235, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    table {
+      margin-bottom: 0;
+      overflow: hidden;
+    }
+
+    thead tr {
+      background: linear-gradient(90deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.04));
+    }
+
+    th {
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--neutral-600);
+      border-bottom: none !important;
+      background-color: transparent !important;
+    }
+
+    td {
+      vertical-align: middle !important;
+      border-color: rgba(15, 23, 42, 0.05) !important;
+    }
+
+    tbody tr:hover {
+      background-color: rgba(219, 234, 254, 0.35) !important;
+    }
+
+    .badge.bg-success {
+      background: var(--success-500) !important;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .table-controls {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 16px 40px -28px rgba(15, 23, 42, 0.45);
+      padding: 0.9rem 1.4rem;
+      border: 1px solid rgba(37, 99, 235, 0.08);
+    }
+
+    .table-controls .form-range {
+      min-width: 160px;
+    }
+
+    .table-controls .pagination {
+      margin-bottom: 0;
+    }
+
+    .btn {
+      border-radius: 999px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    .btn.btn-primary {
+      background: var(--primary-500);
+      border-color: var(--primary-500);
+      box-shadow: 0 10px 30px -15px rgba(37, 99, 235, 0.65);
+    }
+
+    .btn.btn-primary:hover {
+      background: #1e40af;
+      border-color: #1e40af;
+    }
+
+    .btn.btn-success {
+      background: var(--success-500);
+      border-color: var(--success-500);
+      box-shadow: 0 10px 30px -15px rgba(22, 163, 74, 0.6);
+    }
+
+    .btn.btn-success:hover {
+      background: #15803d;
+      border-color: #15803d;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 12px;
+      border-color: rgba(148, 163, 184, 0.4);
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--primary-500);
+      box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.18);
+    }
+
+    .filters-card {
+      background: rgba(255, 255, 255, 0.86);
+      border-radius: 18px;
+      border: 1px solid rgba(37, 99, 235, 0.08);
+      box-shadow: 0 16px 40px -30px rgba(15, 23, 42, 0.55);
+      padding: 1.5rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .filters-card .form-floating > label {
+      color: var(--neutral-600);
+      font-weight: 500;
+    }
+
+    .filters-card .btn {
+      border-radius: 12px;
+    }
+
+    .new-row td {
+      background: rgba(219, 234, 254, 0.35);
+      font-weight: 500;
+    }
+
+    .save-btn,
+    .delete-btn {
+      transition: transform 0.2s ease;
+    }
+
+    .save-btn:hover,
+    .delete-btn:hover,
+    .edit-cita-btn:hover,
+    .edit-mecanico-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 992px) {
+      .admin-header {
+        padding: 1.75rem;
+      }
+
+      .card-elevated {
+        padding: 1.5rem;
+      }
+    }
+
     @media (max-width: 600px) {
-      h1 { font-size: 1.25rem; }
-      th, td { font-size: 0.92rem; padding: 0.4rem; }
-      .btn { font-size: 0.85rem; padding: 0.25rem 0.65rem; }
-      .table-controls { padding: 0.75rem; }
+      .admin-header {
+        border-radius: 18px;
+      }
+
+      .admin-header h1 {
+        font-size: 1.5rem;
+      }
+
+      th,
+      td {
+        font-size: 0.92rem;
+        padding: 0.65rem;
+      }
+
+      .btn {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.9rem;
+      }
+
+      .filters-card {
+        padding: 1.25rem;
+      }
+
+      .table-controls {
+        padding: 0.85rem 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-      <h1 class="h3 text-primary">Panel de Administración</h1>
-      <a href="/logout" class="btn btn-outline-secondary mb-2 mb-sm-0">
-        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
-      </a>
+  <div class="container py-5">
+    <div class="admin-header mb-5">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <h1 class="display-6 mb-2">Panel de Administración</h1>
+          <p class="mb-0">Gestiona usuarios, citas y mecánicos con una vista profesional.</p>
+        </div>
+        <div>
+          <a href="/logout" class="btn logout-link px-4 py-2">
+            <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+          </a>
+        </div>
+      </div>
     </div>
 
     <!-- === Usuarios (solo lectura) === -->
-    <h2 class="h5 text-primary mt-4">Usuarios registrados</h2>
-    <div class="table-responsive mb-4">
-      <table id="usuarios-table" class="table table-bordered table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>ID</th>
-            <th>Teléfono</th>
-            <th>¿Administrador?</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for u in usuarios %}
-          <tr>
-            <td>{{ u.id_usuario }}</td>
-            <td>{{ u.telefono }}</td>
-            <td>
-              {% if u.es_admin %}
-                <span class="badge bg-success">Sí</span>
-              {% else %}
-                <span class="badge bg-secondary">No</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body">
-        <h3 class="h6 text-primary mb-3">Agregar nuevo usuario</h3>
-        <form id="add-usuario-form" class="row g-3 align-items-end">
-          <div class="col-12 col-md-4">
-            <label for="nuevo-telefono" class="form-label">Teléfono</label>
-            <input type="tel" class="form-control" id="nuevo-telefono" name="telefono" placeholder="Ej. 71234567" required minlength="8" maxlength="8" pattern="[0-9]{8}">
-          </div>
-          <div class="col-12 col-md-4">
-            <label for="nuevo-password" class="form-label">Contraseña</label>
-            <input type="password" class="form-control" id="nuevo-password" name="contrasena" placeholder="Mínimo 6 caracteres" required minlength="6">
-          </div>
-          <div class="col-12 col-md-4">
-            <div class="d-flex align-items-center gap-3">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="1" id="nuevo-es-admin" name="es_admin">
-                <label class="form-check-label" for="nuevo-es-admin">
-                  Con privilegios de administrador
-                </label>
-              </div>
-              <button type="submit" class="btn btn-success">
-                <i class="bi bi-person-plus"></i> Crear usuario
-              </button>
-            </div>
-          </div>
-        </form>
+    <section class="card-elevated">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <span class="section-title">Usuarios registrados</span>
+          <h2 class="h4 mb-0">Directorio de usuarios</h2>
+        </div>
       </div>
-    </div>
+      <div class="table-responsive">
+        <table id="usuarios-table" class="table table-bordered table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Teléfono</th>
+              <th>¿Administrador?</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in usuarios %}
+            <tr>
+              <td>{{ u.id_usuario }}</td>
+              <td>{{ u.telefono }}</td>
+              <td>
+                {% if u.es_admin %}
+                  <span class="badge bg-success">Sí</span>
+                {% else %}
+                  <span class="badge bg-secondary">No</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4">
+        <div class="bg-light border rounded-4 p-4">
+          <h3 class="h6 text-uppercase text-primary fw-semibold mb-3">Agregar nuevo usuario</h3>
+          <form id="add-usuario-form" class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+              <label for="nuevo-telefono" class="form-label">Teléfono</label>
+              <input type="tel" class="form-control" id="nuevo-telefono" name="telefono" placeholder="Ej. 71234567" required minlength="8" maxlength="8" pattern="[0-9]{8}">
+            </div>
+            <div class="col-12 col-md-4">
+              <label for="nuevo-password" class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="nuevo-password" name="contrasena" placeholder="Mínimo 6 caracteres" required minlength="6">
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="d-flex align-items-center gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="1" id="nuevo-es-admin" name="es_admin">
+                  <label class="form-check-label" for="nuevo-es-admin">
+                    Con privilegios de administrador
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-success">
+                  <i class="bi bi-person-plus"></i> Crear usuario
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
 
     <!-- === Citas (edición rápida) === -->
-    <h2 class="h5 text-primary mt-4">Gestión de citas</h2>
-    <!-- Filtros -->
-    <div id="citas-filtros" class="row g-2 align-items-end mb-3">
-      <div class="col">
-        <div class="form-floating">
-          <input type="date" id="filtrar-desde" class="form-control" placeholder="Desde">
-          <label for="filtrar-desde">Desde</label>
+    <section class="card-elevated">
+      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <span class="section-title">Gestión de citas</span>
+          <h2 class="h4 mb-0">Agenda de servicios</h2>
         </div>
       </div>
-      <div class="col">
-        <div class="form-floating">
-          <input type="date" id="filtrar-hasta" class="form-control" placeholder="Hasta">
-          <label for="filtrar-hasta">Hasta</label>
+      <!-- Filtros -->
+      <div id="citas-filtros" class="filters-card row g-3 align-items-end">
+        <div class="col">
+          <div class="form-floating">
+            <input type="date" id="filtrar-desde" class="form-control" placeholder="Desde">
+            <label for="filtrar-desde">Desde</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <input type="date" id="filtrar-hasta" class="form-control" placeholder="Hasta">
+            <label for="filtrar-hasta">Hasta</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <select id="filtrar-estado" class="form-select" aria-label="Estado">
+              <option value="" selected>Todos</option>
+              <option value="confirmada">confirmada</option>
+              <option value="reprogramada">reprogramada</option>
+              <option value="cancelada">cancelada</option>
+              <option value="completada">completada</option>
+            </select>
+            <label for="filtrar-estado">Estado</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <select id="filtrar-mecanico" class="form-select" aria-label="Mecánico">
+              <option value="" selected>Todos</option>
+              {% for m in mecanicos %}
+              <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
+              {% endfor %}
+            </select>
+            <label for="filtrar-mecanico">Mecánico</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <input type="text" id="filtrar-servicio" class="form-control" placeholder="Servicio">
+            <label for="filtrar-servicio">Servicio</label>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-floating">
+            <input type="text" id="filtrar-busqueda" class="form-control" placeholder="Usuario o teléfono">
+            <label for="filtrar-busqueda">Usuario o teléfono</label>
+          </div>
+        </div>
+        <div class="col-12 col-md-auto">
+          <button id="limpiar-filtros" type="button" class="btn btn-outline-secondary w-100">Limpiar filtros</button>
         </div>
       </div>
-      <div class="col">
-        <div class="form-floating">
-          <select id="filtrar-estado" class="form-select" aria-label="Estado">
-            <option value="" selected>Todos</option>
-            <option value="confirmada">confirmada</option>
-            <option value="reprogramada">reprogramada</option>
-            <option value="cancelada">cancelada</option>
-            <option value="completada">completada</option>
-          </select>
-          <label for="filtrar-estado">Estado</label>
-        </div>
-      </div>
-      <div class="col">
-        <div class="form-floating">
-          <select id="filtrar-mecanico" class="form-select" aria-label="Mecánico">
-            <option value="" selected>Todos</option>
-            {% for m in mecanicos %}
-            <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
+      <div class="table-responsive mb-4">
+        <table id="citas-table" class="table table-bordered table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Teléfono</th>
+              <th>Servicio</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Mecánico</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in citas %}
+            <tr data-id="{{ c.id_citas }}">
+              <td>{{ c.id_citas }}</td>
+              <td>{{ c.id_usuario }}</td>
+              <td>{{ c.telefono }}</td>
+              <td><input type="text" name="servicio" value="{{ c.servicio }}" class="form-control form-control-sm" disabled></td>
+              <td><input type="date" name="fecha" value="{{ c.fecha }}" class="form-control form-control-sm" disabled></td>
+              <td><input type="time" name="hora" value="{{ c.hora }}" class="form-control form-control-sm" disabled></td>
+              <td>
+                <select name="id_mecanico" class="form-select form-select-sm" disabled>
+                  <option value="">Sin asignar</option>
+                  {% for m in mecanicos %}
+                  <option value="{{ m.id_mecanico }}" {% if c.id_mecanico == m.id_mecanico %}selected{% endif %}>{{ m.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select name="estado" class="form-select form-select-sm" disabled>
+                  <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
+                  <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
+                  <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
+                  <option value="completada" {% if c.estado=='completada' %}selected{% endif %}>completada</option>
+                </select>
+              </td>
+              <td>
+                <button class="edit-cita-btn btn btn-sm btn-primary" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="save-cita-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="delete-cita-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
             {% endfor %}
-          </select>
-          <label for="filtrar-mecanico">Mecánico</label>
-        </div>
+            <tr class="new-row">
+              <td class="text-secondary">Nuevo</td>
+              <td>
+                <select id="new-usuario" class="form-select form-select-sm">
+                  <option value="" selected disabled>Seleccione teléfono</option>
+                  {% for u in usuarios %}
+                  <option value="{{ u.id_usuario }}">{{ u.telefono }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td></td>
+              <td><input type="text" id="new-servicio" placeholder="Servicio" class="form-control form-control-sm"></td>
+              <td><input type="date" id="new-fecha" class="form-control form-control-sm"></td>
+              <td><input type="time" id="new-hora" class="form-control form-control-sm"></td>
+              <td>
+                <select id="new-mecanico" class="form-select form-select-sm">
+                  <option value="" selected>Sin asignar</option>
+                  {% for m in mecanicos %}
+                  <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select id="new-estado" class="form-select form-select-sm">
+                  <option value="confirmada">confirmada</option>
+                  <option value="reprogramada">reprogramada</option>
+                  <option value="cancelada">cancelada</option>
+                  <option value="completada">completada</option>
+                </select>
+              </td>
+              <td>
+                <button id="add-cita-btn" class="btn btn-sm btn-success">
+                  <i class="bi bi-plus-lg"></i> Agregar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="col">
-        <div class="form-floating">
-          <input type="text" id="filtrar-servicio" class="form-control" placeholder="Servicio">
-          <label for="filtrar-servicio">Servicio</label>
-        </div>
-      </div>
-      <div class="col">
-        <div class="form-floating">
-          <input type="text" id="filtrar-busqueda" class="form-control" placeholder="Usuario o teléfono">
-          <label for="filtrar-busqueda">Usuario o teléfono</label>
-        </div>
-      </div>
-      <div class="col-12 col-md-auto">
-        <button id="limpiar-filtros" type="button" class="btn btn-outline-secondary w-100">Limpiar filtros</button>
-      </div>
-    </div>
-    <div class="table-responsive mb-4">
-      <table id="citas-table" class="table table-bordered table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>ID</th>
-            <th>Usuario</th>
-            <th>Teléfono</th>
-            <th>Servicio</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Mecánico</th>
-            <th>Estado</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for c in citas %}
-          <tr data-id="{{ c.id_citas }}">
-            <td>{{ c.id_citas }}</td>
-            <td>{{ c.id_usuario }}</td>
-            <td>{{ c.telefono }}</td>
-            <td><input type="text" name="servicio" value="{{ c.servicio }}" class="form-control form-control-sm" disabled></td>
-            <td><input type="date" name="fecha" value="{{ c.fecha }}" class="form-control form-control-sm" disabled></td>
-            <td><input type="time" name="hora" value="{{ c.hora }}" class="form-control form-control-sm" disabled></td>
-            <td>
-              <select name="id_mecanico" class="form-select form-select-sm" disabled>
-                <option value="">Sin asignar</option>
-                {% for m in mecanicos %}
-                <option value="{{ m.id_mecanico }}" {% if c.id_mecanico == m.id_mecanico %}selected{% endif %}>{{ m.nombre }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td>
-              <select name="estado" class="form-select form-select-sm" disabled>
-                <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
-                <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
-                <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
-                <option value="completada" {% if c.estado=='completada' %}selected{% endif %}>completada</option>
-              </select>
-            </td>
-            <td>
-              <button class="edit-cita-btn btn btn-sm btn-primary" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button class="save-cita-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
-                <i class="bi bi-check-lg"></i>
-              </button>
-              <button class="delete-cita-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-          <tr class="new-row">
-            <td class="text-secondary">Nuevo</td>
-            <td>
-              <select id="new-usuario" class="form-select form-select-sm">
-                <option value="" selected disabled>Seleccione teléfono</option>
-                {% for u in usuarios %}
-                <option value="{{ u.id_usuario }}">{{ u.telefono }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td></td>
-            <td><input type="text" id="new-servicio" placeholder="Servicio" class="form-control form-control-sm"></td>
-            <td><input type="date" id="new-fecha" class="form-control form-control-sm"></td>
-            <td><input type="time" id="new-hora" class="form-control form-control-sm"></td>
-            <td>
-              <select id="new-mecanico" class="form-select form-select-sm">
-                <option value="" selected>Sin asignar</option>
-                {% for m in mecanicos %}
-                <option value="{{ m.id_mecanico }}">{{ m.nombre }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td>
-              <select id="new-estado" class="form-select form-select-sm">
-                <option value="confirmada">confirmada</option>
-                <option value="reprogramada">reprogramada</option>
-                <option value="cancelada">cancelada</option>
-                <option value="completada">completada</option>
-              </select>
-            </td>
-            <td>
-              <button id="add-cita-btn" class="btn btn-sm btn-success">
-                <i class="bi bi-plus-lg"></i> Agregar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    </section>
 
     <!-- === Mecánicos (CRUD) === -->
-    <h2 class="h5 text-primary mt-4">Gestión de mecánicos</h2>
-    <div class="table-responsive mb-4">
-      <table id="mecanicos-table" class="table table-bordered table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Teléfono</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for m in mecanicos %}
-          <tr data-id="{{ m.id_mecanico }}">
-            <td>{{ m.id_mecanico }}</td>
-            <td><input type="text" name="nombre" value="{{ m.nombre }}" class="form-control form-control-sm" disabled></td>
-            <td><input type="tel" name="telefono" value="{{ m.telefono }}" class="form-control form-control-sm" disabled></td>
-            <td>
-              <button class="edit-mecanico-btn btn btn-sm btn-primary" title="Editar">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button class="save-mecanico-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
-                <i class="bi bi-check-lg"></i>
-              </button>
-              <button class="delete-mecanico-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-          <tr class="new-row">
-            <td class="text-secondary">Nuevo</td>
-            <td><input type="text" id="new-nombre" placeholder="Nombre" class="form-control form-control-sm"></td>
-            <td><input type="tel" id="new-telefono" placeholder="Teléfono" class="form-control form-control-sm"></td>
-            <td>
-              <button id="add-mecanico-btn" class="btn btn-sm btn-success">
-                <i class="bi bi-plus-lg"></i> Agregar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <section class="card-elevated">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <span class="section-title">Gestión de mecánicos</span>
+          <h2 class="h4 mb-0">Equipo técnico</h2>
+        </div>
+      </div>
+      <div class="table-responsive mb-4">
+        <table id="mecanicos-table" class="table table-bordered table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in mecanicos %}
+            <tr data-id="{{ m.id_mecanico }}">
+              <td>{{ m.id_mecanico }}</td>
+              <td><input type="text" name="nombre" value="{{ m.nombre }}" class="form-control form-control-sm" disabled></td>
+              <td><input type="tel" name="telefono" value="{{ m.telefono }}" class="form-control form-control-sm" disabled></td>
+              <td>
+                <button class="edit-mecanico-btn btn btn-sm btn-primary" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="save-mecanico-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="delete-mecanico-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+            <tr class="new-row">
+              <td class="text-secondary">Nuevo</td>
+              <td><input type="text" id="new-nombre" placeholder="Nombre" class="form-control form-control-sm"></td>
+              <td><input type="tel" id="new-telefono" placeholder="Teléfono" class="form-control form-control-sm"></td>
+              <td>
+                <button id="add-mecanico-btn" class="btn btn-sm btn-success">
+                  <i class="bi bi-plus-lg"></i> Agregar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
