@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del Mecánico</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f172a;
+    }
+
+    .panel {
+      background: #ffffff;
+      width: min(960px, 95%);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.3);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.8rem;
+    }
+
+    a.logout {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      padding: 0.6rem 1.2rem;
+      color: #fff;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    a.logout:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(220, 38, 38, 0.25);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 1.5rem;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #1d4ed8;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      background: #fff;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.75rem;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .empty {
+      color: #64748b;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <header>
+      <h1>Hola, {{ nombre_mecanico }}</h1>
+      <a href="{{ url_for('logout') }}" class="logout">Cerrar sesión</a>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Próximos horarios</h2>
+        {% if horarios %}
+          <ul>
+            {% for horario in horarios %}
+              <li>
+                <strong>{{ horario.fecha }}</strong>
+                <span>{{ horario.hora }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty">No tienes horarios asignados por el momento.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Clientes asignados</h2>
+        {% if clientes %}
+          <ul>
+            {% for cliente in clientes %}
+              <li>
+                <strong>Cliente:</strong> {{ cliente.telefono }}
+                <span><strong>Servicio:</strong> {{ cliente.servicio }}</span>
+                <span><strong>Horario:</strong> {{ cliente.fecha }} {{ cliente.hora }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty">Aún no tienes clientes asignados.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</body>
+</html>
