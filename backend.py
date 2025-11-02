@@ -74,6 +74,21 @@ def crear_bd():
             )
             """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS citas (
+                id_citas TEXT PRIMARY KEY,
+                id_usuario TEXT NOT NULL,
+                servicio TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                hora TEXT NOT NULL,
+                estado TEXT NOT NULL,
+                id_mecanico TEXT,
+                FOREIGN KEY (id_usuario) REFERENCES usuarios (id_usuario) ON DELETE CASCADE,
+                FOREIGN KEY (id_mecanico) REFERENCES mecanicos (id_mecanico)
+            )
+            """
+        )
     
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
@@ -191,21 +206,36 @@ def login():
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
+
         cursor.execute(
             "SELECT id_usuario, es_admin FROM usuarios WHERE telefono = ? AND contrasena = ?",
             (telefono, hash_contrasena(contrasena))
         )
         usuario = cursor.fetchone()
 
-    if usuario:
-        # Guardamos el ID y si es administrador en la sesión
-        session["id_usuario"] = usuario[0]
-        session["es_admin"] = bool(usuario[1])
-        # Si el usuario es admin redirigimos a su panel
-        if usuario[1]:
-            return redirect(url_for("admin_panel"))
-        return redirect(url_for("chatbot_view"))
+        if usuario:
+            session.pop("id_mecanico", None)
+            session.pop("nombre_mecanico", None)
+            session["id_usuario"] = usuario["id_usuario"]
+            session["es_admin"] = bool(usuario["es_admin"])
+            if usuario["es_admin"]:
+                return redirect(url_for("admin_panel"))
+            return redirect(url_for("chatbot_view"))
+
+        cursor.execute(
+            "SELECT id_mecanico, nombre FROM mecanicos WHERE telefono = ? AND nombre = ?",
+            (telefono, contrasena)
+        )
+        mecanico = cursor.fetchone()
+
+    if mecanico:
+        session.pop("id_usuario", None)
+        session["es_admin"] = False
+        session["id_mecanico"] = mecanico["id_mecanico"]
+        session["nombre_mecanico"] = mecanico["nombre"]
+        return redirect(url_for("mecanico_panel"))
 
     return jsonify({"error": "Credenciales incorrectas"}), 401
 
@@ -383,10 +413,66 @@ def eliminar_mecanico(id_mecanico):
 
     return redirect(url_for("admin_panel"))
 
+@app.route("/mecanico")
+def mecanico_panel():
+    """Panel de control para los mecánicos autenticados."""
+    id_mecanico = session.get("id_mecanico")
+    if not id_mecanico:
+        return redirect(url_for("login_page"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT nombre FROM mecanicos WHERE id_mecanico = ?",
+            (id_mecanico,)
+        )
+        mecanico = cursor.fetchone()
+        if not mecanico:
+            session.pop("id_mecanico", None)
+            session.pop("nombre_mecanico", None)
+            return redirect(url_for("login_page"))
+
+        cursor.execute(
+            """
+            SELECT c.fecha, c.hora, u.telefono AS telefono_cliente, c.servicio
+            FROM citas AS c
+            JOIN usuarios AS u ON c.id_usuario = u.id_usuario
+            WHERE c.id_mecanico = ?
+            ORDER BY c.fecha ASC, c.hora ASC
+            """,
+            (id_mecanico,)
+        )
+        citas = cursor.fetchall()
+
+    horarios = [
+        {"fecha": fila["fecha"], "hora": fila["hora"]}
+        for fila in citas
+    ]
+    clientes = [
+        {
+            "telefono": fila["telefono_cliente"],
+            "servicio": fila["servicio"],
+            "fecha": fila["fecha"],
+            "hora": fila["hora"],
+        }
+        for fila in citas
+    ]
+
+    return render_template(
+        "mecanico_panel.html",
+        nombre_mecanico=mecanico["nombre"],
+        horarios=horarios,
+        clientes=clientes,
+    )
+
 @app.route("/logout")
 def logout():
     session.pop("id_usuario", None)
     session.pop("es_admin", None)
+    session.pop("id_mecanico", None)
+    session.pop("nombre_mecanico", None)
     return redirect(url_for("index"))
 
 @app.route("/historial", methods=["GET"])
