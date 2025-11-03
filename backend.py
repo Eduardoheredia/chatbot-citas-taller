@@ -333,6 +333,97 @@ def agregar_usuario_admin():
     return jsonify({"mensaje": "Usuario creado"}), 200
 
 
+@app.route("/admin/actualizar_usuario/<id_usuario>", methods=["POST"])
+def actualizar_usuario_admin(id_usuario):
+    """Permite editar los datos de un usuario desde el panel de administración."""
+    if not session.get("es_admin"):
+        return redirect(url_for("login_page"))
+
+    telefono = (request.form.get("telefono") or "").strip()
+    contrasena = (request.form.get("contrasena") or "").strip()
+    es_admin = 1 if request.form.get("es_admin") in {"on", "true", "1"} else 0
+
+    if not telefono:
+        return jsonify({"error": "El número de teléfono es obligatorio"}), 400
+    if not telefono.isdigit() or len(telefono) != 8:
+        return jsonify({"error": "El número de teléfono debe tener exactamente 8 dígitos numéricos para bolivia"}), 400
+    if contrasena and len(contrasena) < 6:
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT es_admin FROM usuarios WHERE id_usuario = ?",
+            (id_usuario,),
+        )
+        usuario = cursor.fetchone()
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        if usuario["es_admin"] and not es_admin:
+            cursor.execute("SELECT COUNT(*) FROM usuarios WHERE es_admin = 1")
+            total_admins = cursor.fetchone()[0]
+            if total_admins <= 1:
+                return jsonify({"error": "Debe existir al menos un administrador"}), 400
+
+        if usuario["es_admin"] and id_usuario == session.get("id_usuario") and not es_admin:
+            return jsonify({"error": "No puede quitarse sus propios privilegios de administrador"}), 400
+
+        campos = ["telefono = ?", "es_admin = ?"]
+        valores = [telefono, es_admin]
+        if contrasena:
+            campos.append("contrasena = ?")
+            valores.append(hash_contrasena(contrasena))
+
+        valores.append(id_usuario)
+
+        try:
+            cursor.execute(
+                f"UPDATE usuarios SET {', '.join(campos)} WHERE id_usuario = ?",
+                valores,
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "Número ya registrado"}), 409
+
+    return jsonify({"mensaje": "Usuario actualizado"}), 200
+
+
+@app.route("/admin/eliminar_usuario/<id_usuario>", methods=["POST"])
+def eliminar_usuario_admin(id_usuario):
+    """Permite eliminar un usuario desde el panel de administración."""
+    if not session.get("es_admin"):
+        return redirect(url_for("login_page"))
+
+    if id_usuario == session.get("id_usuario"):
+        return jsonify({"error": "No puede eliminar su propio usuario"}), 400
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT es_admin FROM usuarios WHERE id_usuario = ?",
+            (id_usuario,),
+        )
+        usuario = cursor.fetchone()
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        if usuario["es_admin"]:
+            cursor.execute("SELECT COUNT(*) FROM usuarios WHERE es_admin = 1")
+            total_admins = cursor.fetchone()[0]
+            if total_admins <= 1:
+                return jsonify({"error": "Debe existir al menos un administrador"}), 400
+
+        cursor.execute("DELETE FROM usuarios WHERE id_usuario = ?", (id_usuario,))
+        conn.commit()
+
+    return jsonify({"mensaje": "Usuario eliminado"}), 200
+
+
 @app.route("/admin/actualizar_cita/<id_cita>", methods=["POST"])
 def actualizar_cita(id_cita):
     """Permite modificar una cita desde el panel de administración."""

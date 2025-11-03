@@ -289,20 +289,37 @@
             <tr>
               <th>ID</th>
               <th>Teléfono</th>
+              <th>Nueva contraseña</th>
               <th>¿Administrador?</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {% for u in usuarios %}
-            <tr>
+            <tr data-id="{{ u.id_usuario }}">
               <td>{{ u.id_usuario }}</td>
-              <td>{{ u.telefono }}</td>
               <td>
-                {% if u.es_admin %}
-                  <span class="badge bg-success">Sí</span>
-                {% else %}
-                  <span class="badge bg-secondary">No</span>
-                {% endif %}
+                <input type="tel" name="telefono" value="{{ u.telefono }}" class="form-control form-control-sm" disabled>
+              </td>
+              <td>
+                <input type="password" name="contrasena" placeholder="Dejar en blanco para mantener" class="form-control form-control-sm" disabled>
+              </td>
+              <td>
+                <select name="es_admin" class="form-select form-select-sm" disabled>
+                  <option value="1" {% if u.es_admin %}selected{% endif %}>Sí</option>
+                  <option value="0" {% if not u.es_admin %}selected{% endif %}>No</option>
+                </select>
+              </td>
+              <td>
+                <button class="edit-usuario-btn btn btn-sm btn-primary" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="save-usuario-btn save-btn btn btn-sm btn-success" style="display:none;" title="Guardar">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="delete-usuario-btn delete-btn btn btn-sm btn-danger" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
               </td>
             </tr>
             {% endfor %}
@@ -676,6 +693,75 @@
     const usuariosPaginator = new TablePaginator(document.getElementById('usuarios-table'), { rowsPerPage: 7 });
     const citasPaginator = new TablePaginator(document.getElementById('citas-table'), { rowsPerPage: 7, excludeSelector: '.new-row' });
     const mecanicosPaginator = new TablePaginator(document.getElementById('mecanicos-table'), { rowsPerPage: 7, excludeSelector: '.new-row' });
+
+    // — CRUD Usuarios —
+    document.querySelectorAll('.edit-usuario-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        tr.querySelectorAll('input, select').forEach(el => el.disabled = false);
+        btn.style.display = 'none';
+        tr.querySelector('.save-usuario-btn').style.display = 'inline-block';
+      });
+    });
+
+    document.querySelectorAll('.save-usuario-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        const telefono = tr.querySelector('input[name="telefono"]').value.trim();
+        const contrasena = tr.querySelector('input[name="contrasena"]').value.trim();
+        const esAdmin = tr.querySelector('select[name="es_admin"]').value;
+
+        const params = new URLSearchParams();
+        params.append('telefono', telefono);
+        params.append('es_admin', esAdmin);
+        if (contrasena) {
+          params.append('contrasena', contrasena);
+        }
+
+        const res = await fetch(`/admin/actualizar_usuario/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+
+        if (res.ok) {
+          tr.querySelectorAll('input, select').forEach(el => el.disabled = true);
+          tr.querySelector('input[name="contrasena"]').value = '';
+          btn.style.display = 'none';
+          tr.querySelector('.edit-usuario-btn').style.display = 'inline-block';
+        } else {
+          let mensaje = 'Error al actualizar el usuario';
+          try {
+            const data = await res.json();
+            if (data.error) mensaje = data.error;
+          } catch (_) {}
+          alert(mensaje);
+        }
+      });
+    });
+
+    document.querySelectorAll('.delete-usuario-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        if (confirm('¿Eliminar este usuario?')) {
+          fetch(`/admin/eliminar_usuario/${id}`, { method: 'POST' })
+            .then(async res => {
+              if (res.ok) {
+                location.reload();
+              } else {
+                let mensaje = 'Error al eliminar el usuario';
+                try {
+                  const data = await res.json();
+                  if (data.error) mensaje = data.error;
+                } catch (_) {}
+                alert(mensaje);
+              }
+            });
+        }
+      });
+    });
 
     // — CRUD Citas —
     document.querySelectorAll('.edit-cita-btn').forEach(btn => {
