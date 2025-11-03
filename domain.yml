@@ -49,6 +49,11 @@ slots:
         entity: hora
       - type: from_text
         intent: informar_hora
+  horarios_disponibles:
+    type: list
+    influence_conversation: false
+    mappings:
+      - type: custom
 
 responses:
   utter_saludo:
