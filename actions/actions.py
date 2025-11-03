@@ -197,50 +197,62 @@ class ActionReprogramarCita(Action):
             )
             return []
 
-        row = None
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                     SELECT id_citas, servicio, fecha, hora FROM citas
+                    SELECT id_citas, servicio, fecha, hora FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
                     (id_usuario,),
                 )
                 row = cursor.fetchone()
-                if row:
-                    id_cita, _servicio, fecha_actual, hora_actual = row
-                    if (nueva_fecha, nueva_hora) != (fecha_actual, hora_actual):
-                        cursor.execute(
-                            """
-                            SELECT 1 FROM citas
-                            WHERE fecha = ? AND hora = ?
-                              AND estado IN ('confirmada','reprogramada')
-                              AND id_citas != ?
-                            """,
-                            (nueva_fecha, nueva_hora, id_cita),
-                        )
-                        if cursor.fetchone():
-                            dispatcher.utter_message(response="utter_hora_ocupada")
-                            return []
+
+                if not row:
+                    dispatcher.utter_message(
+                        "ℹ️ No tienes citas activas para reprogramar."
+                    )
+                    return []
+
+                id_cita, _servicio, fecha_actual, hora_actual = row
+
+                if (nueva_fecha, nueva_hora) != (fecha_actual, hora_actual):
                     cursor.execute(
-                        "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
+                        """
+                        SELECT 1 FROM citas
+                        WHERE fecha = ? AND hora = ?
+                          AND estado IN ('confirmada','reprogramada')
+                          AND id_citas != ?
+                        """,
                         (nueva_fecha, nueva_hora, id_cita),
                     )
-                    conn.commit()
+                    if cursor.fetchone():
+                        dispatcher.utter_message(response="utter_hora_ocupada")
+                        return []
+
+                cursor.execute(
+                    "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
+                    (nueva_fecha, nueva_hora, id_cita),
+                )
+                conn.commit()
         except Exception as exc:
             logger.error(f"Error reprogramando cita: {exc}")
-
-        if row:
             dispatcher.utter_message(
-                text=f"🔄 Cita reprogramada para {nueva_fecha} a las {nueva_hora}"
+                "⚠️ Ocurrió un error al intentar reprogramar tu cita. Intenta nuevamente."
             )
-        else:
-            dispatcher.utter_message("ℹ️ No tienes citas activas para reprogramar.")
-        return []
+            return []
+
+        dispatcher.utter_message(
+            text=f"🔄 Cita reprogramada para {nueva_fecha} a las {nueva_hora}"
+        )
+        return [
+            SlotSet("fecha", nueva_fecha),
+            SlotSet("hora", nueva_hora),
+            SlotSet("horarios_disponibles", None),
+        ]
 
 class ValidateAgendarCitaForm(FormValidationAction):
     def name(self) -> Text:
