@@ -32,6 +32,23 @@ nlu:
     - quiero mover mi cita
     - reprograma mi cita
     - quiero reprogramar mi cita
+    - me gustaría cambiar el horario de mi cita
+    - quiero modificar la hora de mi cita
+    - necesito pasar mi cita para otro día
+    - puedo agendar mi cita para mañana en lugar de hoy
+    - quiero cambiar mi cita para el viernes
+    - quiero mover mi cita al lunes a las 10
+    - deseo posponer mi cita
+    - tengo que reprogramar mi cita por un imprevisto
+    - quiero cambiar mi cita por otra hora disponible
+    - necesito aplazar mi cita
+    - cámbiame la cita para más tarde
+    - quiero ajustar la fecha de mi cita
+    - cambia mi cita a otro horario
+    - quiero reagendar la cita que tenía
+    - podrías modificar la fecha de mi cita
+    - necesito modificar la cita que ya tengo
+
 
 - intent: consultar_servicios
   examples: |
