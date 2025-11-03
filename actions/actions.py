@@ -5,6 +5,8 @@ from pytz import timezone
 import logging
 import sqlite3
 import os
+import re
+import unicodedata
 from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.types import DomainDict
@@ -18,6 +20,184 @@ from rasa_sdk.events import (
 
 logger = logging.getLogger(__name__)
 TZ = timezone("America/La_Paz")
+
+PM_INDICATORS = {
+    "pm",
+    "p m",
+    "p. m",
+    "tarde",
+    "de la tarde",
+    "de la noche",
+    "noche",
+}
+
+AM_INDICATORS = {
+    "am",
+    "a m",
+    "a. m",
+    "mañana",
+    "de la mañana",
+    "madrugada",
+    "de la madrugada",
+}
+
+NUMERIC_WORDS = {
+    "cero": 0,
+    "un": 1,
+    "uno": 1,
+    "una": 1,
+    "dos": 2,
+    "tres": 3,
+    "cuatro": 4,
+    "cinco": 5,
+    "seis": 6,
+    "siete": 7,
+    "ocho": 8,
+    "nueve": 9,
+    "diez": 10,
+    "once": 11,
+    "doce": 12,
+    "trece": 13,
+    "catorce": 14,
+    "quince": 15,
+    "dieciseis": 16,
+    "dieciséis": 16,
+    "diecisiete": 17,
+    "dieciocho": 18,
+}
+
+
+def _strip_accents(value: Text) -> Text:
+    return "".join(
+        char
+        for char in unicodedata.normalize("NFD", value)
+        if unicodedata.category(char) != "Mn"
+    )
+
+
+def _texto_a_numero(token: Text) -> Optional[int]:
+    token = _strip_accents(token.lower())
+    return NUMERIC_WORDS.get(token)
+
+
+def _detectar_periodo(texto: Text) -> Dict[str, bool]:
+    texto_normalizado = texto.lower()
+    compacto = re.sub(r"[\s\.]", "", texto_normalizado)
+    indicadores_pm = any(ind in texto_normalizado for ind in PM_INDICATORS) or "pm" in compacto
+    indicadores_am = any(ind in texto_normalizado for ind in AM_INDICATORS) or "am" in compacto
+    return {"pm": indicadores_pm, "am": indicadores_am}
+
+
+def _aplicar_periodo(base_hour: int, minute: int, texto: Text) -> time:
+    periodo = _detectar_periodo(texto)
+    hour = base_hour % 24
+    if periodo["pm"]:
+        if hour < 12:
+            hour = (hour + 12) % 24
+    elif periodo["am"]:
+        if hour == 12:
+            hour = 0
+    else:
+        if hour < 8 and hour + 12 <= 23:
+            hour += 12
+    return time(hour, minute)
+
+
+def _replace_text_numbers(texto: Text) -> Text:
+    def reemplazar(match: re.Match) -> Text:
+        palabra = match.group(0)
+        numero = _texto_a_numero(palabra)
+        if numero is not None:
+            return str(numero)
+        return palabra
+
+    return re.sub(r"\b[\wáéíóúñ]+\b", reemplazar, texto)
+
+
+def parse_hora_es(value: Optional[Text]) -> Optional[time]:
+    if not value:
+        return None
+
+    texto = value.strip().lower()
+    if not texto:
+        return None
+
+    texto = texto.replace("\u200b", "")
+    texto = texto.replace("hrs", "")
+    texto = texto.replace("horas", "")
+    texto = texto.replace("hora", "")
+    texto = texto.replace("hs", "")
+    texto = re.sub(r"(\d{1,2})\s*h\s*(\d{2})", r"\1:\2", texto)
+    texto = re.sub(r"(\d{1,2})\s*h\b", r"\1", texto)
+    texto = texto.replace("p.m.", " pm ")
+    texto = texto.replace("a.m.", " am ")
+    texto = texto.replace("p.m", " pm ")
+    texto = texto.replace("a.m", " am ")
+    texto = re.sub(r"[\.\,]", " ", texto)
+    texto = re.sub(r"\s+", " ", texto).strip()
+
+    if not texto:
+        return None
+
+    texto_sin_acentos = _strip_accents(texto)
+
+    if "medianoche" in texto_sin_acentos or "media noche" in texto_sin_acentos:
+        return time(0, 0)
+    if "mediodia" in texto_sin_acentos or "medio dia" in texto_sin_acentos:
+        return time(12, 0)
+
+    match = re.search(r"cuarto\s+para\s+las?\s+([\wáéíóúñ]+)", texto)
+    if match:
+        objetivo = match.group(1)
+        numero = _texto_a_numero(objetivo) or (int(objetivo) if objetivo.isdigit() else None)
+        if numero is not None:
+            base_hour = (numero - 1) % 24
+            return _aplicar_periodo(base_hour, 45, texto)
+
+    match = re.search(r"([\wáéíóúñ]+)\s+y\s+media", texto)
+    if match:
+        numero = _texto_a_numero(match.group(1))
+        if numero is None and match.group(1).isdigit():
+            numero = int(match.group(1))
+        if numero is not None:
+            return _aplicar_periodo(numero, 30, texto)
+
+    match = re.search(r"([\wáéíóúñ]+)\s+y\s+cuarto", texto)
+    if match:
+        numero = _texto_a_numero(match.group(1))
+        if numero is None and match.group(1).isdigit():
+            numero = int(match.group(1))
+        if numero is not None:
+            return _aplicar_periodo(numero, 15, texto)
+
+    reemplazado = _replace_text_numbers(texto)
+    match = re.search(r"(\d{1,2})(?:[:](\d{1,2}))?", reemplazado)
+    if match:
+        hour = int(match.group(1))
+        minute = int(match.group(2)) if match.group(2) else 0
+        if "y media" in texto:
+            minute = 30
+        elif "y cuarto" in texto:
+            minute = 15
+        if minute >= 60:
+            return None
+        return _aplicar_periodo(hour, minute, texto)
+
+    try:
+        parsed = parse(
+            value,
+            languages=["es"],
+            settings={
+                "TIMEZONE": TZ.zone,
+                "RETURN_AS_TIMEZONE_AWARE": False,
+            },
+        )
+        if parsed:
+            return _aplicar_periodo(parsed.hour, parsed.minute, texto)
+    except Exception:
+        return None
+
+    return None
 
 # Reuse la misma base de datos que utiliza el backend para almacenar
 # usuarios. Aquí agregamos una tabla simple para las citas de cada
@@ -370,46 +550,43 @@ class ValidateAgendarCitaForm(FormValidationAction):
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
 
-        try:
-            hora_str = ''.join(
-                filter(lambda x: x.isdigit() or x == ':', slot_value)
-            )
-            parsed = parse(hora_str, settings={"TIMEZONE": TZ.zone})
-            if not parsed:
-                raise ValueError
-            hora = parsed.time()
-            if hora < time(8, 0) or hora > time(18, 0):
-                dispatcher.utter_message(response="utter_error_hora")
-                return {"hora": None}
-            hora_str = hora.strftime("%H:%M")
-            fecha = tracker.get_slot("fecha")
-            horarios_disponibles = tracker.get_slot("horarios_disponibles") or []
-            if horarios_disponibles and hora_str not in horarios_disponibles:
-                dispatcher.utter_message(
-                    text="⚠️ Debes elegir uno de los horarios disponibles mostrados."
-                )
-                dispatcher.utter_message(
-                    text=tabla_horarios(horarios_disponibles, html=True)
-                )
-                return {"hora": None}
-            if fecha:
-                try:
-                    with sqlite3.connect(DB_PATH) as conn:
-                        conn.execute("PRAGMA foreign_keys = ON")
-                        cursor = conn.cursor()
-                        cursor.execute(
-                            "SELECT 1 FROM citas WHERE fecha = ? AND hora = ? AND estado IN ('confirmada','reprogramada')",
-                            (fecha, hora_str),
-                        )
-                        if cursor.fetchone():
-                            dispatcher.utter_message(response="utter_hora_ocupada")
-                            return {"hora": None}
-                except Exception as exc:
-                    logger.error(f"Error validando hora ocupada: {exc}")
-            return {"hora": hora_str}
-        except Exception:
+        hora = parse_hora_es(slot_value)
+        if not hora:
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
+
+        if hora < time(8, 0) or hora > time(18, 0):
+            dispatcher.utter_message(response="utter_error_hora")
+            return {"hora": None}
+
+        hora_str = hora.strftime("%H:%M")
+        fecha = tracker.get_slot("fecha")
+        horarios_disponibles = tracker.get_slot("horarios_disponibles") or []
+        if horarios_disponibles and hora_str not in horarios_disponibles:
+            dispatcher.utter_message(
+                text="⚠️ Debes elegir una de las horas mostradas en la lista disponible."
+            )
+            dispatcher.utter_message(
+                text=tabla_horarios(horarios_disponibles, html=True)
+            )
+            return {"hora": None}
+
+        if fecha:
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    conn.execute("PRAGMA foreign_keys = ON")
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT 1 FROM citas WHERE fecha = ? AND hora = ? AND estado IN ('confirmada','reprogramada')",
+                        (fecha, hora_str),
+                    )
+                    if cursor.fetchone():
+                        dispatcher.utter_message(response="utter_hora_ocupada")
+                        return {"hora": None}
+            except Exception as exc:
+                logger.error(f"Error validando hora ocupada: {exc}")
+
+        return {"hora": hora_str}
 
 class ActionCancelarCita(Action):
     def name(self) -> str:
