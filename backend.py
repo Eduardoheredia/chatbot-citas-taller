@@ -397,6 +397,9 @@ def eliminar_usuario_admin(id_usuario):
     if not session.get("es_admin"):
         return redirect(url_for("login_page"))
 
+    if id_usuario == "admin":
+        return jsonify({"error": "El administrador predeterminado no se puede eliminar"}), 400
+
     if id_usuario == session.get("id_usuario"):
         return jsonify({"error": "No puede eliminar su propio usuario"}), 400
 
