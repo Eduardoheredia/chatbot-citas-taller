@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chatbot de Citas</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/styles.css" />
   <style>
@@ -30,7 +31,7 @@
     }
     header {
       position: sticky; top: 0; width: 100%; padding: var(--spacing);
-      display: flex; justify-content: center; align-items: center;
+      display: flex; justify-content: center; align-items: center; gap: 1rem;
       background: rgba(255,255,255,0.98); backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--color-border);
       font-size: 1.25rem; font-weight: 600; box-shadow: var(--shadow-sm);
@@ -49,15 +50,41 @@
       box-shadow: var(--shadow-md); outline: none;
     }
     #logout:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
-    #history, #citas {
-      max-width: 1200px; margin: var(--spacing) auto 0;
-      padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem;
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: clamp(0.5rem, 2vw, 2rem);
+      display: grid;
+      gap: var(--spacing);
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      align-items: start;
+    }
+    .panel {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: clamp(0.75rem, 2vw, 1.5rem);
+      color: #555;
+      font-size: clamp(0.9rem, 1.8vw, 1rem);
+    }
+    .panel h2, .panel h3 {
+      font-size: clamp(1.1rem, 2vw, 1.25rem);
+      margin-bottom: 0.75rem;
+      color: var(--color-text);
+    }
+    #history p, #citas p {
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
     }
     #webchat {
-      width: 100%; max-width: 1200px; margin: var(--spacing) auto;
-      height: 70vh; position: relative; background: #fff;
-      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+      height: clamp(400px, 65vh, 720px);
+      position: relative;
       overflow: hidden;
+    }
+    .chat-panel {
+      padding: 0;
     }
     .rw-launcher, .rw-full-screen-launcher { display: none !important; }
     .rw-widget-container {
@@ -65,13 +92,32 @@
       width: 100% !important; height: 100% !important;
     }
     @media (max-width: 768px) {
-      header { font-size: 1.1rem; }
-      #logout {
-        right: var(--spacing); padding: 0.4rem 1rem;
-        font-size: 0.875rem;
+      header {
+        font-size: clamp(1rem, 2.5vw + 0.5rem, 1.1rem);
+        flex-direction: column;
       }
-      #webchat { margin: 1rem; height: 60vh; }
-      #history, #citas { margin: 0.5rem; }
+      #logout {
+        position: static;
+        width: 100%;
+        max-width: 260px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+      main {
+        grid-template-columns: 1fr;
+        padding: var(--spacing);
+      }
+      #webchat {
+        height: 60vh;
+      }
+    }
+    @media (min-width: 1024px) {
+      main {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      #webchat {
+        grid-column: 1 / -1;
+      }
     }
   </style>
 </head>
@@ -80,9 +126,17 @@
     Asistente Virtual del Taller
     <button id="logout">Cerrar sesión</button>
   </header>
-  <div id="history"></div>
-  <div id="citas"></div>
-  <div id="webchat"></div>
+  <main>
+    <section id="history" class="panel" aria-live="polite">
+      <h2>Historial reciente</h2>
+    </section>
+    <section id="citas" class="panel" aria-live="polite">
+      <h2>Resumen de citas</h2>
+    </section>
+    <section class="panel chat-panel">
+      <div id="webchat"></div>
+    </section>
+  </main>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat@1.0.1/lib/index.min.js"></script>
@@ -136,11 +190,17 @@
       .then(r => r.json())
       .then(hist => {
         const historyDiv = document.getElementById("history");
-        hist.forEach(m => {
-          const p = document.createElement("p");
-          //p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
-          historyDiv.appendChild(p);
-        });
+        if (hist.length) {
+          hist.forEach(m => {
+            const p = document.createElement("p");
+            //p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
+            historyDiv.appendChild(p);
+          });
+        } else {
+          const empty = document.createElement("p");
+          empty.textContent = "Aún no hay conversaciones registradas.";
+          historyDiv.appendChild(empty);
+        }
       });
 
       fetch("/citas")
@@ -148,14 +208,15 @@
       .then(citas => {
         const citasDiv = document.getElementById("citas");
         if (citas.length) {
-          const titulo = document.createElement("h3");
-          titulo.textContent = "Tus citas";
-          citasDiv.appendChild(titulo);
           citas.forEach(c => {
             const p = document.createElement("p");
             p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
             citasDiv.appendChild(p);
           });
+        } else {
+          const empty = document.createElement("p");
+          empty.textContent = "No tienes citas registradas.";
+          citasDiv.appendChild(empty);
         }
       });
   </script>
