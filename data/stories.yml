@@ -16,6 +16,14 @@ stories:
     - intent: cancelar_cita
     - action: action_cancelar_cita
 
+- story: reprogramar_cita
+  steps:
+    - intent: reprogramar_cita
+    - action: reprogramar_cita_form
+    - active_loop: reprogramar_cita_form
+    - active_loop: null
+    - action: action_reprogramar_cita
+
 - story: consultar_servicios
   steps:
     - intent: consultar_servicios

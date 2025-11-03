@@ -195,7 +195,7 @@ class ActionReprogramarCita(Action):
             dispatcher.utter_message(
                 "ℹ️ Necesito la nueva fecha y hora para poder reprogramar tu cita."
             )
-            return []
+            return [SlotSet("horarios_disponibles", None)]
 
         row = None
         try:
@@ -204,7 +204,7 @@ class ActionReprogramarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                     SELECT id_citas, servicio, fecha, hora FROM citas
+                    SELECT id_citas, servicio, fecha, hora FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -225,7 +225,7 @@ class ActionReprogramarCita(Action):
                         )
                         if cursor.fetchone():
                             dispatcher.utter_message(response="utter_hora_ocupada")
-                            return []
+                            return [SlotSet("horarios_disponibles", None)]
                     cursor.execute(
                         "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
                         (nueva_fecha, nueva_hora, id_cita),
@@ -234,13 +234,19 @@ class ActionReprogramarCita(Action):
         except Exception as exc:
             logger.error(f"Error reprogramando cita: {exc}")
 
+        events: List[EventType] = [SlotSet("horarios_disponibles", None)]
         if row:
             dispatcher.utter_message(
                 text=f"🔄 Cita reprogramada para {nueva_fecha} a las {nueva_hora}"
             )
         else:
             dispatcher.utter_message("ℹ️ No tienes citas activas para reprogramar.")
-        return []
+        return events
+
+
+class ValidateReprogramarCitaForm(ValidateAgendarCitaForm):
+    def name(self) -> Text:
+        return "validate_reprogramar_cita_form"
 
 class ValidateAgendarCitaForm(FormValidationAction):
     def name(self) -> Text:
