@@ -38,6 +38,8 @@ rules:
   steps:
     - intent: reprogramar_cita
     - action: action_preparar_reprogramacion
+    - action: reprogramar_cita_form
+    - active_loop: reprogramar_cita_form
 
 - rule: Ejecutar reprogramación
   condition:
