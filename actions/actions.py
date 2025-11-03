@@ -178,7 +178,7 @@ class ActionAgendarCita(Action):
         dispatcher.utter_message(
             text=f"✅ Cita confirmada:\n{servicio}\nFecha: {fecha}\nHora: {hora}"
         )
-        return []
+        return [SlotSet("horarios_disponibles", None)]
 
 class ActionReprogramarCita(Action):
     def name(self) -> str:
@@ -263,11 +263,17 @@ class ValidateAgendarCitaForm(FormValidationAction):
             horarios = obtener_horarios_disponibles(fecha_str)
             tabla = tabla_horarios(horarios, html=True)
             dispatcher.utter_message(text=tabla)
-            return {"fecha": fecha_str}
+            if not horarios:
+                dispatcher.utter_message(
+                    text="Por favor ingresa otra fecha con horarios disponibles."
+                )
+                return {"fecha": None, "horarios_disponibles": []}
+
+            return {"fecha": fecha_str, "horarios_disponibles": horarios}
         except Exception as e:
             logger.error(f"Error validando fecha: {str(e)}")
             dispatcher.utter_message(response="utter_error_fecha")
-            return {"fecha": None}
+            return {"fecha": None, "horarios_disponibles": []}
 
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
         if not slot_value:
@@ -287,6 +293,15 @@ class ValidateAgendarCitaForm(FormValidationAction):
                 return {"hora": None}
             hora_str = hora.strftime("%H:%M")
             fecha = tracker.get_slot("fecha")
+            horarios_disponibles = tracker.get_slot("horarios_disponibles") or []
+            if horarios_disponibles and hora_str not in horarios_disponibles:
+                dispatcher.utter_message(
+                    text="⚠️ Debes elegir uno de los horarios disponibles mostrados."
+                )
+                dispatcher.utter_message(
+                    text=tabla_horarios(horarios_disponibles, html=True)
+                )
+                return {"hora": None}
             if fecha:
                 try:
                     with sqlite3.connect(DB_PATH) as conn:
