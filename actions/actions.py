@@ -244,10 +244,6 @@ class ActionReprogramarCita(Action):
         return events
 
 
-class ValidateReprogramarCitaForm(ValidateAgendarCitaForm):
-    def name(self) -> Text:
-        return "validate_reprogramar_cita_form"
-
 class ValidateAgendarCitaForm(FormValidationAction):
     def name(self) -> Text:
         return "validate_agendar_cita_form"
@@ -346,6 +342,12 @@ class ValidateAgendarCitaForm(FormValidationAction):
         except Exception:
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
+
+
+class ValidateReprogramarCitaForm(ValidateAgendarCitaForm):
+    def name(self) -> Text:
+        return "validate_reprogramar_cita_form"
+
 
 class ActionCancelarCita(Action):
     def name(self) -> str:
