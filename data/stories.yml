@@ -55,3 +55,14 @@ stories:
   steps:
     - intent: consultar_historial_citas
     - action: action_mostrar_historial
+
+- story: Reprogramar cita feliz
+  steps:
+    - intent: reprogramar_cita
+    - action: reprogramar_cita_form
+    - active_loop: reprogramar_cita_form
+    - intent: informar_fecha
+    - intent: informar_hora
+    - action: reprogramar_cita_form
+    - active_loop: null
+    - action: action_reprogramar_cita

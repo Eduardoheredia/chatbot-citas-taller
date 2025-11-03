@@ -1,4 +1,4 @@
-from typing import Any, Text, Dict, List
+from typing import Any, Text, Dict, List, Optional
 from datetime import datetime, time, timedelta
 from dateparser import parse
 from pytz import timezone
@@ -104,6 +104,12 @@ def tabla_horarios(horarios: List[Text], html: bool = False) -> Text:
     return ", ".join(horarios)
 
 
+def _get_horarios_disponibles(fecha: Text, servicio: Optional[Text] = None) -> List[Text]:
+    """Wrapper to reuse the existing helper for fetching available slots."""
+
+    return obtener_horarios_disponibles(fecha)
+
+
 class ActionSessionStart(Action):
     """Greets the user once when a new session starts."""
 
@@ -180,6 +186,53 @@ class ActionAgendarCita(Action):
         )
         return [SlotSet("horarios_disponibles", None)]
 
+
+class ValidateReprogramarCitaForm(FormValidationAction):
+    def name(self) -> Text:
+        return "validate_reprogramar_cita_form"
+
+    async def validate_fecha(self, slot_value, dispatcher, tracker, domain):
+        value = (slot_value or "").strip()
+        if (
+            not value
+            or len(value) != 10
+            or value[4] != "-"
+            or value[7] != "-"
+        ):
+            dispatcher.utter_message(text="Formato de fecha inválido. Usa AAAA-MM-DD.")
+            return {"fecha": None, "horarios_disponibles": []}
+
+        try:
+            datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            dispatcher.utter_message(text="Formato de fecha inválido. Usa AAAA-MM-DD.")
+            return {"fecha": None, "horarios_disponibles": []}
+
+        servicio = tracker.get_slot("servicio")
+        horarios = _get_horarios_disponibles(value, servicio)
+        if not horarios:
+            dispatcher.utter_message(
+                text="No hay horarios disponibles para esa fecha. Por favor elige otra."
+            )
+            return {"fecha": None, "horarios_disponibles": []}
+
+        dispatcher.utter_message(text=tabla_horarios(horarios, html=True))
+        return {"fecha": value, "horarios_disponibles": horarios}
+
+    async def validate_hora(self, slot_value, dispatcher, tracker, domain):
+        value = (slot_value or "").strip()
+        horarios = tracker.get_slot("horarios_disponibles") or []
+        if value not in horarios:
+            dispatcher.utter_message(
+                text="⚠️ Debes elegir una hora mostrada en la lista disponible."
+            )
+            if horarios:
+                dispatcher.utter_message(text=tabla_horarios(horarios, html=True))
+            return {"hora": None}
+
+        return {"hora": value}
+
+
 class ActionReprogramarCita(Action):
     def name(self) -> str:
         return "action_reprogramar_cita"
@@ -190,12 +243,18 @@ class ActionReprogramarCita(Action):
         nueva_fecha = tracker.get_slot("fecha")
         nueva_hora = tracker.get_slot("hora")
         id_usuario = tracker.sender_id
+        servicio_actual = tracker.get_slot("servicio")
+
+        events: List[EventType] = [
+            SlotSet("horarios_disponibles", None),
+            SlotSet("requested_slot", None),
+        ]
 
         if not nueva_fecha or not nueva_hora:
             dispatcher.utter_message(
                 "ℹ️ Necesito la nueva fecha y hora para poder reprogramar tu cita."
             )
-            return []
+            return events
 
         row = None
         try:
@@ -204,15 +263,19 @@ class ActionReprogramarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                     SELECT id_citas, servicio, fecha, hora FROM citas
-                    WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
+                    SELECT id_citas, servicio, fecha, hora
+                    FROM citas
+                    WHERE id_usuario = ?
+                      AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
                     (id_usuario,),
                 )
                 row = cursor.fetchone()
                 if row:
-                    id_cita, _servicio, fecha_actual, hora_actual = row
+                    id_cita, servicio_registrado, fecha_actual, hora_actual = row
+                    if not servicio_actual:
+                        servicio_actual = servicio_registrado
                     if (nueva_fecha, nueva_hora) != (fecha_actual, hora_actual):
                         cursor.execute(
                             """
@@ -225,7 +288,7 @@ class ActionReprogramarCita(Action):
                         )
                         if cursor.fetchone():
                             dispatcher.utter_message(response="utter_hora_ocupada")
-                            return []
+                            return events
                     cursor.execute(
                         "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
                         (nueva_fecha, nueva_hora, id_cita),
@@ -233,14 +296,21 @@ class ActionReprogramarCita(Action):
                     conn.commit()
         except Exception as exc:
             logger.error(f"Error reprogramando cita: {exc}")
+            dispatcher.utter_message(text="⚠️ Ocurrió un error al reprogramar tu cita.")
+            return events
 
         if row:
             dispatcher.utter_message(
-                text=f"🔄 Cita reprogramada para {nueva_fecha} a las {nueva_hora}"
+                response="utter_reprogramacion_exitosa",
+                fecha=nueva_fecha,
+                hora=nueva_hora,
             )
-        else:
-            dispatcher.utter_message("ℹ️ No tienes citas activas para reprogramar.")
-        return []
+            if servicio_actual:
+                events.append(SlotSet("servicio", servicio_actual))
+            return events
+
+        dispatcher.utter_message(response="utter_no_hay_cita_activa")
+        return events
 
 class ValidateAgendarCitaForm(FormValidationAction):
     def name(self) -> Text:
