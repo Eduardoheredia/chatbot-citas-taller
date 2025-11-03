@@ -104,6 +104,101 @@ def tabla_horarios(horarios: List[Text], html: bool = False) -> Text:
     return ", ".join(horarios)
 
 
+def _slots_reset_events() -> List[SlotSet]:
+    """Return events that clear scheduling related slots."""
+
+    return [
+        SlotSet("fecha", None),
+        SlotSet("hora", None),
+        SlotSet("horarios_disponibles", []),
+    ]
+
+
+def _validar_fecha(
+    slot_value: Any, dispatcher: CollectingDispatcher, tracker: Tracker
+) -> Dict[Text, Any]:
+    """Validate a date provided by the user for appointment operations."""
+
+    try:
+        parsed = parse(
+            slot_value,
+            settings={
+                "TIMEZONE": TZ.zone,
+                "PREFER_DATES_FROM": "future",
+                "RELATIVE_BASE": datetime.now(TZ),
+            },
+        )
+        if not parsed:
+            raise ValueError("Formato no reconocido")
+        fecha = parsed.date()
+        hoy = datetime.now(TZ).date()
+        if fecha < hoy:
+            dispatcher.utter_message(response="utter_error_fecha")
+            return {"fecha": None, "horarios_disponibles": []}
+        fecha_str = fecha.isoformat()
+        horarios = obtener_horarios_disponibles(fecha_str)
+        tabla = tabla_horarios(horarios, html=True)
+        dispatcher.utter_message(text=tabla)
+        if not horarios:
+            dispatcher.utter_message(
+                text="Por favor ingresa otra fecha con horarios disponibles."
+            )
+            return {"fecha": None, "horarios_disponibles": []}
+
+        return {"fecha": fecha_str, "horarios_disponibles": horarios}
+    except Exception as exc:
+        logger.error(f"Error validando fecha: {str(exc)}")
+        dispatcher.utter_message(response="utter_error_fecha")
+        return {"fecha": None, "horarios_disponibles": []}
+
+
+def _validar_hora(
+    slot_value: Any, dispatcher: CollectingDispatcher, tracker: Tracker
+) -> Dict[Text, Any]:
+    """Validate a time provided by the user for appointment operations."""
+
+    if not slot_value:
+        dispatcher.utter_message(response="utter_error_hora")
+        return {"hora": None}
+
+    try:
+        hora_str = "".join(filter(lambda x: x.isdigit() or x == ":", slot_value))
+        parsed = parse(hora_str, settings={"TIMEZONE": TZ.zone})
+        if not parsed:
+            raise ValueError
+        hora = parsed.time()
+        if hora < time(8, 0) or hora > time(18, 0):
+            dispatcher.utter_message(response="utter_error_hora")
+            return {"hora": None}
+        hora_str = hora.strftime("%H:%M")
+        fecha = tracker.get_slot("fecha")
+        horarios_disponibles = tracker.get_slot("horarios_disponibles") or []
+        if horarios_disponibles and hora_str not in horarios_disponibles:
+            dispatcher.utter_message(
+                text="⚠️ Debes elegir uno de los horarios disponibles mostrados."
+            )
+            dispatcher.utter_message(text=tabla_horarios(horarios_disponibles, html=True))
+            return {"hora": None}
+        if fecha:
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    conn.execute("PRAGMA foreign_keys = ON")
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT 1 FROM citas WHERE fecha = ? AND hora = ? AND estado IN ('confirmada','reprogramada')",
+                        (fecha, hora_str),
+                    )
+                    if cursor.fetchone():
+                        dispatcher.utter_message(response="utter_hora_ocupada")
+                        return {"hora": None}
+            except Exception as exc:
+                logger.error(f"Error validando hora ocupada: {exc}")
+        return {"hora": hora_str}
+    except Exception:
+        dispatcher.utter_message(response="utter_error_hora")
+        return {"hora": None}
+
+
 class ActionSessionStart(Action):
     """Greets the user once when a new session starts."""
 
@@ -191,12 +286,6 @@ class ActionReprogramarCita(Action):
         nueva_hora = tracker.get_slot("hora")
         id_usuario = tracker.sender_id
 
-        if not nueva_fecha or not nueva_hora:
-            dispatcher.utter_message(
-                "ℹ️ Necesito la nueva fecha y hora para poder reprogramar tu cita."
-            )
-            return []
-
         row = None
         try:
             with sqlite3.connect(DB_PATH) as conn:
@@ -204,7 +293,7 @@ class ActionReprogramarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                     SELECT id_citas, servicio, fecha, hora FROM citas
+                     SELECT id_citas, servicio FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -212,23 +301,9 @@ class ActionReprogramarCita(Action):
                 )
                 row = cursor.fetchone()
                 if row:
-                    id_cita, _servicio, fecha_actual, hora_actual = row
-                    if (nueva_fecha, nueva_hora) != (fecha_actual, hora_actual):
-                        cursor.execute(
-                            """
-                            SELECT 1 FROM citas
-                            WHERE fecha = ? AND hora = ?
-                              AND estado IN ('confirmada','reprogramada')
-                              AND id_citas != ?
-                            """,
-                            (nueva_fecha, nueva_hora, id_cita),
-                        )
-                        if cursor.fetchone():
-                            dispatcher.utter_message(response="utter_hora_ocupada")
-                            return []
                     cursor.execute(
                         "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
-                        (nueva_fecha, nueva_hora, id_cita),
+                        (nueva_fecha, nueva_hora, row[0]),
                     )
                     conn.commit()
         except Exception as exc:
@@ -238,9 +313,48 @@ class ActionReprogramarCita(Action):
             dispatcher.utter_message(
                 text=f"🔄 Cita reprogramada para {nueva_fecha} a las {nueva_hora}"
             )
-        else:
+            return [SlotSet("horarios_disponibles", None)]
+
+        dispatcher.utter_message("ℹ️ No tienes citas activas para reprogramar.")
+        return _slots_reset_events()
+
+
+class ActionPrepararReprogramacion(Action):
+    def name(self) -> Text:
+        return "action_preparar_reprogramacion"
+
+    def run(
+        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
+    ) -> List[Dict[Text, Any]]:
+        id_usuario = tracker.sender_id
+
+        tiene_cita = False
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                     SELECT 1 FROM citas
+                    WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
+                    LIMIT 1
+                    """,
+                    (id_usuario,),
+                )
+                tiene_cita = cursor.fetchone() is not None
+        except Exception as exc:
+            logger.error(f"Error consultando cita activa antes de reprogramar: {exc}")
+
+        if not tiene_cita:
             dispatcher.utter_message("ℹ️ No tienes citas activas para reprogramar.")
-        return []
+            return _slots_reset_events() + [FollowupAction("action_listen")]
+
+        dispatcher.utter_message(
+            text="De acuerdo, vamos a reprogramar tu cita. ¿Para qué fecha la deseas?"
+        )
+        events: List[Dict[Text, Any]] = _slots_reset_events()
+        events.append(FollowupAction("reprogramar_cita_form"))
+        return events
 
 class ValidateAgendarCitaForm(FormValidationAction):
     def name(self) -> Text:
@@ -263,83 +377,21 @@ class ValidateAgendarCitaForm(FormValidationAction):
         return {"servicio": None}
 
     async def validate_fecha(self, slot_value, dispatcher, tracker, domain):
-        try:
-            parsed = parse(
-                slot_value,
-                settings={
-                    'TIMEZONE': TZ.zone,
-                    'PREFER_DATES_FROM': 'future',
-                    'RELATIVE_BASE': datetime.now(TZ),
-                },
-            )
-            if not parsed:
-                raise ValueError("Formato no reconocido")
-            fecha = parsed.date()
-            hoy = datetime.now(TZ).date()
-            if fecha < hoy:
-                dispatcher.utter_message(response="utter_error_fecha")
-                return {"fecha": None}
-            fecha_str = fecha.isoformat()
-            horarios = obtener_horarios_disponibles(fecha_str)
-            tabla = tabla_horarios(horarios, html=True)
-            dispatcher.utter_message(text=tabla)
-            if not horarios:
-                dispatcher.utter_message(
-                    text="Por favor ingresa otra fecha con horarios disponibles."
-                )
-                return {"fecha": None, "horarios_disponibles": []}
-
-            return {"fecha": fecha_str, "horarios_disponibles": horarios}
-        except Exception as e:
-            logger.error(f"Error validando fecha: {str(e)}")
-            dispatcher.utter_message(response="utter_error_fecha")
-            return {"fecha": None, "horarios_disponibles": []}
+        return _validar_fecha(slot_value, dispatcher, tracker)
 
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
-        if not slot_value:
-            dispatcher.utter_message(response="utter_error_hora")
-            return {"hora": None}
+        return _validar_hora(slot_value, dispatcher, tracker)
 
-        try:
-            hora_str = ''.join(
-                filter(lambda x: x.isdigit() or x == ':', slot_value)
-            )
-            parsed = parse(hora_str, settings={"TIMEZONE": TZ.zone})
-            if not parsed:
-                raise ValueError
-            hora = parsed.time()
-            if hora < time(8, 0) or hora > time(18, 0):
-                dispatcher.utter_message(response="utter_error_hora")
-                return {"hora": None}
-            hora_str = hora.strftime("%H:%M")
-            fecha = tracker.get_slot("fecha")
-            horarios_disponibles = tracker.get_slot("horarios_disponibles") or []
-            if horarios_disponibles and hora_str not in horarios_disponibles:
-                dispatcher.utter_message(
-                    text="⚠️ Debes elegir uno de los horarios disponibles mostrados."
-                )
-                dispatcher.utter_message(
-                    text=tabla_horarios(horarios_disponibles, html=True)
-                )
-                return {"hora": None}
-            if fecha:
-                try:
-                    with sqlite3.connect(DB_PATH) as conn:
-                        conn.execute("PRAGMA foreign_keys = ON")
-                        cursor = conn.cursor()
-                        cursor.execute(
-                            "SELECT 1 FROM citas WHERE fecha = ? AND hora = ? AND estado IN ('confirmada','reprogramada')",
-                            (fecha, hora_str),
-                        )
-                        if cursor.fetchone():
-                            dispatcher.utter_message(response="utter_hora_ocupada")
-                            return {"hora": None}
-                except Exception as exc:
-                    logger.error(f"Error validando hora ocupada: {exc}")
-            return {"hora": hora_str}
-        except Exception:
-            dispatcher.utter_message(response="utter_error_hora")
-            return {"hora": None}
+
+class ValidateReprogramarCitaForm(FormValidationAction):
+    def name(self) -> Text:
+        return "validate_reprogramar_cita_form"
+
+    async def validate_fecha(self, slot_value, dispatcher, tracker, domain):
+        return _validar_fecha(slot_value, dispatcher, tracker)
+
+    async def validate_hora(self, slot_value, dispatcher, tracker, domain):
+        return _validar_hora(slot_value, dispatcher, tracker)
 
 class ActionCancelarCita(Action):
     def name(self) -> str:

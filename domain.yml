@@ -95,12 +95,18 @@ forms:
       - servicio
       - fecha
       - hora
+  reprogramar_cita_form:
+    required_slots:
+      - fecha
+      - hora
 
 actions:
   - action_agendar_cita
   - action_cancelar_cita
   - action_reprogramar_cita
+  - action_preparar_reprogramacion
   - validate_agendar_cita_form
+  - validate_reprogramar_cita_form
   - action_default_fallback
   - action_responder_consulta_mecanica
   - action_consultar_cita
