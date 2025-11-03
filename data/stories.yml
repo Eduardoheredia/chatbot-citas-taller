@@ -16,14 +16,6 @@ stories:
     - intent: cancelar_cita
     - action: action_cancelar_cita
 
-- story: reprogramar_cita
-  steps:
-    - intent: reprogramar_cita
-    - action: reprogramar_cita_form
-    - active_loop: reprogramar_cita_form
-    - active_loop: null
-    - action: action_reprogramar_cita
-
 - story: consultar_servicios
   steps:
     - intent: consultar_servicios
@@ -63,3 +55,14 @@ stories:
   steps:
     - intent: consultar_historial_citas
     - action: action_mostrar_historial
+
+- story: Reprogramar cita feliz
+  steps:
+    - intent: reprogramar_cita
+    - action: reprogramar_cita_form
+    - active_loop: reprogramar_cita_form
+    - intent: informar_fecha
+    - intent: informar_hora
+    - action: reprogramar_cita_form
+    - active_loop: null
+    - action: action_reprogramar_cita

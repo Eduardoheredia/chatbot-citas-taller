@@ -49,6 +49,7 @@ slots:
         entity: hora
       - type: from_text
         intent: informar_hora
+
   horarios_disponibles:
     type: list
     influence_conversation: false
@@ -67,15 +68,19 @@ responses:
   utter_ask_servicio:
     - text: "¿Qué servicio necesitas? (cambio de aceite, revisión general, alineación, balanceo, mantenimiento preventivo)"
   utter_ask_fecha:
-    - text: "¿Para qué fecha deseas agendar la cita? (Ejemplo: 2025-06-15)"
+    - text: "¿Para qué fecha deseas la nueva cita? (Formato: AAAA-MM-DD - Ejemplo: 2025-06-15)"
   utter_ask_hora:
     - text: "¿A qué hora deseas la cita? Elige una de las horas disponibles (Ejemplo: 10:00, entre 08:00 y 18:00)"
   utter_confirmar_cita:
     - text: "Resumen de cita:\nServicio: {servicio}\nFecha: {fecha}\nHora: {hora}\n¿Confirmar?"
   utter_cancelar_cita:
     - text: "✅ Cita cancelada exitosamente"
-  utter_reprogramar_cita:
-    - text: "🔄 Cita reprogramada para {fecha} a las {hora}"
+  utter_resumen_reprogramacion:
+    - text: "Nueva fecha/hora propuestas:\nFecha: {fecha}\nHora: {hora}\n¿Confirmar?"
+  utter_reprogramacion_exitosa:
+    - text: "✅ Tu cita fue reprogramada a {fecha} a las {hora}."
+  utter_no_hay_cita_activa:
+    - text: "No encuentro una cita activa para reprogramar. Puedes crear una nueva."
   utter_error_fecha:
     - text: "⚠️ Fecha inválida. Ingresa una fecha igual o futura a la actual(Ej: 2025-05-30)"
   utter_error_hora:
@@ -95,6 +100,7 @@ forms:
       - servicio
       - fecha
       - hora
+
   reprogramar_cita_form:
     required_slots:
       - fecha

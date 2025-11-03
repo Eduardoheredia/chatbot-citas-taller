@@ -54,6 +54,10 @@ nlu:
     - quiero reagendar la cita que tenía
     - podrías modificar la fecha de mi cita
     - necesito modificar la cita que ya tengo
+    - quiero reagendar mi cita
+    - cambiar la hora de mi cita
+    - mover mi cita
+    - reagendar cita actual
 
 
 - intent: consultar_servicios

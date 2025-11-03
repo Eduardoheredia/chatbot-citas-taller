@@ -34,20 +34,6 @@ rules:
     - intent: cancelar_cita
     - action: action_cancelar_cita
 
-- rule: Iniciar reprogramación
-  steps:
-    - intent: reprogramar_cita
-    - action: reprogramar_cita_form
-    - active_loop: reprogramar_cita_form
-
-- rule: Finalizar reprogramación
-  condition:
-    - active_loop: reprogramar_cita_form
-  steps:
-    - action: reprogramar_cita_form
-    - active_loop: null
-    - action: action_reprogramar_cita
-
 - rule: Consultar horarios
   steps:
     - intent: consultar_horarios_disponibles
@@ -82,3 +68,24 @@ rules:
   steps:
     - intent: consultar_historial_citas
     - action: action_mostrar_historial
+
+- rule: Iniciar reprogramación
+  steps:
+    - intent: reprogramar_cita
+    - action: reprogramar_cita_form
+    - active_loop: reprogramar_cita_form
+
+- rule: Enviar a validación / preguntar siguiente slot (reprogramar)
+  condition:
+    - active_loop: reprogramar_cita_form
+  steps:
+    - action: reprogramar_cita_form
+    - active_loop: reprogramar_cita_form
+
+- rule: Finalizar reprogramación
+  condition:
+    - active_loop: reprogramar_cita_form
+  steps:
+    - action: reprogramar_cita_form
+    - active_loop: null
+    - action: action_reprogramar_cita
