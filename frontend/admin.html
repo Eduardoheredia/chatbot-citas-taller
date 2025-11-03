@@ -339,6 +339,35 @@
       </div>
     </section>
 
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <h3 class="h6 text-primary mb-3">Agregar nuevo usuario</h3>
+        <form id="add-usuario-form" class="row g-3 align-items-end">
+          <div class="col-12 col-md-4">
+            <label for="nuevo-telefono" class="form-label">Teléfono</label>
+            <input type="tel" class="form-control" id="nuevo-telefono" name="telefono" placeholder="Ej. 71234567" required minlength="8" maxlength="8" pattern="[0-9]{8}">
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="nuevo-password" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="nuevo-password" name="contrasena" placeholder="Mínimo 6 caracteres" required minlength="6">
+          </div>
+          <div class="col-12 col-md-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="1" id="nuevo-es-admin" name="es_admin">
+                <label class="form-check-label" for="nuevo-es-admin">
+                  Con privilegios de administrador
+                </label>
+              </div>
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-person-plus"></i> Crear usuario
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- === Citas (edición rápida) === -->
     <section class="card-elevated">
       <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
