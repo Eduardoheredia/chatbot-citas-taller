@@ -191,6 +191,12 @@ class ActionReprogramarCita(Action):
         nueva_hora = tracker.get_slot("hora")
         id_usuario = tracker.sender_id
 
+        if not nueva_fecha or not nueva_hora:
+            dispatcher.utter_message(
+                "ℹ️ Necesito la nueva fecha y hora para poder reprogramar tu cita."
+            )
+            return []
+
         row = None
         try:
             with sqlite3.connect(DB_PATH) as conn:
@@ -198,7 +204,7 @@ class ActionReprogramarCita(Action):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                     SELECT id_citas, servicio FROM citas
+                     SELECT id_citas, servicio, fecha, hora FROM citas
                     WHERE id_usuario = ? AND estado IN ('confirmada','reprogramada')
                     ORDER BY fecha ASC, hora ASC
                     """,
@@ -206,9 +212,23 @@ class ActionReprogramarCita(Action):
                 )
                 row = cursor.fetchone()
                 if row:
+                    id_cita, _servicio, fecha_actual, hora_actual = row
+                    if (nueva_fecha, nueva_hora) != (fecha_actual, hora_actual):
+                        cursor.execute(
+                            """
+                            SELECT 1 FROM citas
+                            WHERE fecha = ? AND hora = ?
+                              AND estado IN ('confirmada','reprogramada')
+                              AND id_citas != ?
+                            """,
+                            (nueva_fecha, nueva_hora, id_cita),
+                        )
+                        if cursor.fetchone():
+                            dispatcher.utter_message(response="utter_hora_ocupada")
+                            return []
                     cursor.execute(
                         "UPDATE citas SET fecha = ?, hora = ?, estado = 'reprogramada' WHERE id_citas = ?",
-                        (nueva_fecha, nueva_hora, row[0]),
+                        (nueva_fecha, nueva_hora, id_cita),
                     )
                     conn.commit()
         except Exception as exc:

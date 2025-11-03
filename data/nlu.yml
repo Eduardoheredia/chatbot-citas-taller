@@ -31,6 +31,7 @@ nlu:
     - necesito cambiar la fecha de mi cita
     - quiero mover mi cita
     - reprograma mi cita
+    - quiero reprogramar mi cita
 
 - intent: consultar_servicios
   examples: |
