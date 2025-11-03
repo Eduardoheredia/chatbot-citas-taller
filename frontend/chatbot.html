@@ -40,7 +40,11 @@
     .info-card {
       background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm);
       padding: var(--spacing); border: 1px solid rgba(0,0,0,0.03);
-      display: flex; flex-direction: column; gap: 0.5rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .info-card .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.75rem;
     }
     .info-card ul {
       list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem;
@@ -53,6 +57,28 @@
     .info-card li small { color: #888; }
     .info-card h3 {
       font-size: 1.05rem; color: var(--color-primary);
+    }
+    .toggle-btn {
+      background: var(--color-primary); color: #fff;
+      border: none; border-radius: calc(var(--radius) * 0.8);
+      padding: 0.35rem 0.85rem; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; box-shadow: var(--shadow-sm);
+      transition: var(--transition-base);
+    }
+    .toggle-btn:hover,
+    .toggle-btn:focus {
+      outline: none; background: #40a9ff; transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .toggle-btn:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-sm);
+    }
+    .collapsible-content {
+      display: none; flex-direction: column; gap: 0.5rem;
+    }
+    .collapsible-content.is-open {
+      display: flex;
     }
     .info-card p {
       line-height: 1.5; font-size: 0.95rem;
@@ -120,8 +146,15 @@
   <main class="layout">
     <section class="info-panel">
       <div id="history" class="info-card">
-        <h3>Historial de mensajes</h3>
-        <p class="placeholder">Cargando historial...</p>
+        <div class="card-header">
+          <h3>Historial de mensajes</h3>
+          <button id="toggle-history" class="toggle-btn" aria-expanded="false" aria-controls="history-content">
+            Mostrar historial
+          </button>
+        </div>
+        <div id="history-content" class="collapsible-content" hidden>
+          <p class="placeholder">Cargando historial...</p>
+        </div>
       </div>
       <div id="citas" class="info-card">
         <h3>Tus citas</h3>
@@ -181,11 +214,32 @@
       window.location.href = "/logout";
     });
 
+    const historyContent = document.getElementById("history-content");
+    const toggleHistoryBtn = document.getElementById("toggle-history");
+
+    const setHistoryVisibility = (visible) => {
+      if (visible) {
+        historyContent.classList.add("is-open");
+        historyContent.removeAttribute("hidden");
+        toggleHistoryBtn.textContent = "Ocultar historial";
+        toggleHistoryBtn.setAttribute("aria-expanded", "true");
+      } else {
+        historyContent.classList.remove("is-open");
+        historyContent.setAttribute("hidden", "");
+        toggleHistoryBtn.textContent = "Mostrar historial";
+        toggleHistoryBtn.setAttribute("aria-expanded", "false");
+      }
+    };
+
+    toggleHistoryBtn.addEventListener("click", () => {
+      const isVisible = historyContent.classList.contains("is-open");
+      setHistoryVisibility(!isVisible);
+    });
+
     fetch("/historial")
       .then(r => r.json())
       .then(hist => {
-        const historyDiv = document.getElementById("history");
-        historyDiv.querySelectorAll(".placeholder").forEach(node => node.remove());
+        historyContent.querySelectorAll(".placeholder").forEach(node => node.remove());
         if (hist.length) {
           const fragment = document.createDocumentFragment();
           hist.forEach(m => {
@@ -193,19 +247,20 @@
             p.textContent = `${m.sender === "user" ? "Tú" : "Bot"}: ${m.text}`;
             fragment.appendChild(p);
           });
-          historyDiv.appendChild(fragment);
+          historyContent.appendChild(fragment);
         } else {
           const empty = document.createElement("p");
           empty.textContent = "No hay conversaciones previas.";
-          historyDiv.appendChild(empty);
+          historyContent.appendChild(empty);
         }
+        setHistoryVisibility(false);
       })
       .catch(() => {
-        const historyDiv = document.getElementById("history");
-        historyDiv.querySelectorAll(".placeholder").forEach(node => node.remove());
+        historyContent.querySelectorAll(".placeholder").forEach(node => node.remove());
         const error = document.createElement("p");
         error.textContent = "No se pudo cargar el historial.";
-        historyDiv.appendChild(error);
+        historyContent.appendChild(error);
+        setHistoryVisibility(false);
       });
 
     fetch("/citas")
