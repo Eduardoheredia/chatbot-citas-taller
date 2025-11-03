@@ -34,28 +34,6 @@ rules:
     - intent: cancelar_cita
     - action: action_cancelar_cita
 
-- rule: Reprogramar cita
-  steps:
-    - intent: reprogramar_cita
-    - action: action_preparar_reprogramacion
-    - action: reprogramar_cita_form
-    - active_loop: reprogramar_cita_form
-
-- rule: Ejecutar reprogramación
-  condition:
-    - active_loop: reprogramar_cita_form
-  steps:
-    - action: reprogramar_cita_form
-    - active_loop: reprogramar_cita_form
-
-- rule: Finalizar reprogramación
-  condition:
-    - active_loop: reprogramar_cita_form
-  steps:
-    - action: reprogramar_cita_form
-    - active_loop: null
-    - action: action_reprogramar_cita
-
 - rule: Consultar horarios
   steps:
     - intent: consultar_horarios_disponibles
