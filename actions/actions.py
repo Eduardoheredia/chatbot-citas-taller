@@ -379,6 +379,7 @@ class ActionCancelarCita(Action):
         dispatcher.utter_message(
             f"✅ Tu cita de {servicio} el {fecha} a las {hora} ha sido cancelada."
         )
+        dispatcher.utter_message(response="utter_cancelar_cita")
         return [SlotSet("servicio", None), SlotSet("fecha", None), SlotSet("hora", None)]
 
 class ActionMostrarHistorial(Action):
