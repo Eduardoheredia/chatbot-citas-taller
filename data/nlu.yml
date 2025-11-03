@@ -25,6 +25,13 @@ nlu:
     - cancela mi cita
     - necesito anular la cita que tengo
     - anula mi cita
+    - deseo cancelar mi cita agendada
+    - por favor cancela la cita que tengo
+    - quiero eliminar mi cita
+    - necesito cancelar la cita programada
+    - cancelar cita
+    - quiero dar de baja mi cita
+    - podrías cancelar mi cita
 
 - intent: reprogramar_cita
   examples: |
