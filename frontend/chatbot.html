@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chatbot de Citas</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rasa-webchat/lib/styles.css" />
   <style>
@@ -28,6 +29,37 @@
     body {
       display: flex; flex-direction: column; min-height: 100vh;
     }
+    main.layout {
+      flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: var(--spacing);
+      display: grid; grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.4fr);
+      gap: var(--spacing);
+    }
+    .info-panel {
+      display: flex; flex-direction: column; gap: var(--spacing);
+    }
+    .info-card {
+      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm);
+      padding: var(--spacing); border: 1px solid rgba(0,0,0,0.03);
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .info-card ul {
+      list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .info-card li {
+      background: var(--color-bg-light); padding: 0.75rem; border-radius: calc(var(--radius) * 0.8);
+      border: 1px solid rgba(0,0,0,0.04); line-height: 1.4;
+    }
+    .info-card li span { color: #666; }
+    .info-card li small { color: #888; }
+    .info-card h3 {
+      font-size: 1.05rem; color: var(--color-primary);
+    }
+    .info-card p {
+      line-height: 1.5; font-size: 0.95rem;
+    }
+    .chat-panel {
+      display: flex; flex-direction: column;
+    }
     header {
       position: sticky; top: 0; width: 100%; padding: var(--spacing);
       display: flex; justify-content: center; align-items: center;
@@ -49,13 +81,8 @@
       box-shadow: var(--shadow-md); outline: none;
     }
     #logout:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
-    #history, #citas {
-      max-width: 1200px; margin: var(--spacing) auto 0;
-      padding: 0.5rem var(--spacing); color: #555; font-size: 0.95rem;
-    }
     #webchat {
-      width: 100%; max-width: 1200px; margin: var(--spacing) auto;
-      height: 70vh; position: relative; background: #fff;
+      width: 100%; height: clamp(420px, 70vh, 720px); position: relative; background: #fff;
       border-radius: var(--radius); box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
@@ -64,14 +91,24 @@
       position: absolute !important; top: 0; left: 0;
       width: 100% !important; height: 100% !important;
     }
+    @media (max-width: 992px) {
+      main.layout { grid-template-columns: 1fr; }
+      #webchat { height: min(65vh, 640px); }
+    }
     @media (max-width: 768px) {
       header { font-size: 1.1rem; }
       #logout {
         right: var(--spacing); padding: 0.4rem 1rem;
         font-size: 0.875rem;
       }
-      #webchat { margin: 1rem; height: 60vh; }
-      #history, #citas { margin: 0.5rem; }
+      main.layout { padding: 0.75rem; gap: 0.75rem; }
+      #webchat { height: min(60vh, 580px); }
+    }
+    @media (max-width: 480px) {
+      header { flex-direction: column; gap: 0.75rem; }
+      #logout { position: static; width: 100%; }
+      main.layout { padding: 0.75rem 0.5rem; }
+      #webchat { height: min(55vh, 520px); }
     }
   </style>
 </head>
@@ -80,9 +117,21 @@
     Asistente Virtual del Taller
     <button id="logout">Cerrar sesión</button>
   </header>
-  <div id="history"></div>
-  <div id="citas"></div>
-  <div id="webchat"></div>
+  <main class="layout">
+    <section class="info-panel">
+      <div id="history" class="info-card">
+        <h3>Historial de mensajes</h3>
+        <p class="placeholder">Cargando historial...</p>
+      </div>
+      <div id="citas" class="info-card">
+        <h3>Tus citas</h3>
+        <p class="placeholder">Cargando citas...</p>
+      </div>
+    </section>
+    <section class="chat-panel">
+      <div id="webchat"></div>
+    </section>
+  </main>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/rasa-webchat@1.0.1/lib/index.min.js"></script>
@@ -136,27 +185,54 @@
       .then(r => r.json())
       .then(hist => {
         const historyDiv = document.getElementById("history");
-        hist.forEach(m => {
-          const p = document.createElement("p");
-          //p.textContent = (m.sender === "user" ? "Tú: " : "Bot: ") + m.text;
-          historyDiv.appendChild(p);
-        });
+        historyDiv.querySelectorAll(".placeholder").forEach(node => node.remove());
+        if (hist.length) {
+          const fragment = document.createDocumentFragment();
+          hist.forEach(m => {
+            const p = document.createElement("p");
+            p.textContent = `${m.sender === "user" ? "Tú" : "Bot"}: ${m.text}`;
+            fragment.appendChild(p);
+          });
+          historyDiv.appendChild(fragment);
+        } else {
+          const empty = document.createElement("p");
+          empty.textContent = "No hay conversaciones previas.";
+          historyDiv.appendChild(empty);
+        }
+      })
+      .catch(() => {
+        const historyDiv = document.getElementById("history");
+        historyDiv.querySelectorAll(".placeholder").forEach(node => node.remove());
+        const error = document.createElement("p");
+        error.textContent = "No se pudo cargar el historial.";
+        historyDiv.appendChild(error);
       });
 
-      fetch("/citas")
+    fetch("/citas")
       .then(r => r.json())
       .then(citas => {
         const citasDiv = document.getElementById("citas");
+        citasDiv.querySelectorAll(".placeholder").forEach(node => node.remove());
         if (citas.length) {
-          const titulo = document.createElement("h3");
-          titulo.textContent = "Tus citas";
-          citasDiv.appendChild(titulo);
+          const list = document.createElement("ul");
           citas.forEach(c => {
-            const p = document.createElement("p");
-            p.textContent = `Servicio: ${c.servicio} | Fecha: ${c.fecha} | Hora: ${c.hora} (${c.estado})`;
-            citasDiv.appendChild(p);
+            const item = document.createElement("li");
+            item.innerHTML = `<strong>${c.servicio}</strong><br><span>${c.fecha} • ${c.hora}</span><br><small>Estado: ${c.estado}</small>`;
+            list.appendChild(item);
           });
+          citasDiv.appendChild(list);
+        } else {
+          const empty = document.createElement("p");
+          empty.textContent = "Aún no tienes citas registradas.";
+          citasDiv.appendChild(empty);
         }
+      })
+      .catch(() => {
+        const citasDiv = document.getElementById("citas");
+        citasDiv.querySelectorAll(".placeholder").forEach(node => node.remove());
+        const error = document.createElement("p");
+        error.textContent = "No se pudieron cargar las citas.";
+        citasDiv.appendChild(error);
       });
   </script>
 </body>
