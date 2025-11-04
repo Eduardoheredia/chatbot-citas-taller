@@ -299,7 +299,14 @@ class ActionSessionStart(Action):
     async def run(
         self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
     ) -> List[EventType]:
-        dispatcher.utter_message(response="utter_saludo")
+        greeted_before = any(
+            event.get("event") == "bot" and event.get("name") == "utter_saludo"
+            for event in tracker.events
+        )
+
+        if not greeted_before:
+            dispatcher.utter_message(response="utter_saludo")
+
         return [SessionStarted(), ActionExecuted("action_listen")]
 
 class ActionDefaultFallback(Action):
