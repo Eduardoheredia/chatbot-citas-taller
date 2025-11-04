@@ -712,6 +712,10 @@
         const contrasena = tr.querySelector('input[name="contrasena"]').value.trim();
         const esAdmin = tr.querySelector('select[name="es_admin"]').value;
 
+        if (!confirm('¿Desea confirmar los cambios de este usuario?')) {
+          return;
+        }
+
         const params = new URLSearchParams();
         params.append('telefono', telefono);
         params.append('es_admin', esAdmin);
@@ -782,6 +786,11 @@
         const hora   = tr.querySelector('input[name="hora"]').value;
         const mecanico = tr.querySelector('select[name="id_mecanico"]').value;
         const estado = tr.querySelector('select[name="estado"]').value;
+
+        if (!confirm('¿Desea confirmar los cambios de esta cita?')) {
+          return;
+        }
+
         const params = new URLSearchParams({ servicio, fecha, hora, estado, id_mecanico: mecanico });
         const res = await fetch(`/admin/actualizar_cita/${id}`, {
           method: 'POST',
@@ -817,6 +826,7 @@
       const mecanico = document.getElementById('new-mecanico').value;
       const estado = document.getElementById('new-estado').value;
       if (!usuario || !servicio || !fecha || !hora) return alert('Complete los campos');
+      if (!confirm('¿Desea confirmar la creación de esta cita?')) return;
       const params = new URLSearchParams({ id_usuario: usuario, servicio, fecha, hora, estado, id_mecanico: mecanico });
       const res = await fetch('/admin/agregar_cita', {
         method: 'POST',
@@ -889,6 +899,11 @@
         const id = tr.dataset.id;
         const nombre  = tr.querySelector('input[name="nombre"]').value.trim();
         const telefono = tr.querySelector('input[name="telefono"]').value.trim();
+
+        if (!confirm('¿Desea confirmar los cambios de este mecánico?')) {
+          return;
+        }
+
         const params = new URLSearchParams({ nombre, telefono });
         const res = await fetch(`/admin/actualizar_mecanico/${id}`, {
           method: 'POST',
@@ -920,6 +935,7 @@
       const nombre = document.getElementById('new-nombre').value.trim();
       const telefono = document.getElementById('new-telefono').value.trim();
       if (!nombre || !telefono) return alert('Complete los campos');
+      if (!confirm('¿Desea confirmar la creación de este mecánico?')) return;
       const params = new URLSearchParams({ nombre, telefono });
       const res = await fetch('/admin/agregar_mecanico', {
         method: 'POST',
@@ -934,6 +950,9 @@
     if (addUserForm) {
       addUserForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        if (!confirm('¿Desea confirmar la creación de este usuario?')) {
+          return;
+        }
         const formData = new FormData(addUserForm);
         const params = new URLSearchParams();
         formData.forEach((value, key) => {

@@ -116,6 +116,15 @@ class CustomSocketIOInput(SocketIOInput):
 
         @sio.on(self.user_message_evt, namespace=self.namespace)
         async def handle_message(sid: Text, data: Dict) -> None:
+            text = data.get("message", "")
+            if not isinstance(text, str):
+                logger.debug("[SOCKET MESSAGE] Mensaje descartado por tipo inválido: %s", text)
+                return
+
+            if not text.strip():
+                logger.debug("[SOCKET MESSAGE] Mensaje vacío ignorado para SID=%s", sid)
+                return
+
             metadata = data.get(self.metadata_key, {})
             if isinstance(metadata, str):
                 try:
@@ -135,7 +144,7 @@ class CustomSocketIOInput(SocketIOInput):
 
             output_channel = CustomSocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
-                data.get("message", ""),
+                text,
                 output_channel,
                 sender_id,
                 input_channel=self.name(),
