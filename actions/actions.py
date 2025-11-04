@@ -371,7 +371,10 @@ class ActionAgendarCita(Action):
         dispatcher.utter_message(
             text=f"✅ Cita confirmada:\n{servicio}\nFecha: {fecha}\nHora: {hora}"
         )
-        return [SlotSet("horarios_disponibles", None)]
+        return [
+            SlotSet("horarios_disponibles", None),
+            SlotSet("tabla_horarios_html", ""),
+        ]
 
 
 class ValidateReprogramarCitaForm(FormValidationAction):
@@ -387,13 +390,21 @@ class ValidateReprogramarCitaForm(FormValidationAction):
             or value[7] != "-"
         ):
             dispatcher.utter_message(text="Formato de fecha inválido. Usa AAAA-MM-DD.")
-            return {"fecha": None, "horarios_disponibles": []}
+            return {
+                "fecha": None,
+                "horarios_disponibles": [],
+                "tabla_horarios_html": "",
+            }
 
         try:
             datetime.strptime(value, "%Y-%m-%d")
         except ValueError:
             dispatcher.utter_message(text="Formato de fecha inválido. Usa AAAA-MM-DD.")
-            return {"fecha": None, "horarios_disponibles": []}
+            return {
+                "fecha": None,
+                "horarios_disponibles": [],
+                "tabla_horarios_html": "",
+            }
 
         servicio = tracker.get_slot("servicio")
         horarios = _get_horarios_disponibles(value, servicio)
@@ -401,10 +412,18 @@ class ValidateReprogramarCitaForm(FormValidationAction):
             dispatcher.utter_message(
                 text="No hay horarios disponibles para esa fecha. Por favor elige otra."
             )
-            return {"fecha": None, "horarios_disponibles": []}
+            return {
+                "fecha": None,
+                "horarios_disponibles": [],
+                "tabla_horarios_html": "",
+            }
 
-        dispatcher.utter_message(text=tabla_horarios(horarios, html=True))
-        return {"fecha": value, "horarios_disponibles": horarios}
+        tabla = tabla_horarios(horarios, html=True)
+        return {
+            "fecha": value,
+            "horarios_disponibles": horarios,
+            "tabla_horarios_html": tabla,
+        }
 
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
         value = (slot_value or "").strip()
@@ -413,8 +432,6 @@ class ValidateReprogramarCitaForm(FormValidationAction):
             dispatcher.utter_message(
                 text="⚠️ Debes elegir una hora mostrada en la lista disponible."
             )
-            if horarios:
-                dispatcher.utter_message(text=tabla_horarios(horarios, html=True))
             return {"hora": None}
 
         return {"hora": value}
@@ -434,6 +451,7 @@ class ActionReprogramarCita(Action):
 
         events: List[EventType] = [
             SlotSet("horarios_disponibles", None),
+            SlotSet("tabla_horarios_html", ""),
             SlotSet("requested_slot", None),
         ]
 
