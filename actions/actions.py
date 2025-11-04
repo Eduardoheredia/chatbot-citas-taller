@@ -291,7 +291,7 @@ def _get_horarios_disponibles(fecha: Text, servicio: Optional[Text] = None) -> L
 
 
 class ActionSessionStart(Action):
-    """Greets the user once when a new session starts."""
+    """Solo inicializa la sesión sin enviar mensajes automáticamente."""
 
     def name(self) -> Text:
         return "action_session_start"
@@ -299,14 +299,6 @@ class ActionSessionStart(Action):
     async def run(
         self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
     ) -> List[EventType]:
-        greeted_before = any(
-            event.get("event") == "bot" and event.get("name") == "utter_saludo"
-            for event in tracker.events
-        )
-
-        if not greeted_before:
-            dispatcher.utter_message(response="utter_saludo")
-
         return [SessionStarted(), ActionExecuted("action_listen")]
 
 class ActionDefaultFallback(Action):
