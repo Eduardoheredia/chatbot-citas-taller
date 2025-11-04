@@ -56,6 +56,13 @@ slots:
     mappings:
       - type: custom
 
+  tabla_horarios_html:
+    type: text
+    influence_conversation: false
+    initial_value: ""
+    mappings:
+      - type: custom
+
 responses:
   utter_saludo:
     - text: "¡Hola! ¿En qué puedo ayudarte hoy con tu vehículo?"
@@ -70,7 +77,9 @@ responses:
   utter_ask_fecha:
     - text: "¿Para qué fecha deseas la nueva cita? (Formato: AAAA-MM-DD - Ejemplo: 2025-06-15)"
   utter_ask_hora:
-    - text: "¿A qué hora deseas la cita? Elige una de las horas disponibles (Ejemplo: 10:00, entre 08:00 y 18:00)"
+    - text: |
+        ¿A qué hora deseas la cita? Elige una de las horas disponibles (Ejemplo: 10:00, entre 08:00 y 18:00)
+        {tabla_horarios_html}
   utter_confirmar_cita:
     - text: "Resumen de cita:\nServicio: {servicio}\nFecha: {fecha}\nHora: {hora}\n¿Confirmar?"
   utter_cancelar_cita:
