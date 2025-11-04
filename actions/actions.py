@@ -1,5 +1,5 @@
 from typing import Any, Text, Dict, List, Optional
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
 from dateparser import parse
 from pytz import timezone
 import logging
@@ -29,6 +29,34 @@ PM_INDICATORS = {
     "de la tarde",
     "de la noche",
     "noche",
+}
+
+SPANISH_WEEKDAYS = {
+    "lunes": 0,
+    "martes": 1,
+    "miercoles": 2,
+    "miércoles": 2,
+    "jueves": 3,
+    "viernes": 4,
+    "sabado": 5,
+    "sábado": 5,
+    "domingo": 6,
+}
+
+SPANISH_MONTHS = {
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "setiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
 }
 
 AM_INDICATORS = {
@@ -198,6 +226,27 @@ def parse_hora_es(value: Optional[Text]) -> Optional[time]:
         return None
 
     return None
+
+
+def _proxima_fecha_por_dia_semana(weekday: int) -> date:
+    hoy = datetime.now(TZ).date()
+    delta = (weekday - hoy.weekday() + 7) % 7
+    if delta == 0:
+        delta = 7
+    return hoy + timedelta(days=delta)
+
+
+def _ajustar_fecha_futura(fecha_objetivo: date, referencia: date) -> date:
+    fecha = fecha_objetivo
+    if fecha >= referencia:
+        return fecha
+
+    while fecha < referencia:
+        try:
+            fecha = fecha.replace(year=fecha.year + 1)
+        except ValueError:
+            fecha = fecha + timedelta(days=1)
+    return fecha
 
 # Reuse la misma base de datos que utiliza el backend para almacenar
 # usuarios. Aquí agregamos una tabla simple para las citas de cada
@@ -382,32 +431,66 @@ class ValidateReprogramarCitaForm(FormValidationAction):
         return "validate_reprogramar_cita_form"
 
     async def validate_fecha(self, slot_value, dispatcher, tracker, domain):
-        value = (slot_value or "").strip()
-        if (
-            not value
-            or len(value) != 10
-            or value[4] != "-"
-            or value[7] != "-"
-        ):
-            dispatcher.utter_message(text="Formato de fecha inválido. Usa AAAA-MM-DD.")
+        texto = (slot_value or "").strip()
+        if not texto:
+            dispatcher.utter_message(response="utter_error_fecha")
             return {
                 "fecha": None,
                 "horarios_disponibles": [],
                 "tabla_horarios_html": "",
             }
 
-        try:
-            datetime.strptime(value, "%Y-%m-%d")
-        except ValueError:
-            dispatcher.utter_message(text="Formato de fecha inválido. Usa AAAA-MM-DD.")
-            return {
-                "fecha": None,
-                "horarios_disponibles": [],
-                "tabla_horarios_html": "",
-            }
+        texto_normalizado = _strip_accents(texto.lower())
+        hoy = datetime.now(TZ).date()
+
+        fecha_objetivo = None
+
+        dias_encontrados = [
+            dia
+            for dia in SPANISH_WEEKDAYS
+            if re.search(rf"\b{dia}\b", texto_normalizado)
+        ]
+        contiene_mes = any(mes in texto_normalizado for mes in SPANISH_MONTHS)
+        contiene_digitos = any(ch.isdigit() for ch in texto_normalizado)
+        solo_dia_semana = (
+            bool(dias_encontrados)
+            and not contiene_mes
+            and not contiene_digitos
+        )
+
+        if solo_dia_semana:
+            weekday = SPANISH_WEEKDAYS[dias_encontrados[0]]
+            fecha_objetivo = _proxima_fecha_por_dia_semana(weekday)
+        else:
+            try:
+                parsed = parse(
+                    texto,
+                    languages=["es"],
+                    settings={
+                        "TIMEZONE": TZ.zone,
+                        "PREFER_DATES_FROM": "future",
+                        "RELATIVE_BASE": datetime.now(TZ),
+                    },
+                )
+            except Exception:
+                parsed = None
+
+            if not parsed:
+                dispatcher.utter_message(response="utter_error_fecha")
+                return {
+                    "fecha": None,
+                    "horarios_disponibles": [],
+                    "tabla_horarios_html": "",
+                }
+
+            fecha_objetivo = parsed.date()
+            if fecha_objetivo < hoy:
+                fecha_objetivo = _ajustar_fecha_futura(fecha_objetivo, hoy)
+
+        fecha_str = fecha_objetivo.isoformat()
 
         servicio = tracker.get_slot("servicio")
-        horarios = _get_horarios_disponibles(value, servicio)
+        horarios = _get_horarios_disponibles(fecha_str, servicio)
         if not horarios:
             dispatcher.utter_message(
                 text="No hay horarios disponibles para esa fecha. Por favor elige otra."
@@ -415,13 +498,15 @@ class ValidateReprogramarCitaForm(FormValidationAction):
             return {
                 "fecha": None,
                 "horarios_disponibles": [],
+                "tabla_horarios_html": "",
             }
 
         tabla = tabla_horarios(horarios, html=True)
         dispatcher.utter_message(text=tabla)
         return {
-            "fecha": value,
+            "fecha": fecha_str,
             "horarios_disponibles": horarios,
+            "tabla_horarios_html": tabla,
         }
 
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
