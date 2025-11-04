@@ -77,6 +77,7 @@ rules:
 - rule: Iniciar reprogramación
   steps:
     - intent: reprogramar_cita
+    - action: action_reset_reprogramar_slots
     - action: reprogramar_cita_form
     - active_loop: reprogramar_cita_form
 

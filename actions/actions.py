@@ -518,6 +518,30 @@ class ActionReprogramarCita(Action):
         dispatcher.utter_message(response="utter_no_hay_cita_activa")
         return events
 
+
+class ActionResetReprogramarSlots(Action):
+    """Resets scheduling slots before starting the reschedule form.
+
+    When a user has previously agendado or reprogramado una cita, the
+    ``fecha`` y ``hora`` slots pueden conservar valores anteriores. Esto hacía
+    que el formulario de reprogramación preguntara primero por la hora si la
+    fecha ya tenía un valor. Al limpiar los slots nos aseguramos de que el
+    bot siempre pregunte primero por la nueva fecha y luego por la hora.
+    """
+
+    def name(self) -> Text:
+        return "action_reset_reprogramar_slots"
+
+    def run(
+        self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: DomainDict
+    ) -> List[Dict[Text, Any]]:
+        return [
+            SlotSet("fecha", None),
+            SlotSet("hora", None),
+            SlotSet("horarios_disponibles", None),
+            SlotSet("tabla_horarios_html", ""),
+        ]
+
 class ValidateAgendarCitaForm(FormValidationAction):
     def name(self) -> Text:
         return "validate_agendar_cita_form"

@@ -119,6 +119,7 @@ actions:
   - action_agendar_cita
   - action_cancelar_cita
   - action_reprogramar_cita
+  - action_reset_reprogramar_slots
   - validate_agendar_cita_form
   - validate_reprogramar_cita_form
   - action_default_fallback
