@@ -625,6 +625,7 @@ class ActionResetReprogramarSlots(Action):
             SlotSet("hora", None),
             SlotSet("horarios_disponibles", None),
             SlotSet("tabla_horarios_html", ""),
+            SlotSet("requested_slot", None),
         ]
 
 class ValidateAgendarCitaForm(FormValidationAction):
