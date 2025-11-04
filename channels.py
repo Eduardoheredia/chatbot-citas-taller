@@ -71,7 +71,7 @@ class CustomSocketIOInput(SocketIOInput):
             if auth:
                 sender = auth.get("session_id")
 
-            
+
             if not sender:
                 query = parse_qs(environ.get("QUERY_STRING", ""))
                 sender = query.get("session_id", [None])[0]
@@ -79,7 +79,7 @@ class CustomSocketIOInput(SocketIOInput):
             if not sender:
                 sender = sid  # fallback when no session id is provided
 
-            await sio.save_session(sid, {"sender_id": sender})
+            await sio.save_session(sid, {"sender_id": sender, "session_confirmed": False})
             await sio.enter_room(sid, sender)
             logger.info(f"[SOCKET CONNECT] SID={sid}, sender_id={sender}")
             return True
@@ -91,7 +91,11 @@ class CustomSocketIOInput(SocketIOInput):
         @sio.on("session_request", namespace=self.namespace)
         async def session_request(sid: Text, data: Dict[str, Any]) -> None:
             session = await sio.get_session(sid)
-            sender = session.get("sender_id") if session else None
+            session_data: Dict[str, Any] = {}
+            if session:
+                session_data.update(session)
+
+            sender = session_data.get("sender_id")
 
             if not sender:
                 sender = (
@@ -100,10 +104,21 @@ class CustomSocketIOInput(SocketIOInput):
                     or (data.get("customData") or {}).get("sender")
                     or sid
                 )
-                await sio.save_session(sid, {"sender_id": sender})
+
+            if session_data.get("session_confirmed") and sender == session_data.get("sender_id"):
+                logger.info(
+                    "[SOCKET SESSION_CONFIRM] Duplicate session_request ignored for SID=%s",
+                    sid,
+                )
+                return
+
+            session_data.update({"sender_id": sender, "session_confirmed": True})
+            await sio.save_session(sid, session_data)
             await sio.enter_room(sid, sender)
 
-            logger.info(f"[SOCKET SESSION_CONFIRM] SID={sid}, session_confirm={sender}, sender_id={sender}")
+            logger.info(
+                f"[SOCKET SESSION_CONFIRM] SID={sid}, session_confirm={sender}, sender_id={sender}"
+            )
 
             await sio.emit(
                 "session_confirm",
@@ -133,9 +148,31 @@ class CustomSocketIOInput(SocketIOInput):
             if not sender_id:
                 sender_id = sid
 
+            message_text = data.get("message", "")
+            if isinstance(message_text, str):
+                text_is_empty = message_text.strip() == ""
+            else:
+                message_text = str(message_text)
+                text_is_empty = message_text.strip() == ""
+
+            has_non_text_payload = bool(
+                data.get("attachment")
+                or data.get("image")
+                or data.get("buttons")
+                or data.get("custom")
+            )
+
+            if text_is_empty and not has_non_text_payload:
+                logger.info(
+                    "[SOCKET MESSAGE] Ignored empty user message from SID=%s (sender_id=%s)",
+                    sid,
+                    sender_id,
+                )
+                return
+
             output_channel = CustomSocketIOOutput(sio, self.bot_message_evt)
             message = UserMessage(
-                data.get("message", ""),
+                message_text,
                 output_channel,
                 sender_id,
                 input_channel=self.name(),
