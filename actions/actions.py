@@ -415,14 +415,13 @@ class ValidateReprogramarCitaForm(FormValidationAction):
             return {
                 "fecha": None,
                 "horarios_disponibles": [],
-                "tabla_horarios_html": "",
             }
 
         tabla = tabla_horarios(horarios, html=True)
+        dispatcher.utter_message(text=tabla)
         return {
             "fecha": value,
             "horarios_disponibles": horarios,
-            "tabla_horarios_html": tabla,
         }
 
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
@@ -432,6 +431,8 @@ class ValidateReprogramarCitaForm(FormValidationAction):
             dispatcher.utter_message(
                 text="⚠️ Debes elegir una hora mostrada en la lista disponible."
             )
+            if horarios:
+                dispatcher.utter_message(text=tabla_horarios(horarios, html=True))
             return {"hora": None}
 
         return {"hora": value}
