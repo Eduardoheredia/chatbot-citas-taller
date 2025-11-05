@@ -122,11 +122,16 @@
     .estado-reprogramada { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
     .estado-cancelada { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }
     .estado-completada { background: rgba(96, 165, 250, 0.18); color: #1e3a8a; }
+    .estado-en-progreso { background: rgba(250, 204, 21, 0.2); color: #a16207; }
 
     .estado-form {
-      display: grid;
+      display: none;
       gap: 0.5rem;
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    .estado-form.active {
+      display: grid;
     }
 
     .estado-form label {
@@ -159,6 +164,53 @@
     .estado-form button:hover {
       transform: translateY(-1px);
       box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);
+    }
+
+    .estado-form button:disabled,
+    .estado-form button:disabled:hover {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-editar {
+      align-self: start;
+      background: #1d4ed8;
+      color: #fff;
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-editar:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(29, 78, 216, 0.25);
+    }
+
+    .estado-feedback {
+      font-size: 0.85rem;
+      margin: 0.25rem 0 0;
+      min-height: 1.1em;
+    }
+
+    .estado-feedback.success {
+      color: #15803d;
+      font-weight: 600;
+    }
+
+    .estado-feedback.error {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    .estado-acciones {
+      display: grid;
+      gap: 0.75rem;
+      align-items: start;
     }
 
     .confirm-overlay {
@@ -280,7 +332,7 @@
                     <strong>{{ cita.fecha }}</strong>
                     <div>{{ cita.hora }}</div>
                   </div>
-                  <span class="estado-chip estado-{{ cita.estado }}">{{ cita.estado|capitalize }}</span>
+                  <span class="estado-chip estado-{{ cita.estado|replace(' ', '-') }}">{{ cita.estado|capitalize }}</span>
                 </div>
               </li>
             {% endfor %}
@@ -295,21 +347,29 @@
         {% if citas %}
           <ul>
             {% for cita in citas %}
-              <li>
+              <li class="cita-item" data-cita-id="{{ cita.id_cita }}" data-estado-actual="{{ cita.estado }}">
                 <div>
                   <strong>Cliente:</strong> {{ cita.telefono }}
                   <div><strong>Servicio:</strong> {{ cita.servicio }}</div>
                   <div><strong>Horario:</strong> {{ cita.fecha }} {{ cita.hora }}</div>
                 </div>
-                <form class="estado-form" method="post" action="{{ url_for('mecanico_actualizar_estado', id_cita=cita.id_cita) }}">
-                  <label for="estado-{{ cita.id_cita }}">Estado de la cita</label>
-                  <select id="estado-{{ cita.id_cita }}" name="estado">
-                    {% for estado in estados_disponibles %}
-                      <option value="{{ estado }}" {% if estado == cita.estado %}selected{% endif %}>{{ estado|capitalize }}</option>
-                    {% endfor %}
-                  </select>
-                  <button type="submit">Actualizar estado</button>
-                </form>
+                <div class="estado-acciones">
+                  <div>
+                    <span class="estado-chip estado-{{ cita.estado|replace(' ', '-') }}">{{ cita.estado|capitalize }}</span>
+                  </div>
+                  <button type="button" class="btn-editar">Editar cita</button>
+                  <form class="estado-form" method="post" action="{{ url_for('mecanico_actualizar_estado', id_cita=cita.id_cita) }}" data-endpoint="{{ url_for('mecanico_actualizar_estado', id_cita=cita.id_cita) }}" aria-hidden="true">
+                    <label for="estado-{{ cita.id_cita }}">Selecciona el nuevo estado</label>
+                    <select id="estado-{{ cita.id_cita }}" name="estado" disabled>
+                      <option value="" selected disabled>Selecciona un estado</option>
+                      {% for estado in estados_disponibles %}
+                        <option value="{{ estado }}">{{ estado|capitalize }}</option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-confirmar-cambio" disabled>Confirmar cambio</button>
+                  </form>
+                  <p class="estado-feedback" role="status" aria-live="polite"></p>
+                </div>
               </li>
             {% endfor %}
           </ul>
@@ -319,74 +379,151 @@
       </section>
     </div>
   </div>
-  <div class="confirm-overlay" id="confirmar-estado-modal" aria-hidden="true">
-    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmar-estado-titulo">
-      <h3 id="confirmar-estado-titulo">Confirmar actualización</h3>
-      <p class="modal-message">¿Deseas actualizar el estado seleccionado?</p>
+  <div class="confirm-overlay" id="confirmarEdicion" role="dialog" aria-modal="true" aria-labelledby="confirmarEdicionTitulo" aria-hidden="true">
+    <div class="confirm-modal">
+      <h3 id="confirmarEdicionTitulo">Editar estado de la cita</h3>
+      <p>¿Deseas editar el estado de esta cita?</p>
       <div class="confirm-actions">
         <button type="button" class="btn-cancelar">Cancelar</button>
-        <button type="button" class="btn-confirmar">Confirmar</button>
+        <button type="button" class="btn-confirmar">Editar</button>
       </div>
     </div>
   </div>
 
   <script>
-    const overlay = document.getElementById('confirmar-estado-modal');
-    const mensajeModal = overlay.querySelector('.modal-message');
-    const btnCancelar = overlay.querySelector('.btn-cancelar');
-    const btnConfirmar = overlay.querySelector('.btn-confirmar');
-    let formPendiente = null;
-    let ultimoElementoEnfocado = null;
+    document.addEventListener('DOMContentLoaded', () => {
+      const overlay = document.getElementById('confirmarEdicion');
+      const cancelarBtn = overlay.querySelector('.btn-cancelar');
+      const confirmarBtn = overlay.querySelector('.btn-confirmar');
+      let objetivoFormulario = null;
 
-    function cerrarModal() {
-      overlay.classList.remove('active');
-      overlay.setAttribute('aria-hidden', 'true');
-      formPendiente = null;
+      const cerrarOverlay = () => {
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+      };
 
-      if (ultimoElementoEnfocado) {
-        ultimoElementoEnfocado.focus();
-        ultimoElementoEnfocado = null;
-      }
-    }
-
-    document.querySelectorAll('.estado-form').forEach((form) => {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-
-        const select = form.querySelector('select[name="estado"]');
-        const estadoSeleccionado = select ? select.options[select.selectedIndex].text : '';
-
-        mensajeModal.textContent = `¿Confirmas que deseas actualizar el estado de la cita a "${estadoSeleccionado}"?`;
-        formPendiente = form;
-        ultimoElementoEnfocado = document.activeElement;
-        overlay.classList.add('active');
-        overlay.setAttribute('aria-hidden', 'false');
-
-        requestAnimationFrame(() => {
-          btnConfirmar.focus();
+      document.querySelectorAll('.btn-editar').forEach((boton) => {
+        boton.addEventListener('click', () => {
+          objetivoFormulario = boton.closest('.cita-item').querySelector('.estado-form');
+          overlay.classList.add('active');
+          overlay.setAttribute('aria-hidden', 'false');
         });
       });
-    });
 
-    btnCancelar.addEventListener('click', cerrarModal);
+      cancelarBtn.addEventListener('click', () => {
+        objetivoFormulario = null;
+        cerrarOverlay();
+      });
 
-    btnConfirmar.addEventListener('click', () => {
-      if (formPendiente) {
-        formPendiente.submit();
-      }
-      cerrarModal();
-    });
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+          objetivoFormulario = null;
+          cerrarOverlay();
+        }
+      });
 
-    overlay.addEventListener('click', (event) => {
-      if (event.target === overlay) {
-        cerrarModal();
-      }
-    });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && overlay.classList.contains('active')) {
+          objetivoFormulario = null;
+          cerrarOverlay();
+        }
+      });
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && overlay.classList.contains('active')) {
-        cerrarModal();
-      }
+      confirmarBtn.addEventListener('click', () => {
+        if (!objetivoFormulario) {
+          cerrarOverlay();
+          return;
+        }
+
+        objetivoFormulario.classList.add('active');
+        objetivoFormulario.setAttribute('aria-hidden', 'false');
+
+        const select = objetivoFormulario.querySelector('select');
+        const confirmarCambio = objetivoFormulario.querySelector('.btn-confirmar-cambio');
+        select.disabled = false;
+        select.value = '';
+        confirmarCambio.disabled = true;
+
+        const feedback = objetivoFormulario.closest('.cita-item').querySelector('.estado-feedback');
+        feedback.textContent = '';
+        feedback.classList.remove('success', 'error');
+
+        cerrarOverlay();
+        objetivoFormulario = null;
+      });
+
+      document.querySelectorAll('.estado-form select').forEach((select) => {
+        select.addEventListener('change', () => {
+          const form = select.closest('.estado-form');
+          const confirmarBtnCambio = form.querySelector('.btn-confirmar-cambio');
+          confirmarBtnCambio.disabled = !select.value;
+        });
+      });
+
+      document.querySelectorAll('.estado-form').forEach((formulario) => {
+        formulario.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          const select = formulario.querySelector('select');
+          const boton = formulario.querySelector('.btn-confirmar-cambio');
+          const item = formulario.closest('.cita-item');
+          const feedback = item.querySelector('.estado-feedback');
+
+          if (!select.value) {
+            feedback.textContent = 'Selecciona un estado válido.';
+            feedback.classList.remove('success');
+            feedback.classList.add('error');
+            return;
+          }
+
+          boton.disabled = true;
+          feedback.textContent = '';
+          feedback.classList.remove('success', 'error');
+
+          try {
+            const respuesta = await fetch(formulario.dataset.endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: JSON.stringify({ estado: select.value })
+            });
+
+            if (!respuesta.ok) {
+              throw new Error('No se pudo actualizar el estado.');
+            }
+
+            const data = await respuesta.json();
+            if (!data.ok) {
+              throw new Error(data.message || 'No se pudo actualizar el estado.');
+            }
+
+            const chip = item.querySelector('.estado-chip');
+            const nuevoEstado = (data.estado || select.value).toLowerCase();
+            const estadoLegible = data.estado_legible || (nuevoEstado.charAt(0).toUpperCase() + nuevoEstado.slice(1));
+            const claseEstado = `estado-${nuevoEstado.replace(/\s+/g, '-')}`;
+
+            chip.textContent = estadoLegible;
+            chip.className = `estado-chip ${claseEstado}`;
+
+            item.dataset.estadoActual = nuevoEstado;
+
+            feedback.textContent = data.message || 'Estado actualizado correctamente.';
+            feedback.classList.add('success');
+
+            formulario.classList.remove('active');
+            formulario.setAttribute('aria-hidden', 'true');
+            select.disabled = true;
+            select.value = '';
+            formulario.querySelector('.btn-confirmar-cambio').disabled = true;
+          } catch (error) {
+            feedback.textContent = error.message || 'Ocurrió un error al actualizar.';
+            feedback.classList.add('error');
+            boton.disabled = false;
+          }
+        });
+      });
     });
   </script>
 </body>

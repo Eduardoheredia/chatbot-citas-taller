@@ -566,6 +566,8 @@ def mecanico_panel():
     """Panel de control para los mecánicos autenticados."""
     id_mecanico = session.get("id_mecanico")
     if not id_mecanico:
+        if request.is_json:
+            return jsonify({"ok": False, "message": "No autorizado."}), 401
         return redirect(url_for("login_page"))
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -612,7 +614,7 @@ def mecanico_panel():
         "mecanico_panel.html",
         nombre_mecanico=mecanico["nombre"],
         citas=citas_formateadas,
-        estados_disponibles=["confirmada", "reprogramada", "cancelada", "completada"],
+        estados_disponibles=["en progreso", "cancelada", "completada"],
     )
 
 
@@ -621,11 +623,27 @@ def mecanico_actualizar_estado(id_cita):
     """Permite al mecánico actualizar el estado de una cita asignada."""
     id_mecanico = session.get("id_mecanico")
     if not id_mecanico:
+        if request.is_json:
+            return jsonify({"ok": False, "message": "No autorizado."}), 401
         return redirect(url_for("login_page"))
 
-    nuevo_estado = (request.form.get("estado") or "").strip().lower()
-    estados_validos = {"confirmada", "reprogramada", "cancelada", "completada"}
+    estados_validos = {
+        "en progreso",
+        "cancelada",
+        "completada",
+        # Estados previos mantenidos para compatibilidad con citas existentes
+        "confirmada",
+        "reprogramada",
+    }
+
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        nuevo_estado = (data.get("estado") or "").strip().lower()
+    else:
+        nuevo_estado = (request.form.get("estado") or "").strip().lower()
     if nuevo_estado not in estados_validos:
+        if request.is_json:
+            return jsonify({"ok": False, "message": "Estado inválido."}), 400
         return redirect(url_for("mecanico_panel"))
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -636,6 +654,8 @@ def mecanico_actualizar_estado(id_cita):
             (id_cita, id_mecanico),
         )
         if not cursor.fetchone():
+            if request.is_json:
+                return jsonify({"ok": False, "message": "Cita no encontrada."}), 404
             return redirect(url_for("mecanico_panel"))
 
         cursor.execute(
@@ -644,10 +664,22 @@ def mecanico_actualizar_estado(id_cita):
         )
         conn.commit()
 
-    flash(
-        f"El estado de la cita se actualizó a '{nuevo_estado.capitalize()}'.",
-        "success",
-    )
+    mensaje_exito = f"El estado de la cita se actualizó a '{nuevo_estado.capitalize()}'."
+
+    if request.is_json:
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "estado": nuevo_estado,
+                    "estado_legible": nuevo_estado.capitalize(),
+                    "message": "Estado actualizado correctamente.",
+                }
+            ),
+            200,
+        )
+
+    flash(mensaje_exito, "success")
 
     return redirect(url_for("mecanico_panel"))
 
