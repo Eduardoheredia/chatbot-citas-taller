@@ -151,6 +151,90 @@
       box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);
     }
 
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      z-index: 1000;
+    }
+
+    .confirm-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .confirm-modal {
+      background: #fff;
+      border-radius: 18px;
+      padding: 2rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.45);
+      text-align: center;
+      animation: modalPop 0.25s ease;
+    }
+
+    .confirm-modal h3 {
+      font-size: 1.35rem;
+      margin-bottom: 0.75rem;
+      color: #0f172a;
+    }
+
+    .confirm-modal p {
+      color: #475569;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .confirm-actions button {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-cancelar {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .btn-confirmar {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      box-shadow: 0 10px 25px rgba(22, 163, 74, 0.2);
+    }
+
+    .confirm-actions button:hover {
+      transform: translateY(-1px);
+    }
+
+    @keyframes modalPop {
+      from {
+        transform: translateY(10px) scale(0.96);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
     .empty {
       color: #64748b;
       font-style: italic;
@@ -215,19 +299,74 @@
       </section>
     </div>
   </div>
+  <div class="confirm-overlay" id="confirmar-estado-modal" aria-hidden="true">
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmar-estado-titulo">
+      <h3 id="confirmar-estado-titulo">Confirmar actualización</h3>
+      <p class="modal-message">¿Deseas actualizar el estado seleccionado?</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-cancelar">Cancelar</button>
+        <button type="button" class="btn-confirmar">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    const overlay = document.getElementById('confirmar-estado-modal');
+    const mensajeModal = overlay.querySelector('.modal-message');
+    const btnCancelar = overlay.querySelector('.btn-cancelar');
+    const btnConfirmar = overlay.querySelector('.btn-confirmar');
+    let formPendiente = null;
+    let ultimoElementoEnfocado = null;
+
+    function cerrarModal() {
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+      formPendiente = null;
+
+      if (ultimoElementoEnfocado) {
+        ultimoElementoEnfocado.focus();
+        ultimoElementoEnfocado = null;
+      }
+    }
+
     document.querySelectorAll('.estado-form').forEach((form) => {
       form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
         const select = form.querySelector('select[name="estado"]');
         const estadoSeleccionado = select ? select.options[select.selectedIndex].text : '';
-        const confirmado = confirm(
-          `¿Confirmas que deseas actualizar el estado de la cita a "${estadoSeleccionado}"?`
-        );
 
-        if (!confirmado) {
-          event.preventDefault();
-        }
+        mensajeModal.textContent = `¿Confirmas que deseas actualizar el estado de la cita a "${estadoSeleccionado}"?`;
+        formPendiente = form;
+        ultimoElementoEnfocado = document.activeElement;
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+
+        requestAnimationFrame(() => {
+          btnConfirmar.focus();
+        });
       });
+    });
+
+    btnCancelar.addEventListener('click', cerrarModal);
+
+    btnConfirmar.addEventListener('click', () => {
+      if (formPendiente) {
+        formPendiente.submit();
+      }
+      cerrarModal();
+    });
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        cerrarModal();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && overlay.classList.contains('active')) {
+        cerrarModal();
+      }
     });
   </script>
 </body>
