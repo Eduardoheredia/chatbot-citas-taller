@@ -574,36 +574,68 @@ def mecanico_panel():
 
         cursor.execute(
             """
-            SELECT c.fecha, c.hora, u.telefono AS telefono_cliente, c.servicio
+            SELECT c.id_citas, c.fecha, c.hora, c.estado,
+                   u.telefono AS telefono_cliente, c.servicio
             FROM citas AS c
             JOIN usuarios AS u ON c.id_usuario = u.id_usuario
             WHERE c.id_mecanico = ?
             ORDER BY c.fecha ASC, c.hora ASC
             """,
-            (id_mecanico,)
+            (id_mecanico,),
         )
         citas = cursor.fetchall()
 
-    horarios = [
-        {"fecha": fila["fecha"], "hora": fila["hora"]}
-        for fila in citas
-    ]
-    clientes = [
+    citas_formateadas = [
         {
-            "telefono": fila["telefono_cliente"],
-            "servicio": fila["servicio"],
+            "id_cita": fila["id_citas"],
             "fecha": fila["fecha"],
             "hora": fila["hora"],
+            "estado": (fila["estado"] or "").lower(),
+            "telefono": fila["telefono_cliente"],
+            "servicio": fila["servicio"],
         }
         for fila in citas
     ]
 
+
     return render_template(
         "mecanico_panel.html",
         nombre_mecanico=mecanico["nombre"],
-        horarios=horarios,
-        clientes=clientes,
+        citas=citas_formateadas,
+        estados_disponibles=["confirmada", "reprogramada", "cancelada", "completada"],
     )
+
+
+@app.route("/mecanico/cita/<id_cita>/estado", methods=["POST"])
+def mecanico_actualizar_estado(id_cita):
+    """Permite al mecánico actualizar el estado de una cita asignada."""
+    id_mecanico = session.get("id_mecanico")
+    if not id_mecanico:
+        return redirect(url_for("login_page"))
+
+    nuevo_estado = (request.form.get("estado") or "").strip().lower()
+    estados_validos = {"confirmada", "reprogramada", "cancelada", "completada"}
+    if nuevo_estado not in estados_validos:
+        return redirect(url_for("mecanico_panel"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM citas WHERE id_citas = ? AND id_mecanico = ?",
+            (id_cita, id_mecanico),
+        )
+        if not cursor.fetchone():
+            return redirect(url_for("mecanico_panel"))
+
+        cursor.execute(
+            "UPDATE citas SET estado = ? WHERE id_citas = ?",
+            (nuevo_estado, id_cita),
+        )
+        conn.commit()
+
+    return redirect(url_for("mecanico_panel"))
+
 
 @app.route("/logout")
 def logout():

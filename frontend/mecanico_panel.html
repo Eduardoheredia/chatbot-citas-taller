@@ -54,7 +54,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
     }
 
@@ -80,13 +80,75 @@
 
     li {
       background: #fff;
-      border-radius: 10px;
-      padding: 0.85rem 1rem;
-      margin-bottom: 0.75rem;
-      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 0.95rem 1.1rem;
+      margin-bottom: 0.85rem;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.4rem;
+    }
+
+    .cita-horario {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .estado-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.2rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .estado-confirmada { background: rgba(34, 197, 94, 0.12); color: #166534; }
+    .estado-reprogramada { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+    .estado-cancelada { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }
+    .estado-completada { background: rgba(96, 165, 250, 0.18); color: #1e3a8a; }
+
+    .estado-form {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .estado-form label {
+      font-size: 0.85rem;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .estado-form select {
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      padding: 0.55rem 0.65rem;
+      font-size: 0.95rem;
+      color: #0f172a;
+      background: #f8fafc;
+    }
+
+    .estado-form button {
+      align-self: start;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .estado-form button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);
     }
 
     .empty {
@@ -105,12 +167,17 @@
     <div class="grid">
       <section class="card">
         <h2>Próximos horarios</h2>
-        {% if horarios %}
+        {% if citas %}
           <ul>
-            {% for horario in horarios %}
+            {% for cita in citas %}
               <li>
-                <strong>{{ horario.fecha }}</strong>
-                <span>{{ horario.hora }}</span>
+                <div class="cita-horario">
+                  <div>
+                    <strong>{{ cita.fecha }}</strong>
+                    <div>{{ cita.hora }}</div>
+                  </div>
+                  <span class="estado-chip estado-{{ cita.estado }}">{{ cita.estado|capitalize }}</span>
+                </div>
               </li>
             {% endfor %}
           </ul>
@@ -120,14 +187,25 @@
       </section>
 
       <section class="card">
-        <h2>Clientes asignados</h2>
-        {% if clientes %}
+        <h2>Citas asignadas</h2>
+        {% if citas %}
           <ul>
-            {% for cliente in clientes %}
+            {% for cita in citas %}
               <li>
-                <strong>Cliente:</strong> {{ cliente.telefono }}
-                <span><strong>Servicio:</strong> {{ cliente.servicio }}</span>
-                <span><strong>Horario:</strong> {{ cliente.fecha }} {{ cliente.hora }}</span>
+                <div>
+                  <strong>Cliente:</strong> {{ cita.telefono }}
+                  <div><strong>Servicio:</strong> {{ cita.servicio }}</div>
+                  <div><strong>Horario:</strong> {{ cita.fecha }} {{ cita.hora }}</div>
+                </div>
+                <form class="estado-form" method="post" action="{{ url_for('mecanico_actualizar_estado', id_cita=cita.id_cita) }}">
+                  <label for="estado-{{ cita.id_cita }}">Estado de la cita</label>
+                  <select id="estado-{{ cita.id_cita }}" name="estado">
+                    {% for estado in estados_disponibles %}
+                      <option value="{{ estado }}" {% if estado == cita.estado %}selected{% endif %}>{{ estado|capitalize }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit">Actualizar estado</button>
+                </form>
               </li>
             {% endfor %}
           </ul>
