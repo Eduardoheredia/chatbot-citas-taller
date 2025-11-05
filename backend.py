@@ -1,4 +1,14 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, make_response
+from flask import (
+    Flask,
+    render_template,
+    request,
+    jsonify,
+    redirect,
+    url_for,
+    session,
+    make_response,
+    flash,
+)
 import requests
 from flask_cors import CORS
 import sqlite3
@@ -633,6 +643,11 @@ def mecanico_actualizar_estado(id_cita):
             (nuevo_estado, id_cita),
         )
         conn.commit()
+
+    flash(
+        f"El estado de la cita se actualizó a '{nuevo_estado.capitalize()}'.",
+        "success",
+    )
 
     return redirect(url_for("mecanico_panel"))
 
