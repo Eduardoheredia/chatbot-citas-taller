@@ -215,5 +215,20 @@
       </section>
     </div>
   </div>
+  <script>
+    document.querySelectorAll('.estado-form').forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        const select = form.querySelector('select[name="estado"]');
+        const estadoSeleccionado = select ? select.options[select.selectedIndex].text : '';
+        const confirmado = confirm(
+          `¿Confirmas que deseas actualizar el estado de la cita a "${estadoSeleccionado}"?`
+        );
+
+        if (!confirmado) {
+          event.preventDefault();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
