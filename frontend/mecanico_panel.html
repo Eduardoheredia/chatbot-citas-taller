@@ -288,7 +288,7 @@
                       <option value="{{ estado }}" {% if estado == cita.estado %}selected{% endif %}>{{ estado|capitalize }}</option>
                     {% endfor %}
                   </select>
-                  <button type="submit">Actualizar estado</button>
+                  <button type="button" class="btn-abrir-confirmacion">Editar estado</button>
                 </form>
               </li>
             {% endfor %}
@@ -329,16 +329,15 @@
       }
     }
 
-    document.querySelectorAll('.estado-form').forEach((form) => {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-
-        const select = form.querySelector('select[name="estado"]');
+    document.querySelectorAll('.btn-abrir-confirmacion').forEach((boton) => {
+      boton.addEventListener('click', () => {
+        const form = boton.closest('form');
+        const select = form ? form.querySelector('select[name="estado"]') : null;
         const estadoSeleccionado = select ? select.options[select.selectedIndex].text : '';
 
         mensajeModal.textContent = `¿Confirmas que deseas actualizar el estado de la cita a "${estadoSeleccionado}"?`;
         formPendiente = form;
-        ultimoElementoEnfocado = document.activeElement;
+        ultimoElementoEnfocado = boton;
         overlay.classList.add('active');
         overlay.setAttribute('aria-hidden', 'false');
 
