@@ -75,13 +75,12 @@ responses:
   utter_ask_servicio:
     - text: "¿Qué servicio necesitas? (cambio de aceite, revisión general, alineación, balanceo, mantenimiento preventivo)"
   utter_ask_fecha:
-    - text: "¿Para qué fecha deseas la nueva cita? Puedes decir cosas como 'mañana', 'el próximo martes' o usar el formato AAAA-MM-DD (Ejemplo: 2025-06-15)"
+    - text: "¿Para qué fecha deseas la nueva cita?(Ejemplo: 2025-06-15)"
   utter_ask_hora:
     - text: |
         ¿A qué hora deseas la cita? Elige una de las horas disponibles (Ejemplo: 10:00, entre 08:00 y 18:00)
-        {tabla_horarios_html}
   utter_confirmar_cita:
-    - text: "Resumen de cita:\nServicio: {servicio}\nFecha: {fecha}\nHora: {hora}\n¿Confirmar?"
+    - text: "Resumen de cita:\nServicio: {servicio}\nFecha y Hora: {fecha} a las {hora}\n¿Confirmar?"
   utter_cancelar_cita:
     - text: "✅ Cita cancelada exitosamente"
   utter_resumen_reprogramacion:

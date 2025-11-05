@@ -432,7 +432,16 @@ class ValidateReprogramarCitaForm(FormValidationAction):
 
     async def validate_fecha(self, slot_value, dispatcher, tracker, domain):
         texto = (slot_value or "").strip()
+        requested_slot = tracker.get_slot("requested_slot")
         if not texto:
+            # Cuando el formulario se activa por primera vez Rasa intenta
+            # validar los slots con sus valores actuales (None). En ese caso
+            # no debemos mostrar mensajes de error, únicamente solicitar el
+            # valor al usuario. Solo mostramos el error si realmente se estaba
+            # solicitando la fecha y el usuario envió un valor vacío.
+            if requested_slot != "fecha":
+                return {}
+
             dispatcher.utter_message(response="utter_error_fecha")
             return {
                 "fecha": None,
@@ -512,6 +521,14 @@ class ValidateReprogramarCitaForm(FormValidationAction):
     async def validate_hora(self, slot_value, dispatcher, tracker, domain):
         value = (slot_value or "").strip()
         horarios = tracker.get_slot("horarios_disponibles") or []
+        requested_slot = tracker.get_slot("requested_slot")
+
+        if not value and requested_slot != "hora":
+            # Caso similar al de la fecha: al iniciar el formulario todavía no
+            # se ha pedido la hora, por lo que evitamos enviar mensajes de
+            # error hasta que el bot realmente esté solicitando ese dato.
+            return {}
+
         if value not in horarios:
             dispatcher.utter_message(
                 text="⚠️ Debes elegir una hora mostrada en la lista disponible."
