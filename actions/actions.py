@@ -268,13 +268,48 @@ def _init_db() -> None:
                 fecha TEXT NOT NULL,
                 hora TEXT NOT NULL,
                 estado TEXT NOT NULL CHECK (
-                    estado IN ('confirmada','reprogramada','cancelada','completada')
+                    estado IN ('confirmada','reprogramada','en progreso','cancelada','completada')
                 ),
                 id_mecanico TEXT,
                 FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),
                 FOREIGN KEY(id_mecanico) REFERENCES mecanicos(id_mecanico)
             )
         ''')
+        cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='citas'"
+        )
+        row = cursor.fetchone()
+        schema_sql = row[0] if row else ""
+        if "estado IN" in schema_sql and "en progreso" not in schema_sql:
+            cursor.execute("PRAGMA table_info(citas)")
+            cols = [c[1] for c in cursor.fetchall()]
+            id_mecanico_select = "id_mecanico" if "id_mecanico" in cols else "NULL"
+            cursor.execute("ALTER TABLE citas RENAME TO citas_old")
+            cursor.execute(
+                '''
+                CREATE TABLE citas (
+                    id_citas TEXT PRIMARY KEY,
+                    id_usuario TEXT NOT NULL,
+                    servicio TEXT NOT NULL,
+                    fecha TEXT NOT NULL,
+                    hora TEXT NOT NULL,
+                    estado TEXT NOT NULL CHECK (
+                        estado IN ('confirmada','reprogramada','en progreso','cancelada','completada')
+                    ),
+                    id_mecanico TEXT,
+                    FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),
+                    FOREIGN KEY(id_mecanico) REFERENCES mecanicos(id_mecanico)
+                )
+                '''
+            )
+            cursor.execute(
+                f"""
+                INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado, id_mecanico)
+                SELECT id_citas, id_usuario, servicio, fecha, hora, estado, {id_mecanico_select}
+                FROM citas_old
+                """
+            )
+            cursor.execute("DROP TABLE citas_old")
         # Add the column id_mecanico if the table already existed
         cursor.execute("PRAGMA table_info(citas)")
         cols = [c[1] for c in cursor.fetchall()]
