@@ -451,6 +451,11 @@
           </div>
         </div>
         <div class="col-12 col-md-auto">
+          <button id="buscar-filtros" type="button" class="btn btn-primary w-100">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+        </div>
+        <div class="col-12 col-md-auto">
           <button id="limpiar-filtros" type="button" class="btn btn-outline-secondary w-100">Limpiar filtros</button>
         </div>
       </div>
@@ -986,6 +991,7 @@
     }
 
     Object.values(filtros).forEach(el => el.addEventListener('input', filtrarTabla));
+    document.getElementById('buscar-filtros').addEventListener('click', filtrarTabla);
     document.getElementById('limpiar-filtros').addEventListener('click', () => {
       Object.values(filtros).forEach(el => el.value = '');
       filtrarTabla();
