@@ -420,6 +420,7 @@
               <option value="" selected>Todos</option>
               <option value="confirmada">confirmada</option>
               <option value="reprogramada">reprogramada</option>
+              <option value="en progreso">en progreso</option>
               <option value="cancelada">cancelada</option>
               <option value="completada">completada</option>
             </select>
@@ -489,6 +490,7 @@
                 <select name="estado" class="form-select form-select-sm" disabled>
                   <option value="confirmada" {% if c.estado=='confirmada' %}selected{% endif %}>confirmada</option>
                   <option value="reprogramada" {% if c.estado=='reprogramada' %}selected{% endif %}>reprogramada</option>
+                  <option value="en progreso" {% if c.estado=='en progreso' %}selected{% endif %}>en progreso</option>
                   <option value="cancelada" {% if c.estado=='cancelada' %}selected{% endif %}>cancelada</option>
                   <option value="completada" {% if c.estado=='completada' %}selected{% endif %}>completada</option>
                 </select>
@@ -532,6 +534,7 @@
                 <select id="new-estado" class="form-select form-select-sm">
                   <option value="confirmada">confirmada</option>
                   <option value="reprogramada">reprogramada</option>
+                  <option value="en progreso">en progreso</option>
                   <option value="cancelada">cancelada</option>
                   <option value="completada">completada</option>
                 </select>
