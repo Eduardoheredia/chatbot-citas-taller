@@ -99,6 +99,13 @@ def crear_bd():
             )
             """
         )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS estados_cita (
+                estado TEXT PRIMARY KEY
+            )
+            """
+        )
     
         # Si la base ya existía sin la columna es_admin la añadimos
         cursor.execute("PRAGMA table_info(usuarios)")
@@ -123,6 +130,19 @@ def crear_bd():
             INSERT OR IGNORE INTO mecanicos (id_mecanico, nombre, telefono)
             VALUES ('mec1', 'Mecánico Ejemplo', '00000000')
             """
+        )
+        cursor.executemany(
+            """
+            INSERT OR IGNORE INTO estados_cita (estado)
+            VALUES (?)
+            """,
+            [
+                ("confirmada",),
+                ("reprogramada",),
+                ("en progreso",),
+                ("cancelada",),
+                ("completada",),
+            ],
         )
         conn.commit()
         
