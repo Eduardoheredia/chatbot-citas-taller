@@ -34,6 +34,24 @@ app.secret_key = SECRET_KEY
 CORS(app)
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "usuarios.db")
+HORARIOS_ADMIN_PERMITIDOS = {"08:00", "10:00", "12:00", "14:00", "16:00", "18:00"}
+
+
+def normalizar_hora_admin(valor_hora: str):
+    """Normaliza la hora recibida y valida que esté en la lista permitida."""
+    if not valor_hora:
+        return None
+
+    hora_limpia = valor_hora.strip()
+    for formato in ("%H:%M", "%H:%M:%S"):
+        try:
+            hora = datetime.strptime(hora_limpia, formato).strftime("%H:%M")
+            if hora in HORARIOS_ADMIN_PERMITIDOS:
+                return hora
+            return None
+        except ValueError:
+            continue
+    return None
 
 def generar_id_aleatorio(longitud=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
@@ -246,8 +264,11 @@ def generar_eventos_disponibilidad(fecha_inicio: date, fecha_fin: date):
     while cursor_fecha <= fecha_fin:
         # Lunes (0) a sábado (5)
         if cursor_fecha.weekday() <= 5:
-            for hora in range(8, 18):
-                inicio = datetime.combine(cursor_fecha, time(hour=hora, minute=0))
+            for hora_str in sorted(HORARIOS_ADMIN_PERMITIDOS):
+                inicio = datetime.combine(
+                    cursor_fecha,
+                    datetime.strptime(hora_str, "%H:%M").time(),
+                )
                 if inicio not in bloques_ocupados:
                     eventos_disponibles.append(
                         {
@@ -587,13 +608,16 @@ def actualizar_cita(id_cita):
     hora = request.form.get("hora")
     estado = request.form.get("estado")
     id_mecanico = request.form.get("id_mecanico")
+    hora_normalizada = normalizar_hora_admin(hora)
+    if not hora_normalizada:
+        return jsonify({"error": "Hora no permitida. Use: 08:00, 10:00, 12:00, 14:00, 16:00 o 18:00."}), 400
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE citas SET servicio = ?, fecha = ?, hora = ?, estado = ?, id_mecanico = ? WHERE id_citas = ?",
-            (servicio, fecha, hora, estado, id_mecanico, id_cita),
+            (servicio, fecha, hora_normalizada, estado, id_mecanico, id_cita),
         )
         conn.commit()
 
@@ -611,6 +635,9 @@ def agregar_cita():
     hora = request.form.get("hora")
     estado = request.form.get("estado") or "confirmada"
     id_mecanico = request.form.get("id_mecanico")
+    hora_normalizada = normalizar_hora_admin(hora)
+    if not hora_normalizada:
+        return jsonify({"error": "Hora no permitida. Use: 08:00, 10:00, 12:00, 14:00, 16:00 o 18:00."}), 400
 
     id_cita = generar_id_aleatorio()
     with sqlite3.connect(DB_PATH) as conn:
@@ -618,7 +645,7 @@ def agregar_cita():
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado, id_mecanico) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (id_cita, id_usuario, servicio, fecha, hora, estado, id_mecanico),
+            (id_cita, id_usuario, servicio, fecha, hora_normalizada, estado, id_mecanico),
         )
         conn.commit()
 
