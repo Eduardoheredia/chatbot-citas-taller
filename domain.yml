@@ -78,7 +78,7 @@ responses:
     - text: "¿Para qué fecha deseas la nueva cita?(Ejemplo: 2025-06-15)"
   utter_ask_hora:
     - text: |
-        ¿A qué hora deseas la cita? Elige una de las horas disponibles (Ejemplo: 10:00, entre 08:00 y 18:00)
+        ¿A qué hora deseas la cita? Elige uno de estos horarios: 08:00, 10:00, 12:00, 14:00, 16:00 o 18:00
   utter_confirmar_cita:
     - text: "Resumen de cita:\nServicio: {servicio}\nFecha y Hora: {fecha} a las {hora}\n¿Confirmar?"
   utter_cancelar_cita:
@@ -92,11 +92,11 @@ responses:
   utter_error_fecha:
     - text: "⚠️ Fecha inválida. Ingresa una fecha igual o futura a la actual(Ej: 2025-05-30)"
   utter_error_hora:
-    - text: "⚠️ Hora fuera de nuestro horario (08:00 - 18:00)"
+    - text: "⚠️ Hora fuera de horario. Solo atendemos a las 08:00, 10:00, 12:00, 14:00, 16:00 y 18:00."
   utter_hora_ocupada:
     - text: "⚠️ Esa hora ya está ocupada. Por favor elige otra."
   utter_horarios:
-    - text: "Horarios de atención:\nLunes a Viernes: 08:00 - 18:00\nSábados: 08:00 - 18:00  y \ndomingos cerrado"
+    - text: "Horarios de atención:\nLunes a Sábado: 08:00, 10:00, 12:00, 14:00, 16:00 y 18:00\nDomingos: cerrado"
   utter_default:
     - text: "🤖 No entendí. ¿Podrías repetirlo?"
   utter_duracion_servicios:
