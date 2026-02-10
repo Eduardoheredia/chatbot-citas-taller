@@ -509,7 +509,14 @@
               <td>{{ c.telefono }}</td>
               <td><input type="text" name="servicio" value="{{ c.servicio }}" class="form-control form-control-sm" disabled></td>
               <td><input type="date" name="fecha" value="{{ c.fecha }}" class="form-control form-control-sm" disabled></td>
-              <td><input type="time" name="hora" value="{{ c.hora }}" class="form-control form-control-sm" disabled></td>
+              <td>
+                <select name="hora" class="form-select form-select-sm" disabled>
+                  {% set horarios_permitidos = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'] %}
+                  {% for horario in horarios_permitidos %}
+                  <option value="{{ horario }}" {% if c.hora == horario %}selected{% endif %}>{{ horario }}</option>
+                  {% endfor %}
+                </select>
+              </td>
               <td>
                 <select name="id_mecanico" class="form-select form-select-sm" disabled>
                   <option value="">Sin asignar</option>
@@ -553,7 +560,17 @@
               <td></td>
               <td><input type="text" id="new-servicio" placeholder="Servicio" class="form-control form-control-sm"></td>
               <td><input type="date" id="new-fecha" class="form-control form-control-sm"></td>
-              <td><input type="time" id="new-hora" class="form-control form-control-sm"></td>
+              <td>
+                <select id="new-hora" class="form-select form-select-sm">
+                  <option value="" selected disabled>Seleccione horario</option>
+                  <option value="08:00">08:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="18:00">18:00</option>
+                </select>
+              </td>
               <td>
                 <select id="new-mecanico" class="form-select form-select-sm">
                   <option value="" selected>Sin asignar</option>
@@ -983,7 +1000,7 @@
         const id = tr.dataset.id;
         const servicio = tr.querySelector('input[name="servicio"]').value;
         const fecha = tr.querySelector('input[name="fecha"]').value;
-        const hora   = tr.querySelector('input[name="hora"]').value;
+        const hora   = tr.querySelector('select[name="hora"]').value;
         const mecanico = tr.querySelector('select[name="id_mecanico"]').value;
         const estado = tr.querySelector('select[name="estado"]').value;
 

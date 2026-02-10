@@ -69,6 +69,8 @@ AM_INDICATORS = {
     "de la madrugada",
 }
 
+HORARIOS_PERMITIDOS = {"08:00", "10:00", "12:00", "14:00", "16:00", "18:00"}
+
 NUMERIC_WORDS = {
     "cero": 0,
     "un": 1,
@@ -339,15 +341,7 @@ def obtener_horarios_disponibles(fecha: Text) -> List[Text]:
     except Exception as exc:
         logger.error(f"Error consultando horarios: {exc}")
 
-    horarios: List[Text] = []
-    inicio = datetime.strptime("08:00", "%H:%M")
-    fin = datetime.strptime("18:00", "%H:%M")
-    actual = inicio
-    while actual <= fin:
-        hora_str = actual.strftime("%H:%M")
-        if hora_str not in ocupados:
-            horarios.append(hora_str)
-        actual += timedelta(hours=2)
+    horarios = sorted(hora for hora in HORARIOS_PERMITIDOS if hora not in ocupados)
     return horarios
 
 
@@ -743,11 +737,10 @@ class ValidateAgendarCitaForm(FormValidationAction):
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
 
-        if hora < time(8, 0) or hora > time(18, 0):
+        hora_str = hora.strftime("%H:%M")
+        if hora_str not in HORARIOS_PERMITIDOS:
             dispatcher.utter_message(response="utter_error_hora")
             return {"hora": None}
-
-        hora_str = hora.strftime("%H:%M")
         fecha = tracker.get_slot("fecha")
         horarios_disponibles = tracker.get_slot("horarios_disponibles") or []
         if horarios_disponibles and hora_str not in horarios_disponibles:
