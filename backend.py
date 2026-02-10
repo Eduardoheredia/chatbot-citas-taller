@@ -16,6 +16,7 @@ import hashlib
 import os
 import random
 import string
+from datetime import datetime, date, time, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -172,6 +173,97 @@ def obtener_citas(id_usuario: str):
         for cid, s, f, h, e, m in rows
     ]
 
+
+def combinar_fecha_hora(fecha_str: str, hora_str: str):
+    """Combina fecha y hora almacenadas en DB en un datetime válido."""
+    try:
+        fecha = datetime.strptime((fecha_str or "").strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+    for fmt in ("%H:%M", "%H:%M:%S"):
+        try:
+            hora = datetime.strptime((hora_str or "").strip(), fmt).time()
+            return datetime.combine(fecha, hora)
+        except ValueError:
+            continue
+    return None
+
+
+def generar_eventos_disponibilidad(fecha_inicio: date, fecha_fin: date):
+    """Construye eventos para FullCalendar con bloques disponibles y ocupados."""
+    estados_ocupados = {"confirmada", "reprogramada", "en progreso"}
+    eventos_ocupados = []
+    bloques_ocupados = set()
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT c.id_citas, c.servicio, c.fecha, c.hora, c.estado,
+                   u.telefono AS telefono_usuario,
+                   COALESCE(m.nombre, 'Sin asignar') AS nombre_mecanico
+            FROM citas AS c
+            JOIN usuarios AS u ON u.id_usuario = c.id_usuario
+            LEFT JOIN mecanicos AS m ON m.id_mecanico = c.id_mecanico
+            WHERE c.fecha BETWEEN ? AND ?
+            ORDER BY c.fecha ASC, c.hora ASC
+            """,
+            (fecha_inicio.isoformat(), fecha_fin.isoformat()),
+        )
+
+        for fila in cursor.fetchall():
+            inicio = combinar_fecha_hora(fila["fecha"], fila["hora"])
+            if not inicio:
+                continue
+
+            fin = inicio + timedelta(hours=1)
+            estado = (fila["estado"] or "").lower().strip()
+            es_ocupada = estado in estados_ocupados
+
+            if es_ocupada:
+                bloques_ocupados.add(inicio)
+
+            eventos_ocupados.append(
+                {
+                    "id": fila["id_citas"],
+                    "title": f"{fila['servicio']} · {fila['telefono_usuario']}",
+                    "start": inicio.isoformat(),
+                    "end": fin.isoformat(),
+                    "color": "#dc2626" if es_ocupada else "#f59e0b",
+                    "textColor": "#ffffff",
+                    "extendedProps": {
+                        "tipo": "ocupado" if es_ocupada else "informativo",
+                        "estado": fila["estado"],
+                        "mecanico": fila["nombre_mecanico"],
+                    },
+                }
+            )
+
+    eventos_disponibles = []
+    cursor_fecha = fecha_inicio
+    while cursor_fecha <= fecha_fin:
+        # Lunes (0) a sábado (5)
+        if cursor_fecha.weekday() <= 5:
+            for hora in range(8, 18):
+                inicio = datetime.combine(cursor_fecha, time(hour=hora, minute=0))
+                if inicio not in bloques_ocupados:
+                    eventos_disponibles.append(
+                        {
+                            "title": "Disponible",
+                            "start": inicio.isoformat(),
+                            "end": (inicio + timedelta(hours=1)).isoformat(),
+                            "display": "background",
+                            "backgroundColor": "#86efac",
+                            "borderColor": "#86efac",
+                            "extendedProps": {"tipo": "disponible"},
+                        }
+                    )
+        cursor_fecha += timedelta(days=1)
+
+    return eventos_disponibles + eventos_ocupados
+
 def hash_contrasena(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -318,6 +410,33 @@ def admin_panel():
         mecanicos = cursor.fetchall()
 
     return render_template("admin.html", usuarios=usuarios, citas=citas, mecanicos=mecanicos)
+
+
+@app.route("/admin/calendario")
+def admin_calendario():
+    """Devuelve eventos para el calendario de disponibilidad del administrador."""
+    if not session.get("es_admin"):
+        return jsonify({"error": "No autorizado"}), 401
+
+    inicio_str = request.args.get("start", "")
+    fin_str = request.args.get("end", "")
+
+    try:
+        fecha_inicio = datetime.fromisoformat(inicio_str.replace("Z", "+00:00")).date()
+        fecha_fin = datetime.fromisoformat(fin_str.replace("Z", "+00:00")).date()
+    except ValueError:
+        hoy = date.today()
+        fecha_inicio = hoy.replace(day=1)
+        fecha_fin = fecha_inicio + timedelta(days=45)
+
+    if fecha_fin < fecha_inicio:
+        fecha_inicio, fecha_fin = fecha_fin, fecha_inicio
+
+    max_rango = fecha_inicio + timedelta(days=90)
+    if fecha_fin > max_rango:
+        fecha_fin = max_rango
+
+    return jsonify(generar_eventos_disponibilidad(fecha_inicio, fecha_fin))
 
 
 @app.route("/admin/agregar_usuario", methods=["POST"])
