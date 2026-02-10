@@ -53,6 +53,26 @@ def normalizar_hora_admin(valor_hora: str):
             continue
     return None
 
+
+def existe_conflicto_horario(cursor, fecha: str, hora: str, excluir_id_cita: str | None = None):
+    """Valida si ya existe una cita ocupando el mismo bloque de fecha y hora."""
+    query = """
+        SELECT 1
+        FROM citas
+        WHERE fecha = ?
+          AND hora = ?
+          AND lower(trim(estado)) IN ('confirmada', 'reprogramada', 'en progreso')
+    """
+    parametros = [fecha, hora]
+
+    if excluir_id_cita:
+        query += " AND id_citas <> ?"
+        parametros.append(excluir_id_cita)
+
+    query += " LIMIT 1"
+    cursor.execute(query, parametros)
+    return cursor.fetchone() is not None
+
 def generar_id_aleatorio(longitud=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=longitud))
 
@@ -615,6 +635,9 @@ def actualizar_cita(id_cita):
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
+        if existe_conflicto_horario(cursor, fecha, hora_normalizada, excluir_id_cita=id_cita):
+            return jsonify({"error": "Ya existe una cita registrada en ese horario."}), 409
+
         cursor.execute(
             "UPDATE citas SET servicio = ?, fecha = ?, hora = ?, estado = ?, id_mecanico = ? WHERE id_citas = ?",
             (servicio, fecha, hora_normalizada, estado, id_mecanico, id_cita),
@@ -643,6 +666,9 @@ def agregar_cita():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
+        if existe_conflicto_horario(cursor, fecha, hora_normalizada):
+            return jsonify({"error": "Ya existe una cita registrada en ese horario."}), 409
+
         cursor.execute(
             "INSERT INTO citas (id_citas, id_usuario, servicio, fecha, hora, estado, id_mecanico) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (id_cita, id_usuario, servicio, fecha, hora_normalizada, estado, id_mecanico),

@@ -1019,7 +1019,12 @@
           btn.style.display = 'none';
           tr.querySelector('.edit-cita-btn').style.display = 'inline-block';
         } else {
-          alert('Error al actualizar la cita');
+          let mensaje = 'Error al actualizar la cita';
+          try {
+            const data = await res.json();
+            if (data.error) mensaje = data.error;
+          } catch (_) {}
+          alert(mensaje);
         }
       });
     });
@@ -1056,7 +1061,14 @@
         body: params.toString()
       });
       if (res.ok) location.reload();
-      else alert('Error al agregar cita');
+      else {
+        let mensaje = 'Error al agregar cita';
+        try {
+          const data = await res.json();
+          if (data.error) mensaje = data.error;
+        } catch (_) {}
+        alert(mensaje);
+      }
     });
 
     // — Filtros de Citas —
