@@ -698,6 +698,7 @@
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales-all.global.min.js"></script>
   <!-- Tu JavaScript CRUD, sin cambios -->
   <script>
     const confirmationModalElement = document.getElementById('confirmationModal');
@@ -872,6 +873,12 @@
     if (calendarElement && window.FullCalendar) {
       const calendar = new FullCalendar.Calendar(calendarElement, {
         locale: 'es',
+        buttonText: {
+          today: 'Hoy',
+          month: 'Mes',
+          week: 'Semana',
+          day: 'Día'
+        },
         initialView: 'timeGridWeek',
         height: 'auto',
         allDaySlot: false,
