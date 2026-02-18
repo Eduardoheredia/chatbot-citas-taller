@@ -631,6 +631,7 @@
               <th>ID</th>
               <th>Nombre</th>
               <th>Teléfono</th>
+              <th>Nueva contraseña</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -640,6 +641,7 @@
               <td>{{ m.id_mecanico }}</td>
               <td><input type="text" name="nombre" value="{{ m.nombre }}" class="form-control form-control-sm" disabled></td>
               <td><input type="tel" name="telefono" value="{{ m.telefono }}" class="form-control form-control-sm" disabled></td>
+              <td><input type="password" name="contrasena" placeholder="Dejar en blanco para mantener" class="form-control form-control-sm" disabled></td>
               <td>
                 <button class="edit-mecanico-btn btn btn-sm btn-primary" title="Editar">
                   <i class="bi bi-pencil"></i>
@@ -657,6 +659,7 @@
               <td class="text-secondary">Nuevo</td>
               <td><input type="text" id="new-nombre" placeholder="Nombre" class="form-control form-control-sm"></td>
               <td><input type="tel" id="new-telefono" placeholder="Teléfono" class="form-control form-control-sm"></td>
+              <td><input type="password" id="new-contrasena" placeholder="Contraseña (mín. 6)" class="form-control form-control-sm"></td>
               <td>
                 <button id="add-mecanico-btn" class="btn btn-sm btn-success">
                   <i class="bi bi-plus-lg"></i> Agregar
@@ -1141,12 +1144,16 @@
         const id = tr.dataset.id;
         const nombre  = tr.querySelector('input[name="nombre"]').value.trim();
         const telefono = tr.querySelector('input[name="telefono"]').value.trim();
+        const contrasena = tr.querySelector('input[name="contrasena"]').value.trim();
 
         if (!await showConfirmation('¿Desea confirmar los cambios de este mecánico?')) {
           return;
         }
 
         const params = new URLSearchParams({ nombre, telefono });
+        if (contrasena) {
+          params.append('contrasena', contrasena);
+        }
         const res = await fetch(`/admin/actualizar_mecanico/${id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1154,6 +1161,7 @@
         });
         if (res.ok) {
           tr.querySelectorAll('input').forEach(i => i.disabled = true);
+          tr.querySelector('input[name="contrasena"]').value = '';
           btn.style.display = 'none';
           tr.querySelector('.edit-mecanico-btn').style.display = 'inline-block';
         } else {
@@ -1181,9 +1189,10 @@
     document.getElementById('add-mecanico-btn').addEventListener('click', async () => {
       const nombre = document.getElementById('new-nombre').value.trim();
       const telefono = document.getElementById('new-telefono').value.trim();
-      if (!nombre || !telefono) return alert('Complete los campos');
+      const contrasena = document.getElementById('new-contrasena').value.trim();
+      if (!nombre || !telefono || !contrasena) return alert('Complete los campos');
       if (!await showConfirmation('¿Desea confirmar la creación de este mecánico?', { confirmText: 'Sí, crear' })) return;
-      const params = new URLSearchParams({ nombre, telefono });
+      const params = new URLSearchParams({ nombre, telefono, contrasena });
       const res = await fetch('/admin/agregar_mecanico', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
