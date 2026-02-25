@@ -1,150 +1,255 @@
-# Chatbot de Citas para Taller
+# Chatbot de Citas para Taller Mecánico
 
-Este proyecto integra Rasa, Flask, SQLite y un frontend web responsive para ofrecer una experiencia completa de agendamiento y gestión de citas en un taller mecánico.
+Aplicación integral para gestionar citas de un taller mecánico con **Rasa + Flask + SQLite + Frontend Web**.
 
-## Contenido
+El sistema permite:
+- Atención conversacional para clientes.
+- Registro/login de usuarios, administradores y mecánicos.
+- Gestión de citas desde chatbot, panel admin y panel de mecánico.
+- Persistencia de historial conversacional y citas.
 
-- [Instalación](#instalación)
-- [Funcionalidades del chatbot](#funcionalidades-del-chatbot)
-- [Características del proyecto](#características-del-proyecto)
-- [Configuración de la URL del Socket](#configuración-de-la-url-del-socket)
-- [Identificador de sesión fijo](#identificador-de-sesión-fijo)
-- [Persistencia de citas](#persistencia-de-citas)
-- [Persistencia del historial de conversaciones](#persistencia-del-historial-de-conversaciones)
-- [Consulta de citas mediante la API](#consulta-de-citas-mediante-la-api)
-- [Canal personalizado para SocketIO](#canal-personalizado-para-socketio)
-- [Advertencia de SQLAlchemy](#advertencia-de-sqlalchemy)
+---
 
-## Instalación
+## Tabla de contenido
 
-1. Clona este repositorio y crea un entorno virtual:
+- [Arquitectura del proyecto](#arquitectura-del-proyecto)
+- [Funciones principales](#funciones-principales)
+  - [1) Chatbot (Rasa)](#1-chatbot-rasa)
+  - [2) Backend (Flask)](#2-backend-flask)
+  - [3) Frontend](#3-frontend)
+- [Mejoras implementadas](#mejoras-implementadas)
+- [Estructura de base de datos](#estructura-de-base-de-datos)
+- [Rutas HTTP disponibles](#rutas-http-disponibles)
+- [Instalación y ejecución](#instalación-y-ejecución)
+- [Variables de entorno](#variables-de-entorno)
+- [Flujo recomendado de ejecución](#flujo-recomendado-de-ejecución)
+- [Notas operativas](#notas-operativas)
+
+---
+
+## Arquitectura del proyecto
+
+- **Rasa**: motor conversacional (NLU + reglas + historias + formularios + acciones personalizadas).
+- **Actions Server** (`actions/actions.py`): lógica de negocio del chatbot (validación de fecha/hora, agenda, reprogramación, cancelación, historial, FAQ mecánica).
+- **Flask Backend** (`backend.py`): autenticación, sesiones, administración, vista del chatbot, APIs de historial/citas y panel de mecánicos.
+- **Canal SocketIO personalizado** (`channels.py`): mantiene el identificador de sesión de usuario para continuidad conversacional.
+- **SQLite** (`usuarios.db` + `tracker.db`): persistencia de usuarios, mecánicos, citas y eventos conversacionales de Rasa.
+
+---
+
+## Funciones principales
+
+## 1) Chatbot (Rasa)
+
+### Funcionalidades conversacionales
+- Saludo inicial automático por sesión (`action_session_start`).
+- Fallback personalizado cuando no entiende una consulta.
+- Consulta de servicios del taller.
+- Agendamiento guiado por formulario (`agendar_cita_form`).
+- Reprogramación de cita activa (`reprogramar_cita_form`).
+- Cancelación de la próxima cita activa del usuario.
+- Consulta de cita activa y consulta de historial de citas.
+- Respuestas de preguntas frecuentes de mecánica.
+
+### Validaciones inteligentes de fecha y hora
+- Interpreta múltiples formatos de hora en español:
+  - `10`, `10:00`, `10 am`, `2 pm`, `dos y media`, `cuarto para las 3`, etc.
+- Soporta normalización de texto con acentos y expresiones coloquiales.
+- Restringe la agenda a horarios permitidos del taller:
+  - `08:00`, `10:00`, `12:00`, `14:00`, `16:00`, `18:00`.
+- Evita colisiones de horario al confirmar o reprogramar.
+- Muestra horarios disponibles en formato tabla para mejor lectura en webchat.
+
+### Intenciones principales configuradas
+- `solicitar_cita`, `reprogramar_cita`, `cancelar_cita`
+- `consultar_cita_activa`, `consultar_historial_citas`
+- `consultar_servicios`, `consultar_horarios_disponibles`
+- `consulta_mecanica`, `faq_duracion_servicios`
+- `saludo`, `agradecer`, `despedirse`, `confirmar`, `negar`
+
+---
+
+## 2) Backend (Flask)
+
+### Autenticación y roles
+- Registro de clientes con validaciones (teléfono boliviano de 8 dígitos, contraseña mínima).
+- Inicio de sesión para:
+  - Cliente
+  - Administrador
+  - Mecánico
+- Gestión de sesión con `SECRET_KEY` y control de acceso por rol.
+
+### Panel de administración
+- CRUD de usuarios.
+- CRUD de mecánicos.
+- CRUD de citas.
+- Restricciones de seguridad:
+  - evita eliminar el admin base,
+  - evita dejar el sistema sin administradores,
+  - evita quitar privilegios al propio admin en sesión.
+- Calendario de disponibilidad y ocupación para visualizar agenda general.
+
+### Panel de mecánico
+- Visualización de citas asignadas.
+- Cambio de estado de citas (por ejemplo, en progreso/completada según flujo).
+- Vista centrada en la operación diaria del mecánico.
+
+### APIs auxiliares
+- `GET /historial`: devuelve eventos de conversación (usuario/bot) desde tracker de Rasa.
+- `GET /citas`: devuelve citas asociadas al usuario autenticado.
+
+---
+
+## 3) Frontend
+
+- Páginas HTML para:
+  - Inicio,
+  - Login/acceso,
+  - Chatbot,
+  - Administración,
+  - Panel de mecánico.
+- Integración con widget webchat de Rasa en `frontend/chatbot.html`.
+- Uso de `socket_url` para conectar dinámicamente a Rasa por entorno.
+- Limpieza/aislamiento de historial local cuando cambia el usuario autenticado.
+
+---
+
+## Mejoras implementadas
+
+- **Persistencia completa de citas** con estados controlados:
+  - `confirmada`, `reprogramada`, `en progreso`, `cancelada`, `completada`.
+- **Control de conflictos de agenda** tanto en chatbot como en panel admin.
+- **Normalización robusta de horas en español** con soporte de expresiones naturales.
+- **Canal SocketIO con continuidad de identidad** para mantener el historial por usuario.
+- **Creación y migración defensiva de esquema SQLite** para compatibilidad con versiones previas.
+- **Administrador y mecánico por defecto** inicializados automáticamente para arranque rápido.
+- **Consulta de disponibilidad en calendario** para facilitar operación y planificación.
+
+---
+
+## Estructura de base de datos
+
+### Tabla `usuarios`
+- `id_usuario` (PK)
+- `telefono` (único)
+- `contrasena` (hash SHA-256)
+- `es_admin` (0/1)
+
+### Tabla `mecanicos`
+- `id_mecanico` (PK)
+- `nombre`
+- `telefono` (único)
+- `contrasena` (hash SHA-256)
+
+### Tabla `citas`
+- `id_citas` (PK)
+- `id_usuario` (FK -> usuarios)
+- `servicio`
+- `fecha`
+- `hora`
+- `estado`
+- `id_mecanico` (FK -> mecanicos)
+
+### Tabla `estados_cita`
+- catálogo de estados válidos para operación del sistema.
+
+---
+
+## Rutas HTTP disponibles
+
+### Públicas / acceso
+- `GET /` → pantalla principal
+- `GET /acceso` → login
+- `POST /registro` → crear usuario
+- `POST /login` → autenticación
+
+### Cliente autenticado
+- `GET /chatbot` → interfaz chatbot
+- `GET /historial` → historial de conversación
+- `GET /citas` → citas del usuario
+- `GET /logout` → cerrar sesión
+
+### Administrador
+- `GET /admin`
+- `GET /admin/calendario`
+- `POST /admin/agregar_usuario`
+- `POST /admin/actualizar_usuario/<id_usuario>`
+- `POST /admin/eliminar_usuario/<id_usuario>`
+- `POST /admin/agregar_mecanico`
+- `POST /admin/actualizar_mecanico/<id_mecanico>`
+- `POST /admin/eliminar_mecanico/<id_mecanico>`
+- `POST /admin/agregar_cita`
+- `POST /admin/actualizar_cita/<id_cita>`
+- `POST /admin/eliminar_cita/<id_cita>`
+
+### Mecánico
+- `GET /mecanico`
+- `POST /mecanico/cita/<id_cita>/estado`
+
+---
+
+## Instalación y ejecución
+
+1. Crear entorno virtual:
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-2. Instala las dependencias necesarias:
+2. Instalar dependencias:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Define la variable `SECRET_KEY` y ejecuta el backend:
+3. Definir variables mínimas y ejecutar backend:
 
 ```bash
-export SECRET_KEY="alguna-clave-secreta"
+export SECRET_KEY="una-clave-segura"
 python backend.py
 ```
 
-4. En otra terminal inicia Rasa y sus acciones personalizadas:
+4. En otra terminal, entrenar y levantar Rasa:
 
 ```bash
 rasa train
-rasa run actions &
+rasa run actions
 rasa run -m models --enable-api --cors "*" --credentials credentials.yml
 ```
 
-## Funcionalidades del chatbot
+---
 
-- **Asistencia conversacional en español**: El bot inicia con saludos, despedidas y mensajes de agradecimiento personalizados para generar cercanía con el usuario.【F:domain.yml†L24-L55】
-- **Información de servicios y horarios**: Explica qué servicios ofrece el taller, la duración aproximada de cada uno y el horario de atención antes de reservar.【F:domain.yml†L56-L94】
-- **Agendamiento guiado de citas**: Utiliza formularios en Rasa para solicitar servicio, fecha y hora; valida servicios conocidos, interpreta fechas en lenguaje natural, convierte expresiones horarias en español y evita choques de agenda antes de confirmar la cita.【F:actions/actions.py†L495-L590】【F:actions/actions.py†L70-L169】
-- **Reprogramación asistida**: Ofrece horarios alternativos para la nueva cita, valida que el formato de fecha y hora sea correcto y actualiza la cita solo si el espacio está disponible.【F:actions/actions.py†L370-L494】
-- **Cancelación segura**: Permite cancelar la próxima cita activa del usuario, notificando el resultado y limpiando los datos del formulario para evitar reenvíos accidentales.【F:actions/actions.py†L591-L630】
-- **Consulta de citas**: Responde con la próxima cita confirmada o reprogramada y puede listar el historial de servicios completados para que el cliente tenga seguimiento de sus visitas anteriores.【F:actions/actions.py†L632-L720】
-- **Preguntas frecuentes mecánicas**: Contesta dudas comunes sobre mantenimiento, problemas mecánicos y recomendaciones básicas, escalando la consulta cuando es necesario.【F:actions/actions.py†L721-L760】
-- **Fallback y control de sesión**: Saluda automáticamente al iniciar cada sesión, maneja frases no reconocidas con mensajes claros y mantiene el contexto con un `session_id` persistente ligado al número del cliente.【F:domain.yml†L95-L118】【F:actions/actions.py†L320-L358】
+## Variables de entorno
 
-## Características del proyecto
+### Obligatorias
+- `SECRET_KEY`: clave de sesión de Flask.
 
-- **Backend en Flask**: Proporciona registro y autenticación de usuarios y mecánicos, gestiona sesiones seguras con cookies y ofrece endpoints para historial y citas ligadas al usuario autenticado.【F:backend.py†L1-L207】【F:backend.py†L400-L478】
-- **Panel administrativo**: Usuarios administradores pueden crear, editar o eliminar clientes, mecánicos y citas desde una interfaz HTML protegida por sesión.【F:backend.py†L208-L389】【F:frontend/admin.html†L1-L200】
-- **Panel para mecánicos**: Cada mecánico autenticado visualiza su agenda diaria y los datos de contacto de los clientes asignados.【F:backend.py†L480-L575】【F:frontend/mecanico_panel.html†L1-L200】
-- **Frontend web responsivo**: La vista del chatbot muestra el historial conversacional, las citas vigentes y un widget incrustado de Rasa Webchat que se conecta automáticamente al servidor de Rasa utilizando el identificador del usuario.【F:frontend/chatbot.html†L1-L208】
-- **Persistencia centralizada**: Una base de datos SQLite única mantiene usuarios, mecánicos y citas. Tanto el backend como las acciones personalizadas de Rasa comparten el mismo archivo para garantizar consistencia.【F:backend.py†L24-L126】【F:actions/actions.py†L20-L118】
-- **Integración con Rasa**: Las acciones personalizadas consultan y actualizan la base de datos, generan tablas con horarios disponibles y aplican lógica de negocio (validación de fechas, reasignación de slots, etc.).【F:actions/actions.py†L320-L630】
-- **Historial conversacional**: Se consulta directamente el tracker de Rasa para mostrar los mensajes previos en el panel lateral y reanudar conversaciones pendientes.【F:backend.py†L28-L74】【F:frontend/chatbot.html†L180-L238】
-- **API REST ligera**: Endpoints JSON permiten a otros componentes recuperar el historial y las citas del usuario autenticado, facilitando integraciones adicionales.【F:backend.py†L576-L610】
+### Recomendadas
+- `RASA_URL` (default `http://localhost:5005`): URL base de Rasa para consulta de tracker.
+- `SOCKET_URL` (default `http://localhost:5005`): URL usada por el frontend para webchat/socket.
+- `SOCKET_CORS` (default `*`): orígenes permitidos del canal socket.
+- `ADMIN_PHONE` (default `99999999`): teléfono del admin inicial.
+- `ADMIN_PASS` (default `admin123`): contraseña del admin inicial.
+- `MECANICO_PASS` (default `123456`): contraseña del mecánico inicial.
 
-## Configuración de la URL del Socket
+---
 
-El archivo `frontend/chatbot.html` utiliza la variable de plantilla `{{ socket_url }}` para establecer la URL del WebSocket con el servidor de Rasa. Esta variable se define en `backend.py` a partir de la variable de entorno `SOCKET_URL`.
+## Flujo recomendado de ejecución
 
-Si no se define `SOCKET_URL`, se usará `http://localhost:5005` por defecto.
+1. Arrancar backend Flask.
+2. Arrancar `rasa run actions`.
+3. Arrancar `rasa run` con `credentials.yml`.
+4. Ingresar por `/acceso` y probar:
+   - registro/login cliente,
+   - agendamiento por chatbot,
+   - gestión administrativa,
+   - actualización de estado por mecánico.
 
-Al desplegar la aplicación se puede ajustar esta URL estableciendo la variable de entorno antes de ejecutar el servidor:
+---
 
-```bash
-export SOCKET_URL="https://mi-servidor-rasa:5005"
-python backend.py
-```
+## Notas operativas
 
-De esta forma el frontend se conectará al WebSocket indicado.
-
-Si el navegador no recibe mensajes del bot, asegúrate de que el origen esté
-autorizado en el canal SocketIO. Por defecto `channels.py` permite cualquier
-origen usando la variable de entorno `SOCKET_CORS` (valor `"*"`). Puedes limitar
-los dominios permitidos especificando una lista separada por comas:
-
-```bash
-export SOCKET_CORS="http://localhost:8000"
-```
-
-Luego inicia Rasa con:
-
-```bash
-rasa run -m models --enable-api --cors "*" --credentials credentials.yml
-```
-
-
-## Identificador de sesión fijo
-
-El frontend utiliza el número de teléfono del usuario como `session_id` cuando se conecta al WebSocket. Esto permite que el historial de conversaciones y las citas queden vinculadas de forma permanente con la cuenta del usuario. El valor se envía mediante el evento `session_request` al iniciar la conexión, por lo que el mismo identificador se reutiliza aunque el usuario cierre y vuelva a abrir el navegador.
-
-## Persistencia de citas
-
-Cuando un usuario agenda una cita y la confirma, el bot registra el servicio,
-fecha y hora en la base de datos SQLite `usuarios.db` dentro de la tabla
-`citas`. Esta tabla ahora tiene una columna `estado` que
-usa un *check constraint* para permitir solo los valores `confirmada`,
-`reprogramada`, `cancelada` y `completada`.
-El id_usuario enviado
-por el frontend se usa como identificador del usuario, por lo que las citas
-quedan asociadas a cada cuenta y pueden consultarse posteriormente mediante la
-intención `consultar_cita_activa`.
-
-## Persistencia del historial de conversaciones
-
-El archivo `endpoints.yml` incluye un `tracker_store` basado en SQLite que
-guarda los mensajes de cada usuario en `tracker.db`. Al iniciar sesión, el
-frontend consulta `/historial` para mostrar los intercambios previos y así
-continuar la charla incluso después de reiniciar el servidor de Rasa.
-
-Para evitar que un nuevo usuario vea conversaciones ajenas, `chatbot.html`
-comprueba el id_usuario en `localStorage` y lo compara con el
-de la sesión activa. Si son diferentes, el historial guardado en el navegador se
-elimina antes de inicializar el widget, garantizando que cada persona vea solo
-sus propios mensajes.
-
-## Consulta de citas mediante la API
-
-El backend dispone de la ruta `/citas`, la cual devuelve todas las citas
-asociadas al usuario autenticado. Esta función consulta la tabla `citas` de
-`usuarios.db` id_usuario guardado en la sesión. Si no hay
-citas registradas, la respuesta es una lista vacía.
-
-## Canal personalizado para SocketIO
-
-Se añadió el canal `session_socketio` definido en `channels.py`. Este canal
-obtiene el identificador del usuario desde la cookie de sesión y lo usa como
-`sender_id` al procesar los mensajes. De esta forma, cada persona conserva sus
-citas y conversaciones aunque cambie la conexión WebSocket.
-
-## Advertencia de SQLAlchemy
-
-Al ejecutar el servidor de Rasa es posible que aparezca el mensaje:
-
-```
-MovedIn20Warning: Deprecated API features detected! ...
-```
+- El proyecto utiliza SQLite para facilitar desarrollo local.
+- Si cambias de entorno (local, staging, producción), revisa `SOCKET_URL`, `RASA_URL` y CORS.
+- Para trazabilidad conversacional persistente, mantener habilitado el `tracker_store` en `endpoints.yml`.
