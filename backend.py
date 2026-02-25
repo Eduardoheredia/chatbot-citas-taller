@@ -119,7 +119,8 @@ def crear_bd():
             CREATE TABLE IF NOT EXISTS mecanicos (
                 id_mecanico TEXT PRIMARY KEY,
                 nombre TEXT NOT NULL,
-                telefono INTEGER UNIQUE NOT NULL
+                telefono INTEGER UNIQUE NOT NULL,
+                contrasena TEXT NOT NULL
             )
             """
         )
@@ -153,6 +154,18 @@ def crear_bd():
             cursor.execute(
                 "ALTER TABLE usuarios ADD COLUMN es_admin INTEGER NOT NULL DEFAULT 0"
             )
+
+        # Si la tabla mecanicos ya existía sin contraseña, añadimos la columna
+        cursor.execute("PRAGMA table_info(mecanicos)")
+        cols_mecanicos = [c[1] for c in cursor.fetchall()]
+        if "contrasena" not in cols_mecanicos:
+            cursor.execute(
+                "ALTER TABLE mecanicos ADD COLUMN contrasena TEXT"
+            )
+            cursor.execute(
+                "UPDATE mecanicos SET contrasena = ? WHERE contrasena IS NULL OR contrasena = ''",
+                (hash_contrasena("123456"),),
+            )
             
         # Crear un usuario administrador por defecto
         admin_phone = os.environ.get("ADMIN_PHONE", "99999999")
@@ -166,9 +179,11 @@ def crear_bd():
         )
         cursor.execute(
             """
-            INSERT OR IGNORE INTO mecanicos (id_mecanico, nombre, telefono)
-            VALUES ('mec1', 'Mecánico Ejemplo', '00000000')
+            INSERT OR IGNORE INTO mecanicos (id_mecanico, nombre, telefono, contrasena)
+            VALUES ('mec1', 'Mecánico Ejemplo', '00000000', ?)
             """
+            ,
+            (hash_contrasena(os.environ.get("MECANICO_PASS", "123456")),),
         )
         cursor.executemany(
             """
@@ -388,8 +403,8 @@ def login():
             return redirect(url_for("chatbot_view"))
 
         cursor.execute(
-            "SELECT id_mecanico, nombre FROM mecanicos WHERE telefono = ? AND nombre = ?",
-            (telefono, contrasena)
+            "SELECT id_mecanico, nombre FROM mecanicos WHERE telefono = ? AND contrasena = ?",
+            (telefono, hash_contrasena(contrasena))
         )
         mecanico = cursor.fetchone()
 
@@ -702,16 +717,19 @@ def agregar_mecanico():
 
     nombre = request.form.get("nombre")
     telefono = request.form.get("telefono")
-    if not nombre:
-        return redirect(url_for("admin_panel"))
+    contrasena = (request.form.get("contrasena") or "").strip()
+    if not nombre or not telefono or not contrasena:
+        return jsonify({"error": "RELLENE LOS CAMPOS"}), 400
+    if len(contrasena) < 6:
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
 
     id_mecanico = generar_id_aleatorio()
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO mecanicos (id_mecanico, nombre, telefono) VALUES (?, ?, ?)",
-            (id_mecanico, nombre, telefono),
+            "INSERT INTO mecanicos (id_mecanico, nombre, telefono, contrasena) VALUES (?, ?, ?, ?)",
+            (id_mecanico, nombre, telefono, hash_contrasena(contrasena)),
         )
         conn.commit()
 
@@ -725,13 +743,24 @@ def actualizar_mecanico(id_mecanico):
 
     nombre = request.form.get("nombre")
     telefono = request.form.get("telefono")
+    contrasena = (request.form.get("contrasena") or "").strip()
+
+    if contrasena and len(contrasena) < 6:
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE mecanicos SET nombre = ?, telefono = ? WHERE id_mecanico = ?",
-            (nombre, telefono, id_mecanico),
-        )
+        if contrasena:
+            cursor.execute(
+                "UPDATE mecanicos SET nombre = ?, telefono = ?, contrasena = ? WHERE id_mecanico = ?",
+                (nombre, telefono, hash_contrasena(contrasena), id_mecanico),
+            )
+        else:
+            cursor.execute(
+                "UPDATE mecanicos SET nombre = ?, telefono = ? WHERE id_mecanico = ?",
+                (nombre, telefono, id_mecanico),
+            )
         conn.commit()
 
     return redirect(url_for("admin_panel"))
