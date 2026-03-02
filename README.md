@@ -67,6 +67,36 @@ rasa run -m models --enable-api --cors "*" --credentials credentials.yml
 - **Historial conversacional**: Se consulta directamente el tracker de Rasa para mostrar los mensajes previos en el panel lateral y reanudar conversaciones pendientes.【F:backend.py†L28-L74】【F:frontend/chatbot.html†L180-L238】
 - **API REST ligera**: Endpoints JSON permiten a otros componentes recuperar el historial y las citas del usuario autenticado, facilitando integraciones adicionales.【F:backend.py†L576-L610】
 
+## Instalación
+
+1. Clona este repositorio y crea un entorno virtual:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+2. Instala las dependencias necesarias:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Define la variable `SECRET_KEY` y ejecuta el backend:
+
+```bash
+export SECRET_KEY="alguna-clave-secreta"
+python backend.py
+```
+
+4. En otra terminal inicia Rasa y sus acciones personalizadas:
+
+```bash
+rasa train
+rasa run actions &
+rasa run -m models --enable-api --cors "*" --credentials credentials.yml
+```
+
 ## Configuración de la URL del Socket
 
 El archivo `frontend/chatbot.html` utiliza la variable de plantilla `{{ socket_url }}` para establecer la URL del WebSocket con el servidor de Rasa. Esta variable se define en `backend.py` a partir de la variable de entorno `SOCKET_URL`.
