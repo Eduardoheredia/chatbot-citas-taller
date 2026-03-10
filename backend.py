@@ -198,6 +198,19 @@ def crear_bd():
                 ("completada",),
             ],
         )
+        cursor.executemany(
+            """
+            INSERT OR IGNORE INTO estados_cita (estado)
+            VALUES (?)
+            """,
+            [
+                ("confirmada",),
+                ("reprogramada",),
+                ("en progreso",),
+                ("cancelada",),
+                ("completada",),
+            ],
+        )
         conn.commit()
         
 
